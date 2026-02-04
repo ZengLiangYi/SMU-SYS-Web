@@ -42,10 +42,12 @@
     "antd-style": "^3.7.0",
     "classnames": "^2.5.1",
     "dayjs": "^1.11.13",
+    "echarts": "^6.0.0",
+    "echarts-for-react": "^3.0.6",
     "jspdf": "^3.0.4",
     "rc-field-form": "^2.7.1",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@ant-design/pro-cli": "^3.3.0",
@@ -59,8 +61,8 @@
     "@types/jest": "^30.0.0",
     "@types/lodash": "^4.17.10",
     "@types/node": "^24.0.10",
-    "@types/react": "^19.1.5",
-    "@types/react-dom": "^19.1.5",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
     "@types/react-helmet": "^6.1.11",
     "@umijs/max": "^4.6.23",
     "cross-env": "^7.0.3",
@@ -71,6 +73,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^16.1.2",
     "mockjs": "^1.1.0",
+    "sass": "^1.97.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3",
     "umi-presets-pro": "^2.0.3",

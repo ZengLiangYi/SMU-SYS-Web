@@ -1,0 +1,303 @@
+---
+description: Drug treatment module component patterns and conventions
+globs:
+  - "src/pages/drugTreatment/**/*.tsx"
+  - "src/pages/drugTreatment/**/*.less"
+alwaysApply: false
+---
+
+# 药物治疗管理模块组件规范
+
+## 模块结构
+
+### 目录组织
+```
+src/pages/drugTreatment/
+└── DiseaseTypeManagement/          # 认知疾病类型管理
+    ├── components/                 # 页面专用组件
+    │   ├── AddDiseaseTypeModal.tsx    # 添加疾病类型弹窗
+    │   ├── DetailModal.tsx            # 详情查看弹窗
+    │   ├── EditPrescriptionModal.tsx  # 修改处方弹窗
+    │   └── index.ts
+    ├── index.tsx                   # 主页面
+    └── index.less                  # 页面样式
+```
+
+## 组件模式
+
+### 页面组件结构
+- 使用 `PageContainer` 作为根容器
+- 使用 `ProTable` 展示列表数据
+- 工具栏包含筛选条件和操作按钮
+
+```tsx
+// ✅ GOOD
+<PageContainer>
+  <div className="disease-type-list-page">
+    <div className="disease-type-list-card">
+      <div className="toolbar">
+        <div className="toolbar-left">
+          {/* 筛选条件 */}
+        </div>
+        <div className="toolbar-right">
+          {/* 操作按钮 */}
+        </div>
+      </div>
+      <ProTable ... />
+    </div>
+  </div>
+</PageContainer>
+```
+
+### 弹窗组件独立化
+- 所有复杂弹窗都应独立成组件
+- 放在 `components/` 目录下
+- 通过 props 传递数据和回调
+
+```tsx
+// ✅ GOOD - 独立的弹窗组件
+// components/AddDiseaseTypeModal.tsx
+interface AddDiseaseTypeModalProps {
+  visible: boolean;
+  onCancel: () => void;
+  onSuccess: () => void;
+}
+
+const AddDiseaseTypeModal: React.FC<AddDiseaseTypeModalProps> = ({
+  visible,
+  onCancel,
+  onSuccess,
+}) => {
+  // 组件内部管理自己的状态
+  return <Modal ... />;
+};
+```
+
+## 共享组件使用
+
+### 处方相关弹窗
+- 使用 `@/components/PrescriptionModals` 中的共享弹窗
+- `DetailModal` 和 `EditPrescriptionModal` 应使用共享组件
+
+```tsx
+// ✅ GOOD - 使用共享处方弹窗
+import { PrescriptionDetailModal, PrescriptionEditModal } from '@/components/PrescriptionModals';
+
+// DetailModal.tsx 应该简化为：
+const DetailModal: React.FC<DetailModalProps> = ({ visible, record, onCancel }) => {
+  const extraInfo = (
+    <>
+      <p><strong>疾病类别：</strong>{record?.diseaseCategory}</p>
+      <p><strong>疾病名称：</strong>{record?.diseaseName}</p>
+      <p><strong>疾病表现：</strong>{record?.diseaseSymptoms}</p>
+      <p><strong>登记医师：</strong>{record?.registrationDoctor}</p>
+      <p><strong>登记时间：</strong>{record?.registrationTime}</p>
+    </>
+  );
+
+  return (
+    <PrescriptionDetailModal
+      visible={visible}
+      title="疾病类型详情"
+      prescription={record?.prescription}
+      extraInfo={extraInfo}
+      onCancel={onCancel}
+    />
+  );
+};
+
+// EditPrescriptionModal.tsx 应该简化为：
+const EditPrescriptionModal: React.FC<EditPrescriptionModalProps> = ({
+  visible,
+  record,
+  onCancel,
+  onSuccess,
+}) => {
+  const handleSuccess = (prescriptionData: any) => {
+    message.success('修改成功');
+    onSuccess();
+  };
+
+  return (
+    <PrescriptionEditModal
+      visible={visible}
+      title="修改康复处方"
+      initialData={record?.prescription}
+      onCancel={onCancel}
+      onSuccess={handleSuccess}
+    />
+  );
+};
+```
+
+### 添加疾病类型弹窗
+- 两步流程：基本信息 → 处方配置
+- 使用 `currentStep` 状态管理步骤
+- 第二步使用处方组件
+
+```tsx
+// ✅ GOOD
+const [currentStep, setCurrentStep] = useState(0);
+
+<Modal
+  title="添加疾病类型"
+  okText={currentStep === 0 ? '下一步' : '完成'}
+  cancelText={currentStep === 0 ? '取消' : '上一步'}
+  onOk={currentStep === 0 ? handleNext : handleSubmit}
+  onCancel={currentStep === 0 ? onCancel : handlePrevious}
+>
+  {currentStep === 0 ? (
+    <Form>
+      {/* 基本信息表单 */}
+    </Form>
+  ) : (
+    <div>
+      {/* 使用处方组件 */}
+      <MedicationTreatment ... />
+      <CognitiveTraining ... />
+      <DietPrescription ... />
+      <ExercisePrescription ... />
+    </div>
+  )}
+</Modal>
+```
+
+## 数据模式
+
+### 类型定义
+```typescript
+interface DiseaseTypeItem {
+  id: string;
+  diseaseCategory: string;      // 疾病类别
+  diseaseName: string;           // 疾病名称
+  diseaseSymptoms: string;       // 疾病表现
+  recoveryPlan: string;          // 康复处方（格式化显示）
+  registrationDoctor: string;    // 登记医师
+  registrationTime: string;      // 登记时间
+  prescription?: {               // 处方详情
+    medications: any[];
+    cognitiveCards: any[];
+    dietContent: string;
+    exercises: any[];
+  };
+}
+```
+
+### 处方格式化显示
+```tsx
+// ✅ GOOD
+const formatPrescription = (prescription: any) => {
+  if (!prescription) return '每天进行认知训练，辅佐药物...';
+  const parts = [];
+  if (prescription.medications?.length > 0) {
+    parts.push(`药物${prescription.medications.length}种`);
+  }
+  if (prescription.cognitiveCards?.length > 0) {
+    parts.push(`认知训练${prescription.cognitiveCards.length}项`);
+  }
+  if (prescription.dietContent) {
+    parts.push('饮食处方');
+  }
+  if (prescription.exercises?.length > 0) {
+    parts.push(`运动${prescription.exercises.length}项`);
+  }
+  return parts.join(' | ') || '每天进行认知训练，辅佐药物...';
+};
+```
+
+## 样式规范
+
+### 工具栏样式
+```less
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 24px;
+
+  .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+```
+
+### 按钮样式
+```less
+.add-button {
+  border: 1px solid #a0bcff;
+  color: #336fff;
+  background-color: #eaf0ff;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+.query-button {
+  color: #fff;
+  background-color: #336fff;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 12px;
+}
+```
+
+## 最佳实践
+
+### 1. 状态管理简化
+```tsx
+// ✅ GOOD - 简洁的状态管理
+const [addModalVisible, setAddModalVisible] = useState(false);
+const [detailModalVisible, setDetailModalVisible] = useState(false);
+const [editModalVisible, setEditModalVisible] = useState(false);
+const [viewingRecord, setViewingRecord] = useState<DiseaseTypeItem | null>(null);
+const [editingRecord, setEditingRecord] = useState<DiseaseTypeItem | null>(null);
+
+// ❌ BAD - 过多的状态
+const [medications, setMedications] = useState([]);
+const [cognitiveCards, setCognitiveCards] = useState([]);
+const [medicationModalVisible, setMedicationModalVisible] = useState(false);
+// ... 更多重复状态
+```
+
+### 2. 组件复用
+- 优先使用共享组件
+- 避免重复实现相同功能
+- 通过 props 定制化
+
+### 3. 代码组织
+- 主页面保持简洁，只处理列表和路由
+- 复杂逻辑封装到独立组件
+- 弹窗组件独立管理自己的状态
+
+### 4. 类型安全
+- 所有 props 都要定义接口
+- 使用 TypeScript 类型检查
+- 避免使用 any 类型
+
+## 注意事项
+
+1. **不要在主页面中实现复杂弹窗逻辑**
+   - 使用独立的弹窗组件
+   - 使用共享的处方弹窗
+
+2. **保持数据结构一致**
+   - 遵循统一的数据格式
+   - 使用类型定义确保一致性
+
+3. **样式复用**
+   - 使用共享的样式类
+   - 遵循统一的命名规范
+
+4. **性能优化**
+   - 避免不必要的重渲染
+   - 使用 useCallback 优化回调
+   - 合理使用 useMemo

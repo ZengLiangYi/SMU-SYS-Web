@@ -1,0 +1,110 @@
+.disease-type-list-page {
+  .category-tag {
+    border-radius: 12px;
+  }
+
+  .status-tag {
+    border-radius: 12px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 12px;
+  }
+
+  .action-items {
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 8px;
+
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      cursor: pointer;
+      color: #336fff;
+      font-size: 12px;
+    }
+  }
+
+  .disease-type-list-card {
+    padding-top: 24px;
+    min-width: 800px;
+    background-color: #fff;
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 0 24px;
+
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .toolbar-item {
+        margin-right: 16px;
+
+        .toolbar-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #333;
+        }
+      }
+
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .add-button {
+          border: 1px solid #a0bcff;
+          color: #336fff;
+          background-color: #eaf0ff;
+          border-radius: 4px;
+          padding: 8px 16px;
+          font-size: 12px;
+        }
+
+        .query-button {
+          color: #fff;
+          background-color: #336fff;
+          border-radius: 4px;
+          padding: 8px 16px;
+          font-size: 12px;
+        }
+
+        .reset-button {
+          border: 1px solid #d8d8d8;
+          color: #333;
+          background-color: #d8d8d8;
+          border-radius: 4px;
+          padding: 8px 16px;
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  // 状态徽章
+  .status-badge {
+    padding: 2px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+
+    &.completed {
+      color: #336fff;
+      border: 1px solid #336fff;
+    }
+
+    &.uncompleted {
+      color: #ff4d4f;
+      border: 1px solid #ff4d4f;
+    }
+  }
+}

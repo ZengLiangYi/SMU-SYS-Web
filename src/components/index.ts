@@ -5,8 +5,30 @@
 /**
  * 布局组件
  */
-import Footer from './Footer';
-import { Question, SelectLang } from './RightContent';
+
+/**
+ * 业务组件
+ */
+import PatientAvatarInfoContent from './PatientAvatarInfoContent';
+import { Question } from './RightContent';
 import { AvatarDropdown, AvatarName } from './RightContent/AvatarDropdown';
 
-export { AvatarDropdown, AvatarName, Footer, Question, SelectLang };
+/**
+ * 处方组件
+ */
+export {
+  CognitiveTraining,
+  DietPrescription,
+  ExercisePrescription,
+  MedicationTreatment,
+} from './PrescriptionComponents';
+
+/**
+ * 处方弹窗组件
+ */
+export {
+  PrescriptionDetailModal,
+  PrescriptionEditModal,
+} from './PrescriptionModals';
+
+export { AvatarDropdown, AvatarName, Question, PatientAvatarInfoContent };

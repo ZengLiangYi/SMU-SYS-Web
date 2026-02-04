@@ -1,0 +1,206 @@
+---
+description: Patient user module React component patterns and conventions
+globs: src/pages/patientUser/**/*.tsx
+alwaysApply: false
+---
+
+# Patient User Component Patterns
+
+## Component Structure
+
+### Page Components
+- Use `PageContainer` from `@ant-design/pro-components` as the root wrapper
+- Add custom page title in a header section with action buttons
+
+```tsx
+// ✅ GOOD
+<PageContainer className="user-list-page">
+  <div className="user-list-card">
+    <div className="user-detail-header">
+      <h2 className="page-title">个人信息</h2>
+      <div className="header-actions">
+        <button className="action-btn">随访</button>
+      </div>
+    </div>
+  </div>
+</PageContainer>
+```
+
+### Component Organization
+- Extract reusable sub-components into `components/` folder
+- Export all components from `components/index.ts`
+- Keep page-level components in root of feature folder
+
+## Data Patterns
+
+### Type Imports
+- Import types from `@/services/patient-user/typings`
+- Use explicit type annotations for props and state
+
+```tsx
+// ✅ GOOD
+import type { UserListItem, UserDetailInfo } from '@/services/patient-user/typings';
+
+interface PersonalInfoProps {
+  userInfo: UserDetailInfo;
+}
+```
+
+### Mock Data
+- Define mock data functions within components for development
+- Return properly typed arrays matching service typings
+- Use consistent field names matching the type definitions
+
+```tsx
+// ✅ GOOD
+const getMockData = (): UserListItem[] => {
+  return [
+    {
+      id: '1',
+      name: '胡超',
+      gender: 'male',
+      // ... all required fields
+    },
+  ];
+};
+```
+
+## UI Patterns
+
+### Patient Info Display
+- Use `PatientAvatarInfoContent` component from `@/components` for consistent patient info display
+- Pass required props: name, gender, age, phone, category
+
+```tsx
+// ✅ GOOD
+<PatientAvatarInfoContent
+  name={patientInfo.name}
+  gender={patientInfo.gender}
+  age={patientInfo.age}
+  phone={patientInfo.phone}
+  category={patientInfo.category}
+/>
+```
+
+### Category Tags
+- Use `getCategoryColor()` from `@/utils/constants` for consistent category colors
+- Apply `category-tag` className for styling
+
+```tsx
+// ✅ GOOD
+<Tag className='category-tag' color={getCategoryColor(record.category)}>
+  {record.category}
+</Tag>
+```
+
+### Status Display
+- Use `getStatusColor()` for status-based colors
+- Apply inline styles with border and color
+
+```tsx
+// ✅ GOOD
+<span 
+  className='status-tag' 
+  style={{ 
+    border: `1px solid ${getStatusColor(record.status)}`, 
+    color: getStatusColor(record.status) 
+  }}
+>
+  {record.status === 1 ? '已完成' : '未完成'}
+</span>
+```
+
+### Action Items
+- Use consistent action item structure with icon and text
+- Wrap in `Space` component with `action-items` className
+
+```tsx
+// ✅ GOOD
+<Space className='action-items'>
+  <div className='action-item' onClick={() => handleDetail(record)}>
+    <EyeOutlined />
+    <span>详情</span>
+  </div>
+</Space>
+```
+
+## Form Patterns
+
+### Inline Editing
+- Use separate state for editing mode and editing data
+- Provide Save/Cancel buttons during edit mode
+- Show success message on save
+
+```tsx
+// ✅ GOOD
+const [isEditing, setIsEditing] = useState(false);
+const [editingData, setEditingData] = useState(initialData);
+
+const handleSave = () => {
+  setData(editingData);
+  setIsEditing(false);
+  message.success('保存成功');
+};
+```
+
+### Modal Forms
+- Use Ant Design `Form` with `form` hook
+- Set `layout="vertical"` for better mobile support
+- Add proper validation rules with Chinese error messages
+
+## Navigation
+
+### Route Parameters
+- Use query parameters for IDs: `/patient-user/detail?id=${record.id}`
+- Use `history.push()` from `@umijs/max` for navigation
+
+```tsx
+// ✅ GOOD
+import { history } from '@umijs/max';
+
+const handleDetail = (record: UserListItem) => {
+  history.push(`/patient-user/detail?id=${record.id}`);
+};
+```
+
+## 共享组件使用
+
+### 处方组件
+- 使用 `@/components/PrescriptionComponents` 中的处方展示组件
+- 不要在页面中重复实现处方展示逻辑
+
+```tsx
+// ✅ GOOD
+import {
+  MedicationTreatment,
+  CognitiveTraining,
+  DietPrescription,
+  ExercisePrescription,
+} from '@/components/PrescriptionComponents';
+```
+
+### 处方弹窗
+- 使用 `@/components/PrescriptionModals` 中的共享弹窗组件
+- 不要在页面中重复实现处方弹窗逻辑
+
+```tsx
+// ✅ GOOD - 使用共享弹窗
+import { PrescriptionDetailModal, PrescriptionEditModal } from '@/components/PrescriptionModals';
+
+<PrescriptionEditModal
+  visible={editModalVisible}
+  initialData={record?.prescription}
+  onCancel={() => setEditModalVisible(false)}
+  onSuccess={handleSuccess}
+/>
+
+// ❌ BAD - 不要重复实现弹窗
+<Modal title="修改康复处方">
+  <MedicationTreatment ... />
+  <Modal title="添加药物">...</Modal>
+  <Modal title="添加训练">...</Modal>
+  // ... 大量重复代码
+</Modal>
+```
+
+详细使用方法参见 `shared-prescription-components.mdc` 规则。

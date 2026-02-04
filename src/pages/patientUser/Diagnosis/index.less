@@ -1,0 +1,442 @@
+.diagnosis-page {
+
+  .diagnosis-container {
+    background: #fff;
+    min-width: 860px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .diagnosis-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+
+    .diagnosis-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+      color: #000;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+  }
+
+  .patient-info-wrapper {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+
+    .patient-info-left {
+      flex-shrink: 0;
+      width: 280px;
+    }
+
+    .patient-info-right {
+      flex: 1;
+      display: flex;
+    }
+  }
+
+
+  .diagnosis-content,
+  .patient-archive-section {
+    background: #fff;
+    border-radius: 8px;
+
+    .content-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      color: #000;
+    }
+
+    &.patient-archive-section {
+      display: flex;
+
+      .archive-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+
+        .content-title {
+          margin-bottom: 0;
+        }
+
+        .archive-actions {
+          display: flex;
+          gap: 8px;
+        }
+      }
+
+      .archive-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+
+        .archive-item {
+          display: flex;
+          gap: 8px;
+
+          .archive-label {
+            font-size: 13px;
+            color: #000;
+            min-width: 80px;
+            flex-shrink: 0;
+          }
+
+          .archive-value {
+            min-width: 120px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+            word-break: break-all;
+          }
+        }
+      }
+    }
+
+    .form-section {
+      margin-bottom: 24px;
+
+      .form-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 8px;
+      }
+
+      .form-textarea {
+        width: 100%;
+        border-radius: 4px;
+        border: 1px solid #d9d9d9;
+        padding: 8px 12px;
+        font-size: 12px;
+        line-height: 1.6;
+        resize: vertical;
+        color: #484849;
+        font-weight: 600;
+
+        &:hover {
+          border-color: #40a9ff;
+        }
+
+        &:focus {
+          border-color: #40a9ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+          outline: none;
+        }
+      }
+    }
+
+    .form-tip {
+      border: 2px solid #6794ff;
+      color: #6794ff;
+      border-radius: 22px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    // 第二步：AI检查项目推荐
+    .check-items-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+
+      .content-title {
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .subtitle {
+          font-size: 12px;
+          font-weight: normal;
+          color: #999;
+        }
+      }
+
+      .confidence-badge {
+        color: #1890ff;
+        border: 1px solid #6794ff;
+        border-radius: 22px;
+        padding: 2px 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+
+    .check-items-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+
+      .check-category {
+        .category-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #000;
+          margin-bottom: 12px;
+        }
+
+        .check-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          .check-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+
+            &.checked {
+              input[type='checkbox'] {
+                accent-color: #1890ff;
+              }
+            }
+
+            input[type='checkbox'] {
+              cursor: pointer;
+              width: 13px;
+              height: 13px;
+            }
+
+            .item-name {
+              font-size: 12px;
+              color: #000;
+              font-weight: 600;
+              flex: 1;
+            }
+          }
+        }
+      }
+    }
+
+    .ai-suggestion-box {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+
+      .ai-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .ai-content {
+        font-size: 13px;
+        color: #666;
+        line-height: 1.6;
+      }
+    }
+
+    .check-tip {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+    }
+
+    // 第三步：检测结果录入
+    .result-section {
+      margin-bottom: 24px;
+
+      .section-subtitle {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 16px;
+      }
+
+      .result-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 12px;
+
+        .result-label {
+          font-size: 13px;
+          color: #000;
+          font-weight: 600;
+          min-width: 180px;
+          flex-shrink: 0;
+        }
+
+        .result-input {
+          flex: 1;
+          font-size: 13px;
+        }
+      }
+    }
+
+    // 第四步：AI认知障碍分类诊断
+    .ai-diagnosis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+
+      .content-title {
+        margin-bottom: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .generate-time {
+        color: #1890ff;
+        border: 1px solid #6794ff;
+        border-radius: 22px;
+        padding: 2px 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+
+    .ai-diagnosis-container {
+      display: flex;
+      gap: 24px;
+
+      .ai-diagnosis-left {
+        flex: 1;
+
+        .primary-diagnosis {
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 24px;
+
+          .diagnosis-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+          }
+
+          .diagnosis-result {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+
+            .diagnosis-name {
+              font-size: 32px;
+              font-weight: 600;
+              color: #000;
+              line-height: 1.2;
+            }
+
+            .confidence-tag {
+              font-size: 12px;
+              font-weight: 600;
+              border-radius: 22px;
+              padding: 2px 12px;  
+              background: #fff;
+              border: 1px solid #52c41a;
+              color: #52c41a;
+            }
+          }
+
+          .diagnosis-description {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.8;
+          }
+        }
+
+        .other-diagnosis {
+          .diagnosis-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 12px;
+            padding: 0 4px;
+            border-left: 3px solid #1890ff;
+          }
+
+          .diagnosis-item {
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+
+            .diagnosis-name-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+
+              .name {
+                font-size: 14px;
+                font-weight: 600;
+                color: #000;
+              }
+
+              .probability {
+                font-size: 13px;
+                color: #666;
+              }
+            }
+          }
+        }
+      }
+
+      .ai-diagnosis-right {
+        flex: 1;
+        border-radius: 8px;
+        padding: 0;
+
+        .section-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: #000;
+          margin-bottom: 20px;
+        }
+
+        .confirm-section {
+          margin-bottom: 24px;
+
+          .confirm-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 12px;
+          }
+
+          .ant-select {
+            font-size: 13px;
+
+            .ant-select-selector {
+              border-radius: 6px;
+              padding: 4px 12px;
+            }
+          }
+
+          .remarks-textarea {
+            font-size: 13px;
+            resize: vertical;
+            border-radius: 6px;
+            padding: 12px;
+          }
+        }
+
+        .confirm-btn {
+          height: 32px;
+          font-size: 13px;
+          border-radius: 6px;
+        }
+      }
+    }
+
+  }
+}

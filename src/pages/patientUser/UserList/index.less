@@ -1,0 +1,434 @@
+.user-list-page {
+
+    .ant-tabs-nav {
+        padding: 0 24px;
+
+        .ant-tabs-tab-btn {
+            font-size: 12px;
+            font-weight: 600;
+            color: #b6b6b6;
+        }
+    }
+
+    .category-tag {
+        border-radius: 12px;
+    }
+
+    .status-tag {
+        border-radius: 12px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+    }
+
+    .action-items {
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        gap: 8px;
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            color: #336fff;
+            font-size: 12px;
+        }
+    }
+
+
+
+    .user-list-card {
+        min-width: 800px;
+        background-color: #fff;
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 0 24px;
+
+            .toolbar-left {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .toolbar-item {
+                margin-right: 16px;
+
+                .toolbar-label {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #333;
+                }
+            }
+
+            .toolbar-right {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .add-button {
+                    border: 1px solid #a0bcff;
+                    color: #336fff;
+                    background-color: #eaf0ff;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-size: 12px;
+                }
+
+                .query-button {
+                    color: #fff;
+                    background-color: #336fff;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-size: 12px;
+                }
+
+                .reset-button {
+                    border: 1px solid #d8d8d8;
+                    color: #333;
+                    background-color: #d8d8d8;
+                    border-radius: 4px;
+                    padding: 8px 16px;
+                    font-size: 12px;
+                }
+            }
+        }
+    }
+
+    // 聊天视图样式
+    .chat-view-container {
+        .chat-layout {
+            display: flex;
+            height: 540px;
+            padding: 0 24px;
+
+            // 最左侧用户名列表
+            .user-name-list {
+                width: 140px;
+                flex-shrink: 0;
+                overflow-y: auto;
+
+                // 滚动条样式
+                &::-webkit-scrollbar {
+                    width: 4px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: #d8d8d8;
+                    border-radius: 2px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: #f3f3f3;
+                    border-radius: 2px;
+                }
+
+                .user-name-title {
+                    border: 1px solid #f3f3f3;
+                    background: #f7f7f9;
+                    padding: 12px 8px;
+                    font-size: 14px;
+                    color: #9b9b9b;
+                    font-weight: 600;
+                }
+
+                .user-name-item {
+                    padding: 12px 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    color: #333;
+                    font-weight: 600;
+                    border: 1px solid #f3f3f3;
+
+                    &:hover {
+                        background: #f0f0f0;
+                    }
+
+                    &.active {
+                        background: #f0f0f0;
+                    }
+                }
+            }
+
+            // 中间聊天面板
+            .chat-panel {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background: #fff;
+                overflow: hidden;
+
+                .chat-header {
+                    padding: 12px 20px;
+                    border-bottom: 1px solid #dedede;
+                    background: #f5f5f5;
+
+                    .chat-user-name {
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #333;
+                        margin-bottom: 2px;
+                    }
+                }
+
+                .chat-messages {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 20px;
+                    background: #f5f5f5;
+
+                    .empty-chat {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        color: #999;
+
+                        p {
+                            margin: 4px 0;
+                        }
+                    }
+
+                    .message-item {
+                        display: flex;
+                        gap: 12px;
+                        margin-bottom: 20px;
+
+                        &.doctor {
+                            flex-direction: row-reverse;
+
+                            .message-content {
+                                align-items: flex-end;
+                            }
+
+                            .message-bubble {
+                                background: #336fff;
+                                color: #000000;
+                            }
+                        }
+
+                        .message-content {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 4px;
+                            max-width: 60%;
+
+                            .message-bubble {
+                                padding: 10px 14px;
+                                border-radius: 8px;
+                                background: #fff;
+                                word-break: break-word;
+                                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                                font-size: 14px;
+                                line-height: 1.5;
+                            }
+
+                            .message-time {
+                                font-size: 11px;
+                                color: #999;
+                                padding: 0 4px;
+                            }
+                        }
+                    }
+                }
+
+                .chat-input {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    padding: 16px 20px;
+                    border-top: 1px solid #dedede;
+                    background: #f5f5f5;
+                    align-items: flex-end;
+
+                    textarea {
+                        flex: 1;
+                        resize: none;
+                        border-radius: 4px;
+                        background: #f5f5f5;
+                        border: none;
+
+                        :focus {
+                            border: none;
+                            box-shadow: none;
+                            outline: none;
+                        }
+
+                        &:focus-visible {
+                            border: none;
+                            box-shadow: none;
+                            outline: none;
+                        }
+
+                        :hover {
+                            border: none;
+                            box-shadow: none;
+                            outline: none;
+                        }
+                    }
+
+                    button {
+                        height: 30px;
+                        padding: 0 24px;
+                        border-radius: 4px;
+                    }
+                }
+
+                .empty-chat-panel {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100%;
+                    color: #999;
+
+                    p {
+                        margin-top: 16px;
+                        font-size: 14px;
+                    }
+                }
+            }
+
+            // 右侧用户详情
+            .user-detail-panel {
+                width: 280px;
+                flex-shrink: 0;
+                background: #fff;
+                overflow-y: auto;
+                border: 1px solid #f3f3f3;
+
+                // 滚动条样式
+                &::-webkit-scrollbar {
+                    width: 6px;
+                    height: 6px;
+                }
+
+                &::-webkit-scrollbar-thumb {
+                    background: #d8d8d8;
+                    border-radius: 2px;
+                }
+
+                &::-webkit-scrollbar-track {
+                    background: #f3f3f3;
+                    border-radius: 2px;
+                }
+
+                .user-detail-content {
+                    .detail-body {
+                        padding: 12px 8px;
+
+                        .detail-section {
+                            margin-bottom: 16px;
+
+                            &:last-child {
+                                margin-bottom: 0;
+                            }
+
+                            .section-title {
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #333;
+                                margin-bottom: 8px;
+                                padding-bottom: 8px;
+                            }
+
+                            .detail-grid {
+                                display: grid;
+                                grid-template-columns: repeat(2, 1fr);
+                                gap: 16px;
+
+                                .detail-item {
+                                    .status-tag {
+                                        width: 60px;
+                                    }
+
+                                    .detail-label {
+                                        font-size: 13px;
+                                        color: #929292;
+                                        font-weight: 600;
+                                        min-width: 90px;
+                                        margin-bottom: 6px;
+                                    }
+                                        
+
+                                    .detail-value {
+                                        font-size: 13px;
+                                        font-weight: 600;
+
+
+                                        &.score-highlight {
+                                            color: #336fff;
+                                            font-weight: 600;
+                                            font-size: 15px;
+                                        }
+                                    }
+                                }
+                            }
+
+                            .action-items {
+                                justify-content: space-between;
+                            }
+                        }
+
+                        .detail-actions {
+                            display: flex;
+                            gap: 12px;
+                            padding-top: 24px;
+                            border-top: 1px solid #e8e8e8;
+
+                            button {
+                                flex: 1;
+                                height: 40px;
+                                border-radius: 4px;
+                                font-size: 14px;
+                            }
+                        }
+                    }
+                }
+
+                .empty-state {
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    .empty-content {
+                        text-align: center;
+                        color: #999;
+
+                        p {
+                            margin-top: 16px;
+                            font-size: 14px;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 分页器
+        .chat-pagination {
+            padding: 16px;
+            display: flex;
+            justify-content: flex-end;
+            background: #fff;
+
+            .ant-pagination {
+                font-weight: 600;
+
+                .ant-pagination-total-text {
+                    font-size: 14px;
+                    color: #000000;
+                }
+            }
+        }
+    }
+}

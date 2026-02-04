@@ -1,0 +1,187 @@
+---
+description: Diagnosis workflow step-based component patterns
+globs: src/pages/patientUser/Diagnosis/**/*.tsx
+alwaysApply: false
+---
+
+# Diagnosis Workflow Patterns
+
+## Step-Based Architecture
+
+### Step Configuration
+Define steps array with consistent structure:
+
+```tsx
+// ✅ GOOD
+const steps = [
+  { title: '初诊' },
+  { title: 'AI检查项目推荐' },
+  { title: '检测结果录入' },
+  { title: 'AI认知障碍分类诊断' },
+  { title: '综合康复处方制定' },
+];
+```
+
+### Step Navigation
+- Use `current` state to track active step
+- Validate current step before allowing navigation
+- Show appropriate buttons based on step position
+
+```tsx
+// ✅ GOOD
+const handleNext = () => {
+  if (current === 0) {
+    if (!formData.chiefComplaint.trim()) {
+      message.warning('请填写主诉');
+      return;
+    }
+  }
+  if (current < steps.length - 1) {
+    setCurrent(current + 1);
+  }
+};
+```
+
+### Step Content Rendering
+Use switch statement for step content:
+
+```tsx
+// ✅ GOOD
+const renderStepContent = () => {
+  switch (current) {
+    case 0:
+      return <InitialDiagnosis formData={formData} onChange={setFormData} />;
+    case 1:
+      return <AICheckRecommendation checkItems={checkItems} />;
+    default:
+      return null;
+  }
+};
+```
+
+## Form State Management
+
+### Structured Form Data
+Group related fields in objects:
+
+```tsx
+// ✅ GOOD
+const [formData, setFormData] = useState({
+  chiefComplaint: '',
+  appearance: '',
+  currentHistory: '',
+});
+
+// ❌ BAD
+const [chiefComplaint, setChiefComplaint] = useState('');
+const [appearance, setAppearance] = useState('');
+const [currentHistory, setCurrentHistory] = useState('');
+```
+
+### Check Items State
+Use categorized structure for medical check items:
+
+```tsx
+// ✅ GOOD
+const [checkItems, setCheckItems] = useState({
+  scaleAssessment: [
+    { id: '1', name: 'AD-8（早期筛查）', checked: true },
+  ],
+  laboratoryTest: [...],
+  imagingTest: [...],
+});
+```
+
+## AI Integration
+
+### AI Suggestions Display
+Show AI suggestions in dedicated box with consistent styling:
+
+```tsx
+// ✅ GOOD
+<div className="ai-suggestion-box">
+  <div className="ai-label">AI综合建议</div>
+  <div className="ai-content">{aiSuggestion}</div>
+</div>
+```
+
+### AI Suggestion Content
+- Reference medical guidelines in suggestions
+- Use structured format with numbered points (①②③)
+- Include specific dosages and timeframes
+
+## Patient Archive Section
+
+### Archive Display
+Show patient archive (家族史, 既往病史, 既往用药) in all steps:
+
+```tsx
+// ✅ GOOD
+<div className="patient-archive-section">
+  <div className="archive-grid">
+    <div className="archive-item">
+      <div className="archive-label">家族史:</div>
+      {isEditingArchive ? (
+        <Input value={patientArchive.familyHistory} />
+      ) : (
+        <div className="archive-value">{patientArchive.familyHistory}</div>
+      )}
+    </div>
+  </div>
+</div>
+```
+
+### Inline Archive Editing
+- Use edit/save/cancel button pattern
+- Show edit icon when not editing
+- Show save and close icons when editing
+
+## Prescription Components
+
+### Component Props Pattern
+Pass handlers for CRUD operations:
+
+```tsx
+// ✅ GOOD
+<MedicationTreatment
+  medications={medications}
+  onAdd={handleAddMedication}
+  onEdit={handleEditMedication}
+  onDelete={handleDeleteMedication}
+/>
+```
+
+### Modal Management
+- Use separate modal visibility state for each section
+- Use editing state to distinguish add vs edit mode
+- Reset form on modal close
+
+```tsx
+// ✅ GOOD
+const [medicationModalVisible, setMedicationModalVisible] = useState(false);
+const [editingMedication, setEditingMedication] = useState<any>(null);
+
+const handleAddMedication = () => {
+  setEditingMedication(null);
+  form.resetFields();
+  setMedicationModalVisible(true);
+};
+```
+
+## Confirmation Patterns
+
+### Step Confirmation
+Require explicit confirmation before proceeding:
+
+```tsx
+// ✅ GOOD
+const [diagnosisConfirmed, setDiagnosisConfirmed] = useState(false);
+
+const handleNext = () => {
+  if (current === 3 && !diagnosisConfirmed) {
+    message.warning('请先确认诊断结果');
+    return;
+  }
+  // proceed...
+};
+```
