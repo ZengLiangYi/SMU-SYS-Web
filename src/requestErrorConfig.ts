@@ -1,4 +1,4 @@
-﻿import type { RequestOptions } from '@@/plugin-request/request';
+import type { RequestOptions } from '@@/plugin-request/request';
 import type { RequestConfig } from '@umijs/max';
 import { message, notification } from 'antd';
 
@@ -12,11 +12,16 @@ enum ErrorShowType {
 }
 // 与后端约定的响应数据格式
 interface ResponseStructure {
-  success: boolean;
-  data: any;
+  // Legacy format
+  success?: boolean;
   errorCode?: number;
   errorMessage?: string;
   showType?: ErrorShowType;
+  // New API format (API.ApiResponse)
+  status?: string;
+  msg?: string;
+  // Shared
+  data: any;
 }
 
 /**
@@ -29,12 +34,22 @@ export const errorConfig: RequestConfig = {
   errorConfig: {
     // 错误抛出
     errorThrower: (res) => {
-      const { success, data, errorCode, errorMessage, showType } =
+      const { success, data, errorCode, errorMessage, showType, status, msg } =
         res as unknown as ResponseStructure;
-      if (!success) {
-        const error: any = new Error(errorMessage);
+
+      // Check both formats: legacy (!success) and new (status !== 'OK')
+      const isError =
+        success === false || (status !== undefined && status !== 'OK');
+
+      if (isError) {
+        const error: any = new Error(errorMessage || msg || '请求失败');
         error.name = 'BizError';
-        error.info = { errorCode, errorMessage, showType, data };
+        error.info = {
+          errorCode,
+          errorMessage: errorMessage || msg,
+          showType,
+          data,
+        };
         throw error; // 抛出自制的错误
       }
     },
@@ -85,23 +100,49 @@ export const errorConfig: RequestConfig = {
     },
   },
 
-  // 请求拦截器
+  // 请求拦截器 - 添加 Bearer Token
   requestInterceptors: [
     (config: RequestOptions) => {
-      // 拦截请求配置，进行个性化处理。
-      const url = config?.url?.concat('?token=123');
-      return { ...config, url };
+      try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          config.headers = {
+            ...config.headers,
+            Authorization: `Bearer ${token}`,
+          };
+        }
+      } catch {
+        // localStorage 可能在某些环境下不可用
+      }
+      return config;
     },
   ],
 
-  // 响应拦截器
+  // 响应拦截器 - 处理 401 和业务错误
   responseInterceptors: [
     (response) => {
-      // 拦截响应数据，进行个性化处理
-      const { data } = response as unknown as ResponseStructure;
+      // 401 处理：清除 token 并跳转登录
+      if (response.status === 401) {
+        try {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user_role');
+          localStorage.removeItem('currentUser');
+        } catch {
+          // localStorage 可能在某些环境下不可用
+        }
+        window.location.href = '/user/login';
+        return response;
+      }
 
-      if (data?.success === false) {
-        message.error('请求失败！');
+      // 拦截响应数据，进行个性化处理
+      // Check both legacy and new API response formats
+      const { data } = response as unknown as ResponseStructure;
+      const isError =
+        data?.success === false ||
+        (data?.status !== undefined && data?.status !== 'OK');
+
+      if (isError) {
+        message.error(data?.msg || data?.errorMessage || '请求失败！');
       }
       return response;
     },

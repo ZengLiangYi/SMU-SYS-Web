@@ -2,6 +2,7 @@ import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
 import { AvatarDropdown, AvatarName } from '@/components';
+import { getDoctorMe } from '@/services/auth';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 
@@ -16,21 +17,44 @@ export async function getInitialState(): Promise<{
   loading?: boolean;
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = async (): Promise<API.CurrentUser | undefined> => {
     try {
-      // 从 localStorage 获取用户信息,不调用后端接口
-      const userInfoStr = localStorage.getItem('currentUser');
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
+      const role = localStorage.getItem('user_role');
 
-      if (userInfoStr && token) {
-        const userInfo = JSON.parse(userInfoStr);
-        return userInfo as API.CurrentUser;
+      // 早返回：无 token 直接跳转
+      if (!token) {
+        history.push(loginPath);
+        return undefined;
       }
 
-      // 没有登录信息,跳转到登录页
+      if (role === 'doctor') {
+        // 医生：调用 /me 接口获取最新信息
+        const res = await getDoctorMe();
+        if (res.status === 'OK') {
+          return {
+            ...res.data,
+            avatar: '/images/avatar.png',
+            role: 'doctor',
+          } as API.CurrentUser;
+        }
+        // 认证失败，跳转登录
+        history.push(loginPath);
+        return undefined;
+      }
+
+      if (role === 'admin') {
+        // 管理员：使用本地存储（无 /me 接口）
+        const stored = localStorage.getItem('currentUser');
+        if (stored) {
+          return JSON.parse(stored) as API.CurrentUser;
+        }
+      }
+
+      // 认证失败，跳转登录
       history.push(loginPath);
       return undefined;
-    } catch (_error) {
+    } catch {
       history.push(loginPath);
       return undefined;
     }
@@ -97,6 +121,8 @@ export const layout: RunTimeLayoutConfig = ({
 export const request: RequestConfig = {
   // 开发环境用空（走 proxy），生产环境用实际地址
   baseURL:
-    process.env.NODE_ENV === 'development' ? '' : 'http://localhost:8080',
+    process.env.NODE_ENV === 'development'
+      ? ''
+      : 'https://alzheimer.dianchuang.club',
   ...errorConfig,
 };

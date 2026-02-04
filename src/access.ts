@@ -6,6 +6,11 @@ export default function access(
 ) {
   const { currentUser } = initialState ?? {};
   return {
-    canAdmin: currentUser && currentUser.access === 'admin',
+    // 管理员权限
+    canAdmin: currentUser?.role === 'admin',
+    // 医生权限
+    canDoctor: currentUser?.role === 'doctor',
+    // 是否已登录
+    isLoggedIn: !!currentUser,
   };
 }
