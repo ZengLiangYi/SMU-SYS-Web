@@ -1,12 +1,17 @@
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
+import { Typography } from 'antd';
 import React, { useRef } from 'react';
 import type {
   OutTransferRecord,
   TransferRecord as TransferRecordType,
 } from '@/services/patient-user/typings';
+import useComponentStyles from './components.style';
+
+const { Title } = Typography;
 
 const TransferRecord: React.FC = () => {
+  const { styles } = useComponentStyles();
   const inTransferTableRef = useRef<ActionType>(null);
   const outTransferTableRef = useRef<ActionType>(null);
 
@@ -133,10 +138,12 @@ const TransferRecord: React.FC = () => {
   };
 
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">院内转诊</h3>
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            院内转诊
+          </Title>
         </div>
         <ProTable<TransferRecordType>
           actionRef={inTransferTableRef}
@@ -154,13 +161,14 @@ const TransferRecord: React.FC = () => {
           pagination={{
             pageSize: 5,
           }}
-          className="transfer-pro-table"
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">院外转诊</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            院外转诊
+          </Title>
         </div>
         <ProTable<OutTransferRecord>
           actionRef={outTransferTableRef}
@@ -178,7 +186,6 @@ const TransferRecord: React.FC = () => {
           pagination={{
             pageSize: 5,
           }}
-          className="transfer-pro-table"
         />
       </div>
     </div>

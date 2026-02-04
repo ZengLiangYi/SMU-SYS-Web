@@ -1,6 +1,5 @@
 import { Modal } from 'antd';
 import React from 'react';
-import '@/components/PrescriptionComponents/index.less';
 
 interface DiseaseTypeItem {
   id: string;

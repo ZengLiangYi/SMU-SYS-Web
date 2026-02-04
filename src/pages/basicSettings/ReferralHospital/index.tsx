@@ -1,16 +1,8 @@
+import { EditOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Image, Input, Select } from 'antd';
-import React, { useRef, useState } from 'react';
-import './index.less';
-import {
-  EditOutlined,
-  PlusCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-} from '@ant-design/icons';
-
-const { Option } = Select;
+import { Button, Image } from 'antd';
+import React, { useRef } from 'react';
 
 interface HospitalItem {
   id: string;
@@ -24,12 +16,13 @@ interface HospitalItem {
   createTime: string;
 }
 
+// 医院 valueEnum
+const hospitalValueEnum = {
+  大医院: { text: '大医院' },
+};
+
 const ReferralHospital: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
-  const [searchHospital, setSearchHospital] = useState<string>('');
-  const [searchName, setSearchName] = useState<string>('');
-  const [filteredHospital, setFilteredHospital] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
 
   // 表格列定义
   const columns: ProColumns<HospitalItem>[] = [
@@ -37,6 +30,7 @@ const ReferralHospital: React.FC = () => {
       title: '医院logo',
       dataIndex: 'hospitalLogo',
       width: 100,
+      search: false,
       render: (_, record) => (
         <Image
           src={record.hospitalLogo}
@@ -51,47 +45,65 @@ const ReferralHospital: React.FC = () => {
       title: '医院名称',
       dataIndex: 'hospitalName',
       width: 150,
+      valueType: 'select',
+      valueEnum: hospitalValueEnum,
+      fieldProps: {
+        placeholder: '全部',
+      },
     },
     {
       title: '医院地址',
       dataIndex: 'hospitalAddress',
       width: 200,
+      search: false,
     },
     {
       title: '医院电话',
       dataIndex: 'hospitalPhone',
       width: 150,
+      search: false,
     },
     {
       title: '对接医师姓名',
       dataIndex: 'contactDoctorName',
       width: 120,
+      fieldProps: {
+        placeholder: '请输入医师名称',
+      },
     },
     {
       title: '职位',
       dataIndex: 'position',
       width: 100,
+      search: false,
     },
     {
       title: '联系方式',
       dataIndex: 'contactMethod',
       width: 150,
+      search: false,
     },
     {
       title: '创建时间',
       dataIndex: 'createTime',
       width: 120,
+      search: false,
     },
     {
       title: '操作',
       key: 'action',
       width: 100,
       fixed: 'right',
+      search: false,
       render: (_, record) => (
-        <div className="action-item" onClick={() => handleEdit(record)}>
-          <EditOutlined />
-          <span> 修改</span>
-        </div>
+        <Button
+          type="link"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => handleEdit(record)}
+        >
+          修改
+        </Button>
       ),
     },
   ];
@@ -103,20 +115,6 @@ const ReferralHospital: React.FC = () => {
 
   const handleEdit = (record: HospitalItem) => {
     console.log('编辑医院:', record);
-  };
-
-  const handleQuery = () => {
-    setFilteredHospital(searchHospital);
-    setFilteredName(searchName);
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchHospital('');
-    setSearchName('');
-    setFilteredHospital('');
-    setFilteredName('');
-    actionRef.current?.reload();
   };
 
   // 获取模拟数据
@@ -180,20 +178,20 @@ const ReferralHospital: React.FC = () => {
     ];
   };
 
-  // 请求数据
-  const fetchHospitalList = async (_params: any) => {
+  // 请求数据 - 使用 ProTable 传入的 params
+  const fetchHospitalList = async (params: Record<string, any>) => {
     const mockData = getMockData();
     let filteredData = mockData;
 
-    if (filteredHospital) {
+    if (params.hospitalName) {
       filteredData = filteredData.filter((item) =>
-        item.hospitalName.includes(filteredHospital),
+        item.hospitalName.includes(params.hospitalName),
       );
     }
 
-    if (filteredName) {
+    if (params.contactDoctorName) {
       filteredData = filteredData.filter((item) =>
-        item.contactDoctorName.includes(filteredName),
+        item.contactDoctorName.includes(params.contactDoctorName),
       );
     }
 
@@ -206,80 +204,30 @@ const ReferralHospital: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="referral-hospital-page">
-        <div className="referral-hospital-card">
-          <div className="toolbar">
-            <div className="toolbar-left">
-              <div className="toolbar-item">
-                <span className="toolbar-label">所属医院：</span>
-                <Select
-                  placeholder="全部"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchHospital}
-                  onChange={(value) => setSearchHospital(value)}
-                >
-                  <Option value="大医院">大医院</Option>
-                </Select>
-              </div>
-              <div className="toolbar-item">
-                <span className="toolbar-label">名称：</span>
-                <Input
-                  placeholder="请输入医师名称"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="toolbar-right">
-              <Button
-                className="add-button"
-                variant="outlined"
-                onClick={handleAdd}
-              >
-                <PlusCircleOutlined />
-                添加
-              </Button>
-              <Button
-                className="query-button"
-                variant="solid"
-                onClick={handleQuery}
-              >
-                <SearchOutlined />
-                查询
-              </Button>
-              <Button
-                className="reset-button"
-                variant="outlined"
-                onClick={handleReset}
-              >
-                <ReloadOutlined />
-                重置
-              </Button>
-            </div>
-          </div>
-
-          <ProTable<HospitalItem>
-            actionRef={actionRef}
-            rowKey="id"
-            search={false}
-            options={{
-              reload: false,
-              density: false,
-              fullScreen: false,
-              setting: false,
-            }}
-            request={fetchHospitalList}
-            columns={columns}
-            scroll={{ x: 1400 }}
-            pagination={{
-              pageSize: 10,
-            }}
-          />
-        </div>
-      </div>
+      <ProTable<HospitalItem>
+        headerTitle="转诊医院列表"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={handleAdd}
+          >
+            添加
+          </Button>,
+        ]}
+        request={fetchHospitalList}
+        columns={columns}
+        scroll={{ x: 1400 }}
+        pagination={{
+          pageSize: 10,
+        }}
+      />
     </PageContainer>
   );
 };

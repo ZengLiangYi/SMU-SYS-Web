@@ -1,8 +1,9 @@
 import { ManOutlined, UserOutlined, WomanOutlined } from '@ant-design/icons';
-import { Avatar, Tag } from 'antd';
+import { Avatar, Flex, Space, Tag, Typography } from 'antd';
 import React from 'react';
 import { getCategoryColor } from '@/utils/constants';
-import './index.less';
+
+const { Text } = Typography;
 
 interface PatientAvatarInfoContentProps {
   name: string;
@@ -22,29 +23,35 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
   category,
 }) => {
   return (
-    <div className="patient-info-card">
-      <div className="user-info-container">
-        <div className="user-avatar-section">
-          <Avatar size={80} icon={<UserOutlined />} className="user-avatar" />
-        </div>
-        <div className="user-info-section">
-          <div className="user-name-row">
-            <span className="user-name">{name}</span>
+    <div>
+      <Flex gap={24}>
+        <Avatar
+          size={80}
+          icon={<UserOutlined />}
+          style={{ background: '#f0f0f0' }}
+        />
+        <Flex vertical justify="center">
+          <Space style={{ marginBottom: 8 }}>
+            <Text strong style={{ fontSize: 18 }}>
+              {name}
+            </Text>
             {gender === 'male' ? (
               <ManOutlined style={{ color: '#336fff' }} />
             ) : (
               <WomanOutlined style={{ color: '#ff4d4f' }} />
             )}
-            <span className="user-age">{age}岁</span>
-          </div>
-          <div className="user-contact">联系方式：{phone}</div>
-          <div className="user-category">
-            <Tag className="category-tag" color={getCategoryColor(category)}>
+            <Text type="secondary">{age}岁</Text>
+          </Space>
+          <Text type="secondary" style={{ marginBottom: 8 }}>
+            联系方式：{phone}
+          </Text>
+          <div>
+            <Tag color={getCategoryColor(category)} style={{ borderRadius: 4 }}>
               {category}
             </Tag>
           </div>
-        </div>
-      </div>
+        </Flex>
+      </Flex>
     </div>
   );
 };

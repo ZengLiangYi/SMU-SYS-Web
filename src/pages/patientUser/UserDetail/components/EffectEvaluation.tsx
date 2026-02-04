@@ -1,5 +1,6 @@
 import ReactECharts from 'echarts-for-react';
 import React from 'react';
+import useComponentStyles from './components.style';
 
 interface EffectEvaluationProps {
   aiSuggestion: string;
@@ -8,6 +9,7 @@ interface EffectEvaluationProps {
 const EffectEvaluation: React.FC<EffectEvaluationProps> = ({
   aiSuggestion: _aiSuggestion,
 }) => {
+  const { styles } = useComponentStyles();
   // 综合评分数据
   const getComprehensiveScoreData = () => {
     return [
@@ -229,66 +231,66 @@ const EffectEvaluation: React.FC<EffectEvaluationProps> = ({
   };
 
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="effect-evaluation-container">
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div>
           {/* 分项评分趋势图 */}
-          <div className="trend-charts-grid">
-            <div className="trend-chart-item">
+          <div className={styles.trendChartsGrid}>
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={comprehensiveScoreOption}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('血压趋势分评估', '血压得分评估')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('血糖趋势分评估', '血糖得分评估')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('血脂趋势分评估', '血脂得分评估')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('饮食得分评估', '饮食得分评估')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('运动量得分', '运动量得分')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('提供用药得分', '提供用药得分')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('认知训练得分', '认知训练得分')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption('认知训练得分评估', '认知训练得分评估')}
                 style={{ height: '260px' }}
               />
             </div>
-            <div className="trend-chart-item">
+            <div className={styles.trendChartItem}>
               <ReactECharts
                 option={getTrendOption(
                   '用户日常合规分评估',

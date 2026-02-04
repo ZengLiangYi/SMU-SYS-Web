@@ -1,45 +1,40 @@
+import {
+  EyeOutlined,
+  HomeOutlined,
+  PlayCircleOutlined,
+  SwapOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { history } from '@umijs/max';
 import {
-  Avatar,
   Button,
+  Card,
   Input,
   message,
   Pagination,
-  Select,
   Space,
   Tabs,
   Tag,
 } from 'antd';
 import React, { useMemo, useRef, useState } from 'react';
 import type { UserListItem } from '../../../services/patient-user/typings';
-import './index.less';
-import {
-  EyeOutlined,
-  HomeOutlined,
-  PlayCircleOutlined,
-  PlusCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
-  SendOutlined,
-  SwapOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
-import { history } from '@umijs/max';
-import {
-  CROWD_CATEGORY,
-  getCategoryColor,
-  getStatusColor,
-} from '../../../utils/constants';
+import { CROWD_CATEGORY, getCategoryColor } from '../../../utils/constants';
+import useStyles from './index.style';
 
-const { Option } = Select;
+// 生成 valueEnum
+const categoryValueEnum = Object.values(CROWD_CATEGORY).reduce(
+  (acc, cat) => {
+    acc[cat] = { text: cat };
+    return acc;
+  },
+  {} as Record<string, { text: string }>,
+);
 
 const UserList: React.FC = () => {
+  const { styles, cx } = useStyles();
   const actionRef = useRef<ActionType>(null);
-  const [searchName, setSearchName] = useState<string>('');
-  const [searchCategory, setSearchCategory] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
-  const [filteredCategory, setFilteredCategory] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
   const [chatMessage, setChatMessage] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<
@@ -52,6 +47,9 @@ const UserList: React.FC = () => {
   >([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
+  // 聊天视图的搜索状态（单独保留）
+  const [chatSearchName, setChatSearchName] = useState<string>('');
+  const [chatSearchCategory, setChatSearchCategory] = useState<string>('');
 
   // 表格列定义
   const columns: ProColumns<UserListItem>[] = [
@@ -60,11 +58,15 @@ const UserList: React.FC = () => {
       dataIndex: 'name',
       width: 60,
       fixed: 'left',
+      fieldProps: {
+        placeholder: '请输入姓名',
+      },
     },
     {
       title: '性别',
       dataIndex: 'gender',
       width: 40,
+      search: false,
       valueEnum: {
         male: { text: '男' },
         female: { text: '女' },
@@ -74,34 +76,44 @@ const UserList: React.FC = () => {
       title: '年龄',
       dataIndex: 'age',
       width: 40,
+      search: false,
       render: (text) => `${text}岁`,
     },
     {
       title: '联系方式',
       dataIndex: 'phone',
       width: 80,
+      search: false,
     },
     {
       title: '紧急联系人',
       dataIndex: 'emergencyContact',
       width: 60,
+      search: false,
     },
     {
       title: '诊疗评分',
       dataIndex: 'diagnosisScore',
       width: 60,
+      search: false,
     },
     {
       title: '处方日评分',
       dataIndex: 'prescriptionScore',
       width: 60,
+      search: false,
     },
     {
       title: '人群分类',
       dataIndex: 'category',
       width: 100,
+      valueType: 'select',
+      valueEnum: categoryValueEnum,
       render: (_, record) => (
-        <Tag className="category-tag" color={getCategoryColor(record.category)}>
+        <Tag
+          color={getCategoryColor(record.category)}
+          style={{ borderRadius: 12 }}
+        >
           {record.category}
         </Tag>
       ),
@@ -110,16 +122,11 @@ const UserList: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       width: 40,
+      search: false,
       render: (_, record) => (
-        <span
-          className="status-tag"
-          style={{
-            border: `1px solid ${getStatusColor(record.status)}`,
-            color: getStatusColor(record.status),
-          }}
-        >
+        <Tag bordered color={record.status === 1 ? 'blue' : 'red'}>
           {record.status === 1 ? '已完成' : '未完成'}
-        </span>
+        </Tag>
       ),
     },
     {
@@ -127,24 +134,41 @@ const UserList: React.FC = () => {
       key: 'action',
       width: 140,
       fixed: 'right',
+      search: false,
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-          <div className="action-item" onClick={() => handleDiagnosis(record)}>
-            <SwapOutlined />
-            <span>转诊</span>
-          </div>
-          <div className="action-item" onClick={() => handleDiagnosis(record)}>
-            <PlayCircleOutlined />
-            <span>诊断</span>
-          </div>
-          <div className="action-item" onClick={() => handleFollowUp(record)}>
-            <HomeOutlined />
-            <span>随访</span>
-          </div>
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<SwapOutlined />}
+            onClick={() => handleDiagnosis(record)}
+          >
+            转诊
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<PlayCircleOutlined />}
+            onClick={() => handleDiagnosis(record)}
+          >
+            诊断
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<HomeOutlined />}
+            onClick={() => handleFollowUp(record)}
+          >
+            随访
+          </Button>
         </Space>
       ),
     },
@@ -155,34 +179,12 @@ const UserList: React.FC = () => {
     history.push(`/patient-user/detail?id=${record.id}`);
   };
 
-  const handleTransfer = (record: UserListItem) => {
-    message.info(`转诊: ${record.name}`);
-    // TODO: 打开转诊弹窗
-  };
-
   const handleDiagnosis = (record: UserListItem) => {
     history.push(`/patient-user/diagnosis?id=${record.id}`);
   };
 
   const handleFollowUp = (record: UserListItem) => {
     message.info(`随访: ${record.name}`);
-    // TODO: 跳转到随访页面
-  };
-
-  const handleQuery = () => {
-    setFilteredName(searchName);
-    setFilteredCategory(searchCategory);
-    setCurrentPage(1); // 查询时重置到第一页
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchName('');
-    setSearchCategory('');
-    setFilteredName('');
-    setFilteredCategory('');
-    setCurrentPage(1); // 重置时回到第一页
-    actionRef.current?.reload();
   };
 
   const handleSendMessage = () => {
@@ -353,40 +355,34 @@ const UserList: React.FC = () => {
     ];
   };
 
-  // 模拟数据请求
-  const fetchUserList = async (params: any) => {
+  // 模拟数据请求 - 使用 ProTable 传入的 params
+  const fetchUserList = async (params: Record<string, any>) => {
     const mockData = getMockData();
-
-    // 应用搜索过滤
     let filteredData = mockData;
-    if (filteredName) {
+    if (params.name) {
       filteredData = filteredData.filter((item) =>
-        item.name.includes(filteredName),
+        item.name.includes(params.name),
       );
     }
-    if (filteredCategory) {
+    if (params.category) {
       filteredData = filteredData.filter(
-        (item) => item.category === filteredCategory,
+        (item) => item.category === params.category,
       );
     }
-
-    return {
-      data: filteredData,
-      success: true,
-      total: filteredData.length,
-    };
+    return { data: filteredData, success: true, total: filteredData.length };
   };
 
-  // 获取过滤后的用户列表
+  // 获取过滤后的用户列表（聊天视图使用）
   const filteredUsers = useMemo(() => {
     return getMockData().filter((user) => {
-      if (filteredName && !user.name.includes(filteredName)) return false;
-      if (filteredCategory && user.category !== filteredCategory) return false;
+      if (chatSearchName && !user.name.includes(chatSearchName)) return false;
+      if (chatSearchCategory && user.category !== chatSearchCategory)
+        return false;
       return true;
     });
-  }, [filteredName, filteredCategory]);
+  }, [chatSearchName, chatSearchCategory]);
 
-  // 获取当前页的用户列表
+  // 获取当前页的用户列表（聊天视图使用）
   const currentPageUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
@@ -394,181 +390,66 @@ const UserList: React.FC = () => {
   }, [filteredUsers, currentPage, pageSize]);
 
   return (
-    <PageContainer className="user-list-page">
-      <div className="user-list-card">
+    <PageContainer>
+      <Card style={{ minWidth: 800 }}>
         <Tabs
           items={[
             {
               key: 'list',
               label: '列表视图',
               children: (
-                <>
-                  <div className="toolbar">
-                    <div className="toolbar-left">
-                      <div className="toolbar-item">
-                        <span className="toolbar-label">姓名：</span>
-                        <Input
-                          key="search"
-                          placeholder="请输入姓名或紧急联系人姓名"
-                          allowClear
-                          style={{ width: 240 }}
-                          value={searchName}
-                          onChange={(e) => {
-                            setSearchName(e.target.value);
-                          }}
-                        />
-                      </div>
-                      <div className="toolbar-item">
-                        <span className="toolbar-label">人群分类：</span>
-                        <Select
-                          key="category"
-                          style={{ width: 200 }}
-                          placeholder="全部"
-                          allowClear
-                          value={searchCategory || undefined}
-                          onChange={(value) => {
-                            setSearchCategory(value || '');
-                          }}
-                        >
-                          <Option key="all" value="">
-                            全部
-                          </Option>
-                          {Object.values(CROWD_CATEGORY).map((category) => (
-                            <Option key={category} value={category}>
-                              {category}
-                            </Option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="toolbar-right">
-                      <Button
-                        className="query-button"
-                        variant="solid"
-                        onClick={handleQuery}
-                      >
-                        <SearchOutlined />
-                        查询
-                      </Button>
-                      <Button
-                        className="reset-button"
-                        variant="outlined"
-                        onClick={handleReset}
-                      >
-                        <ReloadOutlined />
-                        重置
-                      </Button>
-                    </div>
-                  </div>
-                  <ProTable<UserListItem>
-                    actionRef={actionRef}
-                    rowKey="id"
-                    search={false}
-                    options={{
-                      reload: false,
-                      density: false,
-                      fullScreen: false,
-                      setting: false,
-                    }}
-                    request={fetchUserList}
-                    columns={columns}
-                    scroll={{ x: 1000 }}
-                    pagination={{
-                      pageSize: 10,
-                    }}
-                  />
-                </>
+                <ProTable<UserListItem>
+                  headerTitle="用户列表"
+                  actionRef={actionRef}
+                  rowKey="id"
+                  search={{
+                    labelWidth: 120,
+                  }}
+                  request={fetchUserList}
+                  columns={columns}
+                  scroll={{ x: 1000 }}
+                  pagination={{ pageSize: 10 }}
+                />
               ),
             },
             {
               key: 'chat',
               label: '聊天视图',
               children: (
-                <div className="chat-view-container">
-                  <div className="toolbar">
-                    <div className="toolbar-left">
-                      <div className="toolbar-item">
-                        <span className="toolbar-label">姓名：</span>
-                        <Input
-                          placeholder="请输入姓名或紧急联系人姓名"
-                          allowClear
-                          style={{ width: 240 }}
-                          value={searchName}
-                          onChange={(e) => {
-                            setSearchName(e.target.value);
-                          }}
-                        />
-                      </div>
-                      <div className="toolbar-item">
-                        <span className="toolbar-label">人群分类：</span>
-                        <Select
-                          style={{ width: 200 }}
-                          placeholder="全部"
-                          allowClear
-                          value={searchCategory || undefined}
-                          onChange={(value) => {
-                            setSearchCategory(value || '');
-                          }}
-                        >
-                          <Option value="">全部</Option>
-                          {Object.values(CROWD_CATEGORY).map((category) => (
-                            <Option key={category} value={category}>
-                              {category}
-                            </Option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="toolbar-right">
-                      <Button
-                        className="query-button"
-                        variant="solid"
-                        onClick={handleQuery}
-                      >
-                        <SearchOutlined />
-                        查询
-                      </Button>
-                      <Button
-                        className="reset-button"
-                        variant="outlined"
-                        onClick={handleReset}
-                      >
-                        <ReloadOutlined />
-                        重置
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="chat-layout">
-                    {/* 最左侧用户名列表 */}
-                    <div className="user-name-list">
-                      <div className="user-name-title">
-                        <span className="name">用户</span>
+                <div className={styles.chatViewContainer}>
+                  <div className={styles.chatLayout}>
+                    {/* 左侧用户名列表 */}
+                    <div className={styles.userNameList}>
+                      <div className={styles.userNameTitle}>
+                        <span>用户</span>
                       </div>
                       {currentPageUsers.map((user) => (
                         <div
                           key={user.id}
-                          className={`user-name-item ${selectedUser?.id === user.id ? 'active' : ''}`}
+                          className={cx(
+                            styles.userNameItem,
+                            selectedUser?.id === user.id && 'active',
+                          )}
                           onClick={() => setSelectedUser(user)}
                         >
-                          <span className="name">{user.name}</span>
+                          <span>{user.name}</span>
                         </div>
                       ))}
                     </div>
 
                     {/* 中间聊天框 */}
-                    <div className="chat-panel">
+                    <div className={styles.chatPanel}>
                       {selectedUser ? (
                         <>
-                          <div className="chat-header">
-                            <div className="chat-user-name">
+                          <div className={styles.chatHeader}>
+                            <div className={styles.chatUserName}>
                               {selectedUser.name}
                             </div>
                           </div>
 
-                          <div className="chat-messages">
+                          <div className={styles.chatMessages}>
                             {chatHistory.length === 0 ? (
-                              <div className="empty-chat">
+                              <div className={styles.emptyChat}>
                                 <p>暂无聊天记录</p>
                                 <p style={{ fontSize: 12, color: '#999' }}>
                                   开始与用户沟通吧
@@ -578,13 +459,13 @@ const UserList: React.FC = () => {
                               chatHistory.map((msg) => (
                                 <div
                                   key={msg.id}
-                                  className={`message-item ${msg.sender}`}
+                                  className={cx(styles.messageItem, msg.sender)}
                                 >
-                                  <div className="message-content">
-                                    <div className="message-bubble">
+                                  <div className={styles.messageContent}>
+                                    <div className={styles.messageBubble}>
                                       {msg.message}
                                     </div>
-                                    <div className="message-time">
+                                    <div className={styles.messageTime}>
                                       {msg.time}
                                     </div>
                                   </div>
@@ -593,7 +474,7 @@ const UserList: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="chat-input">
+                          <div className={styles.chatInput}>
                             <Input.TextArea
                               value={chatMessage}
                               onChange={(e) => setChatMessage(e.target.value)}
@@ -612,7 +493,7 @@ const UserList: React.FC = () => {
                           </div>
                         </>
                       ) : (
-                        <div className="empty-chat-panel">
+                        <div className={styles.emptyChatPanel}>
                           <UserOutlined
                             style={{ fontSize: 64, color: '#d9d9d9' }}
                           />
@@ -622,134 +503,148 @@ const UserList: React.FC = () => {
                     </div>
 
                     {/* 右侧用户详情 */}
-                    <div className="user-detail-panel">
+                    <div className={styles.userDetailPanel}>
                       {selectedUser ? (
-                        <div className="user-detail-content">
-                          <div className="detail-body">
-                            <div className="detail-section">
-                              <h4 className="section-title">基本信息</h4>
-                              <div className="detail-grid">
-                                <div className="detail-item">
-                                  <div className="detail-label">姓名：</div>
-                                  <div className="detail-value">
-                                    {selectedUser.name}
-                                  </div>
+                        <div className={styles.detailBody}>
+                          <div className={styles.detailSection}>
+                            <h4 className={styles.sectionTitle}>基本信息</h4>
+                            <div className={styles.detailGrid}>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>姓名：</div>
+                                <div className={styles.detailValue}>
+                                  {selectedUser.name}
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">性别：</div>
-                                  <div className="detail-value">
-                                    {selectedUser.gender === 'male'
-                                      ? '男'
-                                      : '女'}
-                                  </div>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>性别：</div>
+                                <div className={styles.detailValue}>
+                                  {selectedUser.gender === 'male' ? '男' : '女'}
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">年龄：</div>
-                                  <div className="detail-value">
-                                    {selectedUser.age}岁
-                                  </div>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>年龄：</div>
+                                <div className={styles.detailValue}>
+                                  {selectedUser.age}岁
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">联系方式：</div>
-                                  <div className="detail-value">
-                                    {selectedUser.phone}
-                                  </div>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>
+                                  联系方式：
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">
-                                    紧急联系人：
-                                  </div>
-                                  <div className="detail-value">
-                                    {selectedUser.emergencyContact}
-                                  </div>
+                                <div className={styles.detailValue}>
+                                  {selectedUser.phone}
+                                </div>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>
+                                  紧急联系人：
+                                </div>
+                                <div className={styles.detailValue}>
+                                  {selectedUser.emergencyContact}
                                 </div>
                               </div>
                             </div>
+                          </div>
 
-                            <div className="detail-section">
-                              <h4 className="section-title">诊疗信息</h4>
-                              <div className="detail-grid">
-                                <div className="detail-item">
-                                  <div className="detail-label">人群分类：</div>
-                                  <Tag
-                                    className="category-tag"
-                                    color={getCategoryColor(
-                                      selectedUser.category,
-                                    )}
-                                  >
-                                    {selectedUser.category}
-                                  </Tag>
+                          <div className={styles.detailSection}>
+                            <h4 className={styles.sectionTitle}>诊疗信息</h4>
+                            <div className={styles.detailGrid}>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>
+                                  人群分类：
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">状态：</div>
-                                  <div
-                                    className="status-tag"
-                                    style={{
-                                      border: `1px solid ${getStatusColor(selectedUser.status)}`,
-                                      color: getStatusColor(
-                                        selectedUser.status,
-                                      ),
-                                    }}
-                                  >
-                                    {selectedUser.status === 1
-                                      ? '已完成'
-                                      : '未完成'}
-                                  </div>
+                                <Tag
+                                  color={getCategoryColor(
+                                    selectedUser.category,
+                                  )}
+                                  style={{ borderRadius: 12 }}
+                                >
+                                  {selectedUser.category}
+                                </Tag>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>状态：</div>
+                                <Tag
+                                  bordered
+                                  color={
+                                    selectedUser.status === 1 ? 'blue' : 'red'
+                                  }
+                                >
+                                  {selectedUser.status === 1
+                                    ? '已完成'
+                                    : '未完成'}
+                                </Tag>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>
+                                  诊疗评分：
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">诊疗评分：</div>
-                                  <div className="detail-value score-highlight">
-                                    {selectedUser.diagnosisScore}
-                                  </div>
+                                <div
+                                  className={cx(
+                                    styles.detailValue,
+                                    styles.scoreHighlight,
+                                  )}
+                                >
+                                  {selectedUser.diagnosisScore}
                                 </div>
-                                <div className="detail-item">
-                                  <div className="detail-label">
-                                    处方日评分：
-                                  </div>
-                                  <div className="detail-value score-highlight">
-                                    {selectedUser.prescriptionScore}
-                                  </div>
+                              </div>
+                              <div className={styles.detailItem}>
+                                <div className={styles.detailLabel}>
+                                  处方日评分：
+                                </div>
+                                <div
+                                  className={cx(
+                                    styles.detailValue,
+                                    styles.scoreHighlight,
+                                  )}
+                                >
+                                  {selectedUser.prescriptionScore}
                                 </div>
                               </div>
                             </div>
-                            <div className="detail-section">
-                              <h4 className="section-title">操作</h4>
-                              <Space className="action-items">
-                                <div
-                                  className="action-item"
-                                  onClick={() => handleDetail(selectedUser)}
-                                >
-                                  <EyeOutlined />
-                                  <span>详情</span>
-                                </div>
-                                <div
-                                  className="action-item"
-                                  onClick={() => handleDiagnosis(selectedUser)}
-                                >
-                                  <SwapOutlined />
-                                  <span>转诊</span>
-                                </div>
-                                <div
-                                  className="action-item"
-                                  onClick={() => handleDiagnosis(selectedUser)}
-                                >
-                                  <PlayCircleOutlined />
-                                  <span>诊断</span>
-                                </div>
-                                <div
-                                  className="action-item"
-                                  onClick={() => handleFollowUp(selectedUser)}
-                                >
-                                  <HomeOutlined />
-                                  <span>随访</span>
-                                </div>
-                              </Space>
-                            </div>
+                          </div>
+
+                          <div className={styles.detailSection}>
+                            <h4 className={styles.sectionTitle}>操作</h4>
+                            <Space>
+                              <Button
+                                type="link"
+                                size="small"
+                                icon={<EyeOutlined />}
+                                onClick={() => handleDetail(selectedUser)}
+                              >
+                                详情
+                              </Button>
+                              <Button
+                                type="link"
+                                size="small"
+                                icon={<SwapOutlined />}
+                                onClick={() => handleDiagnosis(selectedUser)}
+                              >
+                                转诊
+                              </Button>
+                              <Button
+                                type="link"
+                                size="small"
+                                icon={<PlayCircleOutlined />}
+                                onClick={() => handleDiagnosis(selectedUser)}
+                              >
+                                诊断
+                              </Button>
+                              <Button
+                                type="link"
+                                size="small"
+                                icon={<HomeOutlined />}
+                                onClick={() => handleFollowUp(selectedUser)}
+                              >
+                                随访
+                              </Button>
+                            </Space>
                           </div>
                         </div>
                       ) : (
-                        <div className="empty-state">
-                          <div className="empty-content">
+                        <div className={styles.emptyState}>
+                          <div className={styles.emptyContent}>
                             <UserOutlined
                               style={{ fontSize: 64, color: '#d9d9d9' }}
                             />
@@ -761,7 +656,7 @@ const UserList: React.FC = () => {
                   </div>
 
                   {/* 分页器 */}
-                  <div className="chat-pagination">
+                  <div className={styles.chatPagination}>
                     <Pagination
                       size="small"
                       current={currentPage}
@@ -782,7 +677,7 @@ const UserList: React.FC = () => {
             },
           ]}
         />
-      </div>
+      </Card>
     </PageContainer>
   );
 };

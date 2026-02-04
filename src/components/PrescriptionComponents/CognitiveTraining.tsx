@@ -1,7 +1,9 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Typography } from 'antd';
 import React from 'react';
-import './index.less';
+import usePrescriptionStyles from './index.style';
+
+const { Title } = Typography;
 
 interface CognitiveCard {
   id: string;
@@ -22,40 +24,43 @@ const CognitiveTraining: React.FC<CognitiveTrainingProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { styles, cx } = usePrescriptionStyles();
+
   return (
-    <div className="prescription-section">
-      <div className="section-header">
-        <h3 className="section-title">认知训练</h3>
-        <span className="section-subtitle">每日30分钟</span>
+    <div className={styles.prescriptionSection}>
+      <div className={styles.sectionHeader}>
+        <Title level={5} className={styles.sectionTitle}>
+          认知训练
+        </Title>
+        <span className={styles.sectionSubtitle}>每日30分钟</span>
       </div>
-      <div className="cognitive-cards-container">
+      <div className={styles.cognitiveCardsContainer}>
         {cards.map((item) => (
-          <div key={item.id} className="cognitive-card">
-            <div className="cognitive-card-content">
-              <div className="cognitive-card-name">{item.cardName}</div>
-              <div className="cognitive-card-difficulty">{item.difficulty}</div>
+          <div key={item.id} className={styles.cognitiveCard}>
+            <div className={styles.cognitiveCardContent}>
+              <div className={styles.cognitiveCardName}>{item.cardName}</div>
+              <div className={styles.cognitiveCardDifficulty}>
+                {item.difficulty}
+              </div>
             </div>
-            <div className="cognitive-card-actions">
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onEdit(item)}
-              >
+            <div className={styles.cognitiveCardActions}>
+              <Button type="link" onClick={() => onEdit(item)}>
                 <EditOutlined />
               </Button>
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onDelete(item.id)}
-              >
+              <Button type="link" onClick={() => onDelete(item.id)}>
                 <DeleteOutlined />
               </Button>
             </div>
           </div>
         ))}
-        <div className="cognitive-card add-card" onClick={onAdd}>
-          <PlusOutlined className="add-icon" />
-          <span>更多卡片</span>
+        <div
+          className={cx(styles.cognitiveCard, styles.addCard)}
+          onClick={onAdd}
+        >
+          <PlusOutlined
+            style={{ fontSize: 24, color: '#999', marginBottom: 8 }}
+          />
+          <span style={{ fontSize: 13, color: '#666' }}>更多卡片</span>
         </div>
       </div>
     </div>

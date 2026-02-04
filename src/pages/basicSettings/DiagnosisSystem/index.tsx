@@ -1,16 +1,13 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Image, Space, Tabs, Tag } from 'antd';
-import React, { useRef, useState } from 'react';
-import './index.less';
 import {
   DeleteOutlined,
   EditOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProCard, ProTable } from '@ant-design/pro-components';
+import { Button, Image, Space, Tag } from 'antd';
+import React, { useRef, useState } from 'react';
 import { getFeatureColor, getScaleTypeColor } from '@/utils/constants';
-
-const { TabPane } = Tabs;
 
 // 量表配置数据类型
 interface ScaleConfigItem {
@@ -107,18 +104,24 @@ const DiagnosisSystem: React.FC = () => {
       width: 150,
       fixed: 'right',
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleScaleEdit(record)}>
-            <EditOutlined />
-            <span> 修改</span>
-          </div>
-          <div
-            className="action-item delete"
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleScaleEdit(record)}
+          >
+            修改
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
             onClick={() => handleScaleDelete(record)}
           >
-            <DeleteOutlined />
-            <span> 删除</span>
-          </div>
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -162,10 +165,14 @@ const DiagnosisSystem: React.FC = () => {
       width: 100,
       fixed: 'right',
       render: (_, record) => (
-        <div className="action-item" onClick={() => handleLabEdit(record)}>
-          <EditOutlined />
-          <span> 修改</span>
-        </div>
+        <Button
+          type="link"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => handleLabEdit(record)}
+        >
+          修改
+        </Button>
       ),
     },
   ];
@@ -208,10 +215,14 @@ const DiagnosisSystem: React.FC = () => {
       width: 100,
       fixed: 'right',
       render: (_, record) => (
-        <div className="action-item" onClick={() => handleImagingEdit(record)}>
-          <EditOutlined />
-          <span> 修改</span>
-        </div>
+        <Button
+          type="link"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => handleImagingEdit(record)}
+        >
+          修改
+        </Button>
       ),
     },
   ];
@@ -357,73 +368,77 @@ const DiagnosisSystem: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="diagnosis-system-page">
-        <div className="diagnosis-system-card">
-          <Button className="add-button" variant="outlined" onClick={handleAdd}>
-            <PlusCircleOutlined />
-            添加
-          </Button>
-          <Tabs activeKey={activeTab} onChange={setActiveTab}>
-            <TabPane tab="量表配置" key="scale">
-              <ProTable<ScaleConfigItem>
-                actionRef={scaleActionRef}
-                rowKey="id"
-                search={false}
-                options={{
-                  reload: false,
-                  density: false,
-                  fullScreen: false,
-                  setting: false,
-                }}
-                request={fetchScaleList}
-                columns={scaleColumns}
-                scroll={{ x: 1200 }}
-                pagination={{
-                  pageSize: 10,
-                }}
-              />
-            </TabPane>
-            <TabPane tab="实验室常备" key="lab">
-              <ProTable<LabItem>
-                actionRef={labActionRef}
-                rowKey="id"
-                search={false}
-                options={{
-                  reload: false,
-                  density: false,
-                  fullScreen: false,
-                  setting: false,
-                }}
-                request={fetchLabList}
-                columns={labColumns}
-                scroll={{ x: 1000 }}
-                pagination={{
-                  pageSize: 10,
-                }}
-              />
-            </TabPane>
-            <TabPane tab="影像学常备" key="imaging">
-              <ProTable<ImagingItem>
-                actionRef={imagingActionRef}
-                rowKey="id"
-                search={false}
-                options={{
-                  reload: false,
-                  density: false,
-                  fullScreen: false,
-                  setting: false,
-                }}
-                request={fetchImagingList}
-                columns={imagingColumns}
-                scroll={{ x: 1000 }}
-                pagination={{
-                  pageSize: 10,
-                }}
-              />
-            </TabPane>
-          </Tabs>
-        </div>
-      </div>
+      <ProCard
+        tabs={{
+          activeKey: activeTab,
+          onChange: setActiveTab,
+          tabBarExtraContent: (
+            <Button
+              type="primary"
+              icon={<PlusCircleOutlined />}
+              onClick={handleAdd}
+            >
+              添加
+            </Button>
+          ),
+          items: [
+            {
+              key: 'scale',
+              label: '量表配置',
+              children: (
+                <ProTable<ScaleConfigItem>
+                  actionRef={scaleActionRef}
+                  rowKey="id"
+                  search={false}
+                  options={false}
+                  request={fetchScaleList}
+                  columns={scaleColumns}
+                  scroll={{ x: 1200 }}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                />
+              ),
+            },
+            {
+              key: 'lab',
+              label: '实验室常备',
+              children: (
+                <ProTable<LabItem>
+                  actionRef={labActionRef}
+                  rowKey="id"
+                  search={false}
+                  options={false}
+                  request={fetchLabList}
+                  columns={labColumns}
+                  scroll={{ x: 1000 }}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                />
+              ),
+            },
+            {
+              key: 'imaging',
+              label: '影像学常备',
+              children: (
+                <ProTable<ImagingItem>
+                  actionRef={imagingActionRef}
+                  rowKey="id"
+                  search={false}
+                  options={false}
+                  request={fetchImagingList}
+                  columns={imagingColumns}
+                  scroll={{ x: 1000 }}
+                  pagination={{
+                    pageSize: 10,
+                  }}
+                />
+              ),
+            },
+          ],
+        }}
+      />
     </PageContainer>
   );
 };

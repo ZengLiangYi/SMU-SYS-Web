@@ -1,18 +1,13 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Image, Input, Select, Space } from 'antd';
-import React, { useRef, useState } from 'react';
-import './index.less';
 import {
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, Image, Space } from 'antd';
+import React, { useRef, useState } from 'react';
 import { AddTrainingModal, DetailModal, EditTrainingModal } from './components';
-
-const { Option } = Select;
 
 interface TrainingItem {
   id: string;
@@ -24,12 +19,16 @@ interface TrainingItem {
   createTime: string;
 }
 
+// 关卡类型 valueEnum
+const levelTypeValueEnum = {
+  认知障碍: { text: '认知障碍' },
+  情绪障碍: { text: '情绪障碍' },
+  精神障碍: { text: '精神障碍' },
+  运动障碍: { text: '运动障碍' },
+};
+
 const TrainingList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
-  const [searchLevelType, setSearchLevelType] = useState<string>('');
-  const [searchName, setSearchName] = useState<string>('');
-  const [filteredLevelType, setFilteredLevelType] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
 
   // 弹窗状态
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -43,14 +42,20 @@ const TrainingList: React.FC = () => {
     {
       title: '关卡类型',
       dataIndex: 'levelType',
+      valueType: 'select',
+      valueEnum: levelTypeValueEnum,
     },
     {
       title: '关卡名称',
       dataIndex: 'levelName',
+      fieldProps: {
+        placeholder: '请输入关卡名称',
+      },
     },
     {
       title: '关卡图片',
       dataIndex: 'levelImage',
+      search: false,
       render: (_, record) => (
         <Image
           src={record.levelImage}
@@ -65,29 +70,41 @@ const TrainingList: React.FC = () => {
       title: '关卡简介',
       dataIndex: 'levelIntro',
       ellipsis: true,
+      search: false,
     },
     {
       title: '关卡等级范围',
       dataIndex: 'levelRange',
+      search: false,
     },
     {
       title: '创建时间',
       dataIndex: 'createTime',
+      search: false,
     },
     {
       title: '操作',
       key: 'action',
       fixed: 'right',
+      search: false,
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-          <div className="action-item" onClick={() => handleEdit(record)}>
-            <EditOutlined />
-            <span>修改</span>
-          </div>
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            修改
+          </Button>
         </Space>
       ),
     },
@@ -115,20 +132,6 @@ const TrainingList: React.FC = () => {
 
   const handleEditSuccess = () => {
     setEditModalVisible(false);
-    actionRef.current?.reload();
-  };
-
-  const handleQuery = () => {
-    setFilteredLevelType(searchLevelType);
-    setFilteredName(searchName);
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchLevelType('');
-    setSearchName('');
-    setFilteredLevelType('');
-    setFilteredName('');
     actionRef.current?.reload();
   };
 
@@ -183,20 +186,20 @@ const TrainingList: React.FC = () => {
     ];
   };
 
-  // 请求数据
-  const fetchTrainingList = async (params: any) => {
+  // 请求数据 - 使用 ProTable 传入的 params
+  const fetchTrainingList = async (params: Record<string, any>) => {
     const mockData = getMockData();
     let filteredData = mockData;
 
-    if (filteredLevelType) {
+    if (params.levelType) {
       filteredData = filteredData.filter(
-        (item) => item.levelType === filteredLevelType,
+        (item) => item.levelType === params.levelType,
       );
     }
 
-    if (filteredName) {
+    if (params.levelName) {
       filteredData = filteredData.filter((item) =>
-        item.levelName.includes(filteredName),
+        item.levelName.includes(params.levelName),
       );
     }
 
@@ -209,105 +212,52 @@ const TrainingList: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="training-list-page">
-        <div className="training-list-card">
-          <div className="toolbar">
-            <div className="toolbar-left">
-              <div className="toolbar-item">
-                <span className="toolbar-label">关卡类型：</span>
-                <Select
-                  placeholder="全部"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchLevelType}
-                  onChange={(value) => setSearchLevelType(value)}
-                >
-                  <Option value="认知障碍">认知障碍</Option>
-                  <Option value="情绪障碍">情绪障碍</Option>
-                  <Option value="精神障碍">精神障碍</Option>
-                  <Option value="运动障碍">运动障碍</Option>
-                </Select>
-              </div>
-              <div className="toolbar-item">
-                <span className="toolbar-label">名称：</span>
-                <Input
-                  placeholder="请输入关卡名称"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="toolbar-right">
-              <Button
-                className="add-button"
-                variant="outlined"
-                onClick={handleAdd}
-              >
-                <PlusCircleOutlined />
-                添加
-              </Button>
-              <Button
-                className="query-button"
-                variant="solid"
-                onClick={handleQuery}
-              >
-                <SearchOutlined />
-                查询
-              </Button>
-              <Button
-                className="reset-button"
-                variant="outlined"
-                onClick={handleReset}
-              >
-                <ReloadOutlined />
-                重置
-              </Button>
-            </div>
-          </div>
+      <ProTable<TrainingItem>
+        headerTitle="康复训练关卡列表"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={handleAdd}
+          >
+            添加
+          </Button>,
+        ]}
+        request={fetchTrainingList}
+        columns={columns}
+        scroll={{ x: 1300 }}
+        pagination={{
+          pageSize: 10,
+        }}
+      />
 
-          <ProTable<TrainingItem>
-            actionRef={actionRef}
-            rowKey="id"
-            search={false}
-            options={{
-              reload: false,
-              density: false,
-              fullScreen: false,
-              setting: false,
-            }}
-            request={fetchTrainingList}
-            columns={columns}
-            scroll={{ x: 1300 }}
-            pagination={{
-              pageSize: 10,
-            }}
-          />
-        </div>
+      {/* 添加关卡弹窗 */}
+      <AddTrainingModal
+        visible={addModalVisible}
+        onCancel={() => setAddModalVisible(false)}
+        onSuccess={handleAddSuccess}
+      />
 
-        {/* 添加关卡弹窗 */}
-        <AddTrainingModal
-          visible={addModalVisible}
-          onCancel={() => setAddModalVisible(false)}
-          onSuccess={handleAddSuccess}
-        />
+      {/* 详情弹窗 */}
+      <DetailModal
+        visible={detailModalVisible}
+        record={viewingRecord}
+        onCancel={() => setDetailModalVisible(false)}
+      />
 
-        {/* 详情弹窗 */}
-        <DetailModal
-          visible={detailModalVisible}
-          record={viewingRecord}
-          onCancel={() => setDetailModalVisible(false)}
-        />
-
-        {/* 修改弹窗 */}
-        <EditTrainingModal
-          visible={editModalVisible}
-          record={editingRecord}
-          onCancel={() => setEditModalVisible(false)}
-          onSuccess={handleEditSuccess}
-        />
-      </div>
+      {/* 修改弹窗 */}
+      <EditTrainingModal
+        visible={editModalVisible}
+        record={editingRecord}
+        onCancel={() => setEditModalVisible(false)}
+        onSuccess={handleEditSuccess}
+      />
     </PageContainer>
   );
 };

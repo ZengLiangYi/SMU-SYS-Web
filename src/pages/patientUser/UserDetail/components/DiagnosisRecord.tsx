@@ -1,7 +1,16 @@
 import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Form, Input, Modal, message, Select, Space } from 'antd';
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  message,
+  Select,
+  Tag,
+  Typography,
+} from 'antd';
 import React, { useRef, useState } from 'react';
 import type { DiagnosisRecord as DiagnosisRecordType } from '@/services/patient-user/typings';
 import {
@@ -10,9 +19,12 @@ import {
   ExercisePrescription,
   MedicationTreatment,
 } from '../../Diagnosis/components';
-import '@/components/PrescriptionComponents/index.less';
+import useComponentStyles from './components.style';
+
+const { Title } = Typography;
 
 const DiagnosisRecord: React.FC = () => {
+  const { styles, cx } = useComponentStyles();
   const diagnosisTableRef = useRef<ActionType>(null);
   const [form] = Form.useForm();
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -315,26 +327,31 @@ const DiagnosisRecord: React.FC = () => {
       title: '状态',
       dataIndex: 'status',
       width: 100,
-      render: () => <span className="status-badge completed">已完成</span>,
+      render: () => <Tag color="blue">已完成</Tag>,
     },
     {
       title: '操作',
       key: 'action',
       width: 180,
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-          <div
-            className="action-item"
+        <>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
             onClick={() => handleEditPrescription(record)}
           >
-            <EditOutlined />
-            <span>修改处方</span>
-          </div>
-        </Space>
+            修改处方
+          </Button>
+        </>
       ),
     },
   ];
@@ -349,7 +366,7 @@ const DiagnosisRecord: React.FC = () => {
   };
 
   return (
-    <div className="tab-content">
+    <div className={styles.tabContent}>
       <ProTable<DiagnosisRecordType>
         actionRef={diagnosisTableRef}
         rowKey="id"
@@ -366,7 +383,6 @@ const DiagnosisRecord: React.FC = () => {
         pagination={{
           pageSize: 8,
         }}
-        className="diagnosis-pro-table"
       />
 
       {/* 详情弹窗 */}
@@ -376,7 +392,7 @@ const DiagnosisRecord: React.FC = () => {
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={900}
-        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         {viewingRecord && (
           <div style={{ padding: '20px 0' }}>
@@ -401,35 +417,40 @@ const DiagnosisRecord: React.FC = () => {
               </p>
               <p style={{ marginBottom: 0, fontSize: 14 }}>
                 <strong>状态：</strong>
-                <span className="status-badge completed">已完成</span>
+                <Tag color="blue">已完成</Tag>
               </p>
             </div>
 
             {viewingRecord.prescription ? (
-              <div className="prescription-detail-view">
-                <h4 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>
+              <div>
+                <Title level={5} style={{ marginBottom: 16 }}>
                   康复处方详情
-                </h4>
+                </Title>
 
                 {/* 药物治疗 - 只读 */}
                 {viewingRecord.prescription.medications?.length > 0 && (
-                  <div className="prescription-section">
-                    <div className="section-header">
-                      <h3 className="section-title">药物治疗</h3>
+                  <div className={styles.prescriptionSection}>
+                    <div className={styles.sectionHeader}>
+                      <Title level={5} className={styles.sectionTitle}>
+                        药物治疗
+                      </Title>
                     </div>
-                    <div className="prescription-list">
+                    <div className={styles.prescriptionList}>
                       {viewingRecord.prescription.medications.map(
                         (item: any) => (
-                          <div key={item.id} className="prescription-item">
-                            <div className="prescription-content">
-                              <div className="prescription-name">
+                          <div
+                            key={item.id}
+                            className={styles.prescriptionItem}
+                          >
+                            <div className={styles.prescriptionContent}>
+                              <div className={styles.prescriptionName}>
                                 {item.medicineName}
                               </div>
-                              <div className="prescription-detail">
+                              <div className={styles.prescriptionDetail}>
                                 用法：{item.usage}
                               </div>
                             </div>
-                            <div className="prescription-dosage">
+                            <div className={styles.prescriptionDosage}>
                               {item.dosage}
                             </div>
                           </div>
@@ -441,20 +462,22 @@ const DiagnosisRecord: React.FC = () => {
 
                 {/* 认知训练 - 只读 */}
                 {viewingRecord.prescription.cognitiveCards?.length > 0 && (
-                  <div className="prescription-section">
-                    <div className="section-header">
-                      <h3 className="section-title">认知训练</h3>
-                      <span className="section-subtitle">每日30分钟</span>
+                  <div className={styles.prescriptionSection}>
+                    <div className={styles.sectionHeader}>
+                      <Title level={5} className={styles.sectionTitle}>
+                        认知训练
+                      </Title>
+                      <span className={styles.sectionSubtitle}>每日30分钟</span>
                     </div>
-                    <div className="cognitive-cards-container">
+                    <div className={styles.cognitiveCardsContainer}>
                       {viewingRecord.prescription.cognitiveCards.map(
                         (item: any) => (
-                          <div key={item.id} className="cognitive-card">
-                            <div className="cognitive-card-content">
-                              <div className="cognitive-card-name">
+                          <div key={item.id} className={styles.cognitiveCard}>
+                            <div className={styles.cognitiveCardContent}>
+                              <div className={styles.cognitiveCardName}>
                                 {item.cardName}
                               </div>
-                              <div className="cognitive-card-difficulty">
+                              <div className={styles.cognitiveCardDifficulty}>
                                 {item.difficulty}
                               </div>
                             </div>
@@ -467,11 +490,13 @@ const DiagnosisRecord: React.FC = () => {
 
                 {/* 饮食处方 - 只读 */}
                 {viewingRecord.prescription.dietContent && (
-                  <div className="prescription-section">
-                    <div className="section-header">
-                      <h3 className="section-title">饮食处方</h3>
+                  <div className={styles.prescriptionSection}>
+                    <div className={styles.sectionHeader}>
+                      <Title level={5} className={styles.sectionTitle}>
+                        饮食处方
+                      </Title>
                     </div>
-                    <div className="diet-content">
+                    <div className={styles.dietContent}>
                       {viewingRecord.prescription.dietContent}
                     </div>
                   </div>
@@ -479,19 +504,21 @@ const DiagnosisRecord: React.FC = () => {
 
                 {/* 运动处方 - 只读 */}
                 {viewingRecord.prescription.exercises?.length > 0 && (
-                  <div className="prescription-section">
-                    <div className="section-header">
-                      <h3 className="section-title">运动处方</h3>
+                  <div className={styles.prescriptionSection}>
+                    <div className={styles.sectionHeader}>
+                      <Title level={5} className={styles.sectionTitle}>
+                        运动处方
+                      </Title>
                     </div>
-                    <div className="exercise-list">
+                    <div className={styles.exerciseList}>
                       {viewingRecord.prescription.exercises.map((item: any) => (
-                        <div key={item.id} className="exercise-item">
-                          <div className="exercise-content">
-                            <div className="exercise-name">
+                        <div key={item.id} className={styles.exerciseItem}>
+                          <div className={styles.exerciseContent}>
+                            <div className={styles.exerciseName}>
                               {item.exerciseName}
                             </div>
                           </div>
-                          <div className="exercise-duration">
+                          <div className={styles.exerciseDuration}>
                             {item.duration}
                           </div>
                         </div>
@@ -519,7 +546,7 @@ const DiagnosisRecord: React.FC = () => {
         onOk={handleSubmitPrescription}
         onCancel={() => setPrescriptionModalVisible(false)}
         width={900}
-        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         <div style={{ padding: '20px 0' }}>
           {/* 药物治疗 */}

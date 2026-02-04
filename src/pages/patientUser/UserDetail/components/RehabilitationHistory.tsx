@@ -1,11 +1,16 @@
 import { EyeOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Space } from 'antd';
+import { Button, Typography } from 'antd';
 import React from 'react';
 import type { ScoreHistoryRecord } from '@/services/patient-user/typings';
+import useComponentStyles from './components.style';
+
+const { Title } = Typography;
 
 const RehabilitationHistory: React.FC = () => {
+  const { styles } = useComponentStyles();
+
   const getComprehensiveScore = () => {
     return 88.8;
   };
@@ -79,15 +84,14 @@ const RehabilitationHistory: React.FC = () => {
       key: 'action',
       width: 150,
       render: (_, record) => (
-        <Space className="action-items">
-          <div
-            className="action-item"
-            onClick={() => console.log('查看详情:', record)}
-          >
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-        </Space>
+        <Button
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => console.log('查看详情:', record)}
+        >
+          详情
+        </Button>
       ),
     },
   ];
@@ -102,79 +106,91 @@ const RehabilitationHistory: React.FC = () => {
     };
   };
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="score-visualization-container">
-          <div className="score-visualization-left">
-            <div className="score-summary-display">
-              <div className="score-summary-label">综合评分：</div>
-              <div className="score-summary-value">
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div className={styles.scoreVisualizationContainer}>
+          <div className={styles.scoreVisualizationLeft}>
+            <div className={styles.scoreSummaryDisplay}>
+              <div className={styles.scoreSummaryLabel}>综合评分：</div>
+              <div className={styles.scoreSummaryValue}>
                 {getComprehensiveScore()}
               </div>
             </div>
-            <div className="score-charts">
-              <div className="score-chart-item">
-                <div className="chart-label">用药</div>
-                <div className="chart-bar-container">
+            <div className={styles.scoreCharts}>
+              <div className={styles.scoreChartItem}>
+                <div className={styles.chartLabel}>用药</div>
+                <div className={styles.chartBarContainer}>
                   <div
-                    className="chart-bar"
+                    className={styles.chartBar}
                     style={{
                       width: `${getMedicationScore()[0].score}%`,
                       background: '#5b8ff9',
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
-              <div className="score-chart-item">
-                <div className="chart-label">认知</div>
-                <div className="chart-bar-container">
+              <div className={styles.scoreChartItem}>
+                <div className={styles.chartLabel}>认知</div>
+                <div className={styles.chartBarContainer}>
                   <div
-                    className="chart-bar"
+                    className={styles.chartBar}
                     style={{
                       width: `${getMedicationScore()[1].score}%`,
                       background: '#b799ff',
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
-              <div className="score-chart-item">
-                <div className="chart-label">饮食</div>
-                <div className="chart-bar-container">
+              <div className={styles.scoreChartItem}>
+                <div className={styles.chartLabel}>饮食</div>
+                <div className={styles.chartBarContainer}>
                   <div
-                    className="chart-bar"
+                    className={styles.chartBar}
                     style={{
                       width: `${getMedicationScore()[2].score}%`,
                       background: '#a44cff',
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
-              <div className="score-chart-item">
-                <div className="chart-label">运动</div>
-                <div className="chart-bar-container">
+              <div className={styles.scoreChartItem}>
+                <div className={styles.chartLabel}>运动</div>
+                <div className={styles.chartBarContainer}>
                   <div
-                    className="chart-bar"
+                    className={styles.chartBar}
                     style={{
                       width: `${getMedicationScore()[3].score}%`,
                       background: '#b8d4ff',
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
-              <div className="chart-scales">
-                <span className="chart-scale scale-0">0</span>
-                <span className="chart-scale scale-20">20</span>
-                <span className="chart-scale scale-40">40</span>
-                <span className="chart-scale scale-60">60</span>
-                <span className="chart-scale scale-80">80</span>
-                <span className="chart-scale scale-100">100</span>
+              <div className={styles.chartScales}>
+                <span className={styles.chartScale} style={{ left: 0 }}>
+                  0
+                </span>
+                <span className={styles.chartScale} style={{ left: '20%' }}>
+                  20
+                </span>
+                <span className={styles.chartScale} style={{ left: '40%' }}>
+                  40
+                </span>
+                <span className={styles.chartScale} style={{ left: '60%' }}>
+                  60
+                </span>
+                <span className={styles.chartScale} style={{ left: '80%' }}>
+                  80
+                </span>
+                <span className={styles.chartScale} style={{ left: '100%' }}>
+                  100
+                </span>
               </div>
             </div>
           </div>
-          <div className="score-visualization-right">
-            <div className="score-recommendation-box">
-              <div className="score-recommendation-title">日建议：</div>
-              <div className="score-recommendation-content">
+          <div className={styles.scoreVisualizationRight}>
+            <div className={styles.scoreRecommendationBox}>
+              <div className={styles.scoreRecommendationTitle}>日建议：</div>
+              <div className={styles.scoreRecommendationContent}>
                 建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容
               </div>
             </div>
@@ -182,9 +198,11 @@ const RehabilitationHistory: React.FC = () => {
         </div>
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">评分历史</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            评分历史
+          </Title>
         </div>
         <ProTable<ScoreHistoryRecord>
           rowKey="id"
@@ -200,7 +218,6 @@ const RehabilitationHistory: React.FC = () => {
           pagination={{
             pageSize: 5,
           }}
-          className="score-history-table"
         />
       </div>
     </div>

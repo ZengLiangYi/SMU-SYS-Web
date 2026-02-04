@@ -1,6 +1,8 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Tabs } from 'antd';
+import { history } from '@umijs/max';
+import { Button, Card, Flex, Space, Tabs, Typography } from 'antd';
 import React, { useState } from 'react';
+import { PatientAvatarInfoContent } from '@/components';
 import type { UserDetailInfo } from '@/services/patient-user/typings';
 import { CROWD_CATEGORY, getTimeFormat } from '@/utils/constants';
 import {
@@ -12,11 +14,12 @@ import {
   TodaySituation,
   TransferRecord,
 } from './components';
-import './index.less';
-import { history } from '@umijs/max';
-import { PatientAvatarInfoContent } from '@/components';
+import useStyles from './index.style';
+
+const { Title, Text } = Typography;
 
 const UserDetail: React.FC = () => {
+  const { styles } = useStyles();
   const [activeTab, setActiveTab] = useState<string>('personalInfo');
 
   // 模拟用户数据
@@ -94,57 +97,81 @@ const UserDetail: React.FC = () => {
   };
 
   return (
-    <PageContainer title={false} className="user-detail-page">
-      <div className="user-detail-card">
-        <div className="user-detail-header">
-          <h2 className="page-title">个人信息</h2>
-          <div className="header-actions">
-            <button type="button" className="action-btn visit-btn">
+    <PageContainer title={false}>
+      <Card className={styles.userDetailCard}>
+        {/* 页面头部 */}
+        <Flex
+          justify="space-between"
+          align="center"
+          className={styles.userDetailHeader}
+        >
+          <Title level={4} className={styles.pageTitle}>
+            个人信息
+          </Title>
+          <Space>
+            <Button
+              style={{
+                background: '#4ea8ff',
+                borderColor: '#279cea',
+                color: '#fff',
+              }}
+            >
               随访
-            </button>
-            <button type="button" className="action-btn transfer-btn">
+            </Button>
+            <Button
+              style={{
+                background: '#ff5340',
+                borderColor: '#e12f0f',
+                color: '#fff',
+              }}
+            >
               转诊
-            </button>
-            <button
-              type="button"
-              className="action-btn diagnosis-btn"
+            </Button>
+            <Button
+              style={{
+                background: '#61e054',
+                borderColor: '#4ec731',
+                color: '#fff',
+              }}
               onClick={handleDiagnosis}
             >
               诊断
-            </button>
-          </div>
-        </div>
+            </Button>
+          </Space>
+        </Flex>
 
-        <div className="user-basic-info">
-          <div className="ai-comprehensive-efficacy-evaluation-suggestion">
+        {/* 用户基本信息 */}
+        <div className={styles.userBasicInfo}>
+          <Text className={styles.aiSuggestion}>
             AI综合疗效评估建议：
             {userInfo.AIComprehensiveEfficacyEvaluationSuggestion}
-          </div>
-          <div className="user-info-container">
-            <div className="user-info-left">
+          </Text>
+          <Flex
+            justify="space-between"
+            gap={24}
+            className={styles.userInfoContainer}
+          >
+            <div className={styles.userInfoLeft}>
               <PatientAvatarInfoContent {...userInfo} />
             </div>
-            <div className="user-info-right">
-              <div className="user-diagnosis-score">
-                <div className="user-diagnosis-score-value">
-                  {userInfo.diagnosisScore}
-                </div>
-                <div className="user-diagnosis-score-label">当前疗效评分是</div>
-                <div className="user-diagnosis-score-update-time">
-                  {getTimeFormat(userInfo.diagnosisScoreUpdateTime)}更新
-                </div>
+            <div className={styles.userDiagnosisScore}>
+              <div className={styles.scoreValue}>{userInfo.diagnosisScore}</div>
+              <div className={styles.scoreLabel}>当前疗效评分是</div>
+              <div className={styles.scoreUpdateTime}>
+                {getTimeFormat(userInfo.diagnosisScoreUpdateTime)}更新
               </div>
             </div>
-          </div>
+          </Flex>
         </div>
 
+        {/* Tab 区域 */}
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
-          className="user-detail-tabs"
+          style={{ padding: '0 24px' }}
         />
-      </div>
+      </Card>
     </PageContainer>
   );
 };

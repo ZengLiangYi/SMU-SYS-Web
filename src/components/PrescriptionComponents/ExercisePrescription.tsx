@@ -1,7 +1,9 @@
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Typography } from 'antd';
 import React from 'react';
-import './index.less';
+import usePrescriptionStyles from './index.style';
+
+const { Title } = Typography;
 
 interface ExerciseItem {
   id: string;
@@ -22,34 +24,30 @@ const ExercisePrescription: React.FC<ExercisePrescriptionProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { styles } = usePrescriptionStyles();
+
   return (
-    <div className="prescription-section">
-      <div className="section-header">
-        <h3 className="section-title">运动处方</h3>
-        <Button type="link" className="add-button" onClick={onAdd}>
+    <div className={styles.prescriptionSection}>
+      <div className={styles.sectionHeader}>
+        <Title level={5} className={styles.sectionTitle}>
+          运动处方
+        </Title>
+        <Button type="link" onClick={onAdd}>
           +添加计划
         </Button>
       </div>
-      <div className="exercise-list">
+      <div className={styles.exerciseList}>
         {exercises.map((item) => (
-          <div key={item.id} className="exercise-item">
-            <div className="exercise-content">
-              <div className="exercise-name">{item.exerciseName}</div>
+          <div key={item.id} className={styles.exerciseItem}>
+            <div className={styles.exerciseContent}>
+              <div className={styles.exerciseName}>{item.exerciseName}</div>
             </div>
-            <div className="exercise-duration">{item.duration}</div>
-            <div className="exercise-actions">
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onEdit(item)}
-              >
+            <div className={styles.exerciseDuration}>{item.duration}</div>
+            <div className={styles.exerciseActions}>
+              <Button type="link" onClick={() => onEdit(item)}>
                 <EditOutlined />
               </Button>
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onDelete(item.id)}
-              >
+              <Button type="link" onClick={() => onDelete(item.id)}>
                 <DeleteOutlined />
               </Button>
             </div>

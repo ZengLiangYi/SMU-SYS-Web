@@ -1,5 +1,6 @@
 // https://umijs.org/config/
 
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { defineConfig } from '@umijs/max';
 import defaultSettings from './defaultSettings';
@@ -150,7 +151,9 @@ export default defineConfig({
       requestLibPath: "import { request } from '@umijs/max'",
       // 或者使用在线的版本
       // schemaPath: "https://gw.alipayobjects.com/os/antfincdn/M%24jrzTTYJN/oneapi.json"
-      schemaPath: join(__dirname, 'oneapi.json'),
+      schemaPath: existsSync(join(__dirname, 'oneapi.json'))
+        ? join(__dirname, 'oneapi.json')
+        : undefined,
       mock: false,
     },
     {

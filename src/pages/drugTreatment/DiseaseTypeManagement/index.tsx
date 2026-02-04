@@ -1,22 +1,17 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Input, Select, Space } from 'antd';
-import React, { useRef, useState } from 'react';
-import './index.less';
 import {
   EditOutlined,
   EyeOutlined,
   PlusCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, Space } from 'antd';
+import React, { useRef, useState } from 'react';
 import {
   AddDiseaseTypeModal,
   DetailModal,
   EditPrescriptionModal,
 } from './components';
-
-const { Option } = Select;
 
 interface DiseaseTypeItem {
   id: string;
@@ -34,12 +29,16 @@ interface DiseaseTypeItem {
   };
 }
 
+// 疾病类别 valueEnum
+const diseaseCategoryValueEnum = {
+  认知障碍: { text: '认知障碍' },
+  情绪障碍: { text: '情绪障碍' },
+  精神障碍: { text: '精神障碍' },
+  运动障碍: { text: '运动障碍' },
+};
+
 const DiseaseTypeList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
-  const [searchCategory, setSearchCategory] = useState<string>('');
-  const [searchName, setSearchName] = useState<string>('');
-  const [filteredCategory, setFilteredCategory] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
 
   // 弹窗状态
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -52,64 +51,6 @@ const DiseaseTypeList: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<DiseaseTypeItem | null>(
     null,
   );
-
-  // 表格列定义
-  const columns: ProColumns<DiseaseTypeItem>[] = [
-    {
-      title: '疾病类别',
-      dataIndex: 'diseaseCategory',
-      width: 120,
-    },
-    {
-      title: '疾病名称',
-      dataIndex: 'diseaseName',
-      width: 150,
-    },
-    {
-      title: '疾病表现',
-      dataIndex: 'diseaseSymptoms',
-      width: 200,
-      ellipsis: true,
-    },
-    {
-      title: '康复处方',
-      dataIndex: 'recoveryPlan',
-      width: 280,
-      ellipsis: true,
-      render: (_, record) => formatPrescription(record.prescription),
-    },
-    {
-      title: '登记医师',
-      dataIndex: 'registrationDoctor',
-      width: 100,
-    },
-    {
-      title: '登记时间',
-      dataIndex: 'registrationTime',
-      width: 120,
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 180,
-      fixed: 'right',
-      render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-          <div
-            className="action-item"
-            onClick={() => handleEditPrescription(record)}
-          >
-            <EditOutlined />
-            <span>修改处方</span>
-          </div>
-        </Space>
-      ),
-    },
-  ];
 
   // 格式化处方显示
   const formatPrescription = (prescription: any) => {
@@ -129,6 +70,79 @@ const DiseaseTypeList: React.FC = () => {
     }
     return parts.join(' | ') || '每天进行认知训练，辅佐药物...';
   };
+
+  // 表格列定义
+  const columns: ProColumns<DiseaseTypeItem>[] = [
+    {
+      title: '疾病类别',
+      dataIndex: 'diseaseCategory',
+      width: 120,
+      valueType: 'select',
+      valueEnum: diseaseCategoryValueEnum,
+    },
+    {
+      title: '疾病名称',
+      dataIndex: 'diseaseName',
+      width: 150,
+      fieldProps: {
+        placeholder: '请输入疾病类型名称',
+      },
+    },
+    {
+      title: '疾病表现',
+      dataIndex: 'diseaseSymptoms',
+      width: 200,
+      ellipsis: true,
+      search: false,
+    },
+    {
+      title: '康复处方',
+      dataIndex: 'recoveryPlan',
+      width: 280,
+      ellipsis: true,
+      search: false,
+      render: (_, record) => formatPrescription(record.prescription),
+    },
+    {
+      title: '登记医师',
+      dataIndex: 'registrationDoctor',
+      width: 100,
+      search: false,
+    },
+    {
+      title: '登记时间',
+      dataIndex: 'registrationTime',
+      width: 120,
+      search: false,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 180,
+      fixed: 'right',
+      search: false,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditPrescription(record)}
+          >
+            修改处方
+          </Button>
+        </Space>
+      ),
+    },
+  ];
 
   // 操作处理函数
   const handleAdd = () => {
@@ -152,20 +166,6 @@ const DiseaseTypeList: React.FC = () => {
 
   const handlePrescriptionSuccess = () => {
     setPrescriptionModalVisible(false);
-    actionRef.current?.reload();
-  };
-
-  const handleQuery = () => {
-    setFilteredCategory(searchCategory);
-    setFilteredName(searchName);
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchCategory('');
-    setSearchName('');
-    setFilteredCategory('');
-    setFilteredName('');
     actionRef.current?.reload();
   };
 
@@ -224,20 +224,20 @@ const DiseaseTypeList: React.FC = () => {
     ];
   };
 
-  // 请求数据
-  const fetchDiseaseTypeList = async (_params: any) => {
+  // 请求数据 - 使用 ProTable 传入的 params
+  const fetchDiseaseTypeList = async (params: Record<string, any>) => {
     const mockData = getMockData();
     let filteredData = mockData;
 
-    if (filteredCategory) {
+    if (params.diseaseCategory) {
       filteredData = filteredData.filter(
-        (item) => item.diseaseCategory === filteredCategory,
+        (item) => item.diseaseCategory === params.diseaseCategory,
       );
     }
 
-    if (filteredName) {
+    if (params.diseaseName) {
       filteredData = filteredData.filter((item) =>
-        item.diseaseName.includes(filteredName),
+        item.diseaseName.includes(params.diseaseName),
       );
     }
 
@@ -250,105 +250,52 @@ const DiseaseTypeList: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="disease-type-list-page">
-        <div className="disease-type-list-card">
-          <div className="toolbar">
-            <div className="toolbar-left">
-              <div className="toolbar-item">
-                <span className="toolbar-label">所属类别：</span>
-                <Select
-                  placeholder="请选择疾病类别"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchCategory}
-                  onChange={(value) => setSearchCategory(value)}
-                >
-                  <Option value="认知障碍">认知障碍</Option>
-                  <Option value="情绪障碍">情绪障碍</Option>
-                  <Option value="精神障碍">精神障碍</Option>
-                  <Option value="运动障碍">运动障碍</Option>
-                </Select>
-              </div>
-              <div className="toolbar-item">
-                <span className="toolbar-label">名称：</span>
-                <Input
-                  placeholder="请输入疾病类型名称"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="toolbar-right">
-              <Button
-                className="add-button"
-                variant="outlined"
-                onClick={handleAdd}
-              >
-                <PlusCircleOutlined />
-                添加
-              </Button>
-              <Button
-                className="query-button"
-                variant="solid"
-                onClick={handleQuery}
-              >
-                <SearchOutlined />
-                查询
-              </Button>
-              <Button
-                className="reset-button"
-                variant="outlined"
-                onClick={handleReset}
-              >
-                <ReloadOutlined />
-                重置
-              </Button>
-            </div>
-          </div>
+      <ProTable<DiseaseTypeItem>
+        headerTitle="认知疾病类型管理"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={handleAdd}
+          >
+            添加
+          </Button>,
+        ]}
+        request={fetchDiseaseTypeList}
+        columns={columns}
+        scroll={{ x: 1200 }}
+        pagination={{
+          pageSize: 10,
+        }}
+      />
 
-          <ProTable<DiseaseTypeItem>
-            actionRef={actionRef}
-            rowKey="id"
-            search={false}
-            options={{
-              reload: false,
-              density: false,
-              fullScreen: false,
-              setting: false,
-            }}
-            request={fetchDiseaseTypeList}
-            columns={columns}
-            scroll={{ x: 1200 }}
-            pagination={{
-              pageSize: 10,
-            }}
-          />
-        </div>
+      {/* 添加疾病类型弹窗 */}
+      <AddDiseaseTypeModal
+        visible={addModalVisible}
+        onCancel={() => setAddModalVisible(false)}
+        onSuccess={handleAddSuccess}
+      />
 
-        {/* 添加疾病类型弹窗 */}
-        <AddDiseaseTypeModal
-          visible={addModalVisible}
-          onCancel={() => setAddModalVisible(false)}
-          onSuccess={handleAddSuccess}
-        />
+      {/* 详情弹窗 */}
+      <DetailModal
+        visible={detailModalVisible}
+        record={viewingRecord}
+        onCancel={() => setDetailModalVisible(false)}
+      />
 
-        {/* 详情弹窗 */}
-        <DetailModal
-          visible={detailModalVisible}
-          record={viewingRecord}
-          onCancel={() => setDetailModalVisible(false)}
-        />
-
-        {/* 修改处方弹窗 */}
-        <EditPrescriptionModal
-          visible={prescriptionModalVisible}
-          record={editingRecord}
-          onCancel={() => setPrescriptionModalVisible(false)}
-          onSuccess={handlePrescriptionSuccess}
-        />
-      </div>
+      {/* 修改处方弹窗 */}
+      <EditPrescriptionModal
+        visible={prescriptionModalVisible}
+        record={editingRecord}
+        onCancel={() => setPrescriptionModalVisible(false)}
+        onSuccess={handlePrescriptionSuccess}
+      />
     </PageContainer>
   );
 };

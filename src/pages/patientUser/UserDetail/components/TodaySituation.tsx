@@ -5,7 +5,7 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Space } from 'antd';
+import { Button, Tag, Typography } from 'antd';
 import React, { useRef } from 'react';
 import type {
   BehaviorRecord,
@@ -14,8 +14,12 @@ import type {
   ExerciseRecord,
   MedicationRecord,
 } from '@/services/patient-user/typings';
+import useComponentStyles from './components.style';
+
+const { Title, Text } = Typography;
 
 const TodaySituation: React.FC = () => {
+  const { styles } = useComponentStyles();
   const medicationTableRef = useRef<ActionType>(null);
   const behaviorTableRef = useRef<ActionType>(null);
   const dietTableRef = useRef<ActionType>(null);
@@ -179,15 +183,15 @@ const TodaySituation: React.FC = () => {
       width: 100,
       render: (_, record) =>
         record.status === 1 ? (
-          <div className="complete-status">
+          <Text className={styles.completeStatus}>
             <CheckCircleOutlined />
             完成
-          </div>
+          </Text>
         ) : (
-          <div className="uncomplete-status">
+          <Text className={styles.uncompleteStatus}>
             <CloseCircleOutlined />
             未完成
-          </div>
+          </Text>
         ),
     },
   ];
@@ -200,15 +204,15 @@ const TodaySituation: React.FC = () => {
       width: 100,
       render: (_, record) =>
         record.status === 1 ? (
-          <div className="complete-status">
+          <Text className={styles.completeStatus}>
             <CheckCircleOutlined />
             完成
-          </div>
+          </Text>
         ) : (
-          <div className="uncomplete-status">
+          <Text className={styles.uncompleteStatus}>
             <CloseCircleOutlined />
             未完成
-          </div>
+          </Text>
         ),
     },
   ];
@@ -241,15 +245,15 @@ const TodaySituation: React.FC = () => {
       width: 100,
       render: (_, record) =>
         record.status === 1 ? (
-          <div className="complete-status">
+          <Text className={styles.completeStatus}>
             <CheckCircleOutlined />
             完成
-          </div>
+          </Text>
         ) : (
-          <div className="uncomplete-status">
+          <Text className={styles.uncompleteStatus}>
             <CloseCircleOutlined />
             未完成
-          </div>
+          </Text>
         ),
     },
   ];
@@ -282,31 +286,30 @@ const TodaySituation: React.FC = () => {
       width: 100,
       render: (_, record) =>
         record.completionStatus === 1 ? (
-          <span className="status-badge completed">已完成</span>
+          <Tag color="blue">已完成</Tag>
         ) : (
-          <span className="status-badge uncompleted">未完成</span>
+          <Tag color="red">未完成</Tag>
         ),
     },
     {
       title: '按钮',
       key: 'action',
       width: 100,
-      render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item">
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-        </Space>
+      render: () => (
+        <Button type="link" size="small" icon={<EyeOutlined />}>
+          详情
+        </Button>
       ),
     },
   ];
 
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">用药记录</h3>
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            用药记录
+          </Title>
         </div>
         <ProTable<MedicationRecord>
           actionRef={medicationTableRef}
@@ -325,13 +328,14 @@ const TodaySituation: React.FC = () => {
           })}
           columns={medicationColumns}
           pagination={false}
-          className="today-situation-table"
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">行为记录</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            行为记录
+          </Title>
         </div>
         <ProTable<BehaviorRecord>
           actionRef={behaviorTableRef}
@@ -350,13 +354,14 @@ const TodaySituation: React.FC = () => {
           })}
           columns={behaviorColumns}
           pagination={false}
-          className="today-situation-table"
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">饮食记录</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            饮食记录
+          </Title>
         </div>
         <ProTable<DietRecord>
           actionRef={dietTableRef}
@@ -375,13 +380,14 @@ const TodaySituation: React.FC = () => {
           })}
           columns={dietColumns}
           pagination={false}
-          className="today-situation-table"
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">运动记录</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            运动记录
+          </Title>
         </div>
         <ProTable<ExerciseRecord>
           actionRef={exerciseTableRef}
@@ -400,13 +406,14 @@ const TodaySituation: React.FC = () => {
           })}
           columns={exerciseColumns}
           pagination={false}
-          className="today-situation-table"
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">认知训练记录</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            认知训练记录
+          </Title>
         </div>
         <ProTable<CognitiveTrainingRecord>
           actionRef={cognitiveTrainingTableRef}
@@ -425,7 +432,6 @@ const TodaySituation: React.FC = () => {
           })}
           columns={cognitiveTrainingColumns}
           pagination={{ pageSize: 5 }}
-          className="today-situation-table"
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { CloseOutlined, EditOutlined, SaveOutlined } from '@ant-design/icons';
 import { PageContainer } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
-import { Button, Divider, Input, message } from 'antd';
+import { Button, Divider, Flex, Input, message, Space, Typography } from 'antd';
 import React, { useState } from 'react';
 import { PatientAvatarInfoContent } from '@/components';
 import { CROWD_CATEGORY } from '../../../utils/constants';
@@ -12,10 +12,12 @@ import {
   InitialDiagnosis,
   TestResultEntry,
 } from './components';
+import useDiagnosisStyles from './index.style';
 
-import './index.less';
+const { Title, Text } = Typography;
 
 const Diagnosis: React.FC = () => {
+  const { styles } = useDiagnosisStyles();
   const [current, setCurrent] = useState(0);
   const [formData, setFormData] = useState({
     chiefComplaint:
@@ -77,7 +79,6 @@ const Diagnosis: React.FC = () => {
 
   const handleNext = () => {
     if (current === 0) {
-      // 验证第一步表单
       if (!formData.chiefComplaint.trim()) {
         message.warning('请填写主诉');
         return;
@@ -88,7 +89,6 @@ const Diagnosis: React.FC = () => {
       }
     }
     if (current === 1) {
-      // 验证第二步至少选择一项检查
       const hasSelected =
         checkItems.scaleAssessment.some((item) => item.checked) ||
         checkItems.laboratoryTest.some((item) => item.checked) ||
@@ -99,7 +99,6 @@ const Diagnosis: React.FC = () => {
       }
     }
     if (current === 3) {
-      // 验证第四步必须确认诊断
       if (!diagnosisConfirmed) {
         message.warning('请先确认诊断结果');
         return;
@@ -110,7 +109,6 @@ const Diagnosis: React.FC = () => {
     }
   };
 
-  // 切换检查项目选中状态
   const handleCheckItemToggle = (category: string, id: string) => {
     setCheckItems((prev) => ({
       ...prev,
@@ -130,7 +128,6 @@ const Diagnosis: React.FC = () => {
     history.back();
   };
 
-  // 渲染步骤内容
   const renderStepContent = () => {
     switch (current) {
       case 0:
@@ -161,25 +158,28 @@ const Diagnosis: React.FC = () => {
     }
   };
 
-  // 确认诊断
   const handleDiagnosisConfirm = () => {
     setDiagnosisConfirmed(true);
     message.success('诊断确认成功！可以进入下一步制定康复处方');
   };
 
-  // 完成处方制定
   const handlePrescriptionComplete = () => {
     message.success('康复处方制定完成！');
-    // TODO: 保存数据并跳转
   };
 
   return (
-    <PageContainer title={false} className="diagnosis-page">
-      <div className="diagnosis-container">
+    <PageContainer title={false}>
+      <div className={styles.diagnosisContainer}>
         {/* 头部 */}
-        <div className="diagnosis-header">
-          <h2 className="diagnosis-title">诊断-{steps[current].title}</h2>
-          <div className="header-actions">
+        <Flex
+          justify="space-between"
+          align="center"
+          className={styles.diagnosisHeader}
+        >
+          <Title level={4} className={styles.diagnosisTitle}>
+            诊断-{steps[current].title}
+          </Title>
+          <Space>
             <Button type="primary" danger onClick={handleClose}>
               离开
             </Button>
@@ -198,12 +198,12 @@ const Diagnosis: React.FC = () => {
                 完成诊断
               </Button>
             )}
-          </div>
-        </div>
+          </Space>
+        </Flex>
 
-        {/* 患者信息卡片和档案 - 左右布局（所有步骤共用）*/}
-        <div className="patient-info-wrapper">
-          <div className="patient-info-left">
+        {/* 患者信息卡片和档案 */}
+        <Flex gap={24} className={styles.patientInfoWrapper}>
+          <div className={styles.patientInfoLeft}>
             <PatientAvatarInfoContent
               name={patientInfo.name}
               gender={patientInfo.gender}
@@ -213,13 +213,13 @@ const Diagnosis: React.FC = () => {
             />
           </div>
 
-          <Divider vertical style={{ height: 'none' }} />
+          <Divider orientation="vertical" />
 
-          <div className="patient-info-right">
-            <div className="patient-archive-section">
-              <div className="archive-grid">
-                <div className="archive-item">
-                  <div className="archive-label">家族史:</div>
+          <div className={styles.patientInfoRight}>
+            <div className={styles.patientArchiveSection}>
+              <div className={styles.archiveGrid}>
+                <div className={styles.archiveItem}>
+                  <Text className={styles.archiveLabel}>家族史:</Text>
                   {isEditingArchive ? (
                     <Input
                       value={patientArchive.familyHistory}
@@ -232,14 +232,14 @@ const Diagnosis: React.FC = () => {
                       placeholder="请输入家族史"
                     />
                   ) : (
-                    <div className="archive-value">
+                    <Text className={styles.archiveValue}>
                       {patientArchive.familyHistory}
-                    </div>
+                    </Text>
                   )}
                 </div>
 
-                <div className="archive-item">
-                  <div className="archive-label">既往病史:</div>
+                <div className={styles.archiveItem}>
+                  <Text className={styles.archiveLabel}>既往病史:</Text>
                   {isEditingArchive ? (
                     <Input
                       value={patientArchive.existingDisease}
@@ -252,14 +252,14 @@ const Diagnosis: React.FC = () => {
                       placeholder="请输入既往病史"
                     />
                   ) : (
-                    <div className="archive-value">
+                    <Text className={styles.archiveValue}>
                       {patientArchive.existingDisease}
-                    </div>
+                    </Text>
                   )}
                 </div>
 
-                <div className="archive-item">
-                  <div className="archive-label">既往用药:</div>
+                <div className={styles.archiveItem}>
+                  <Text className={styles.archiveLabel}>既往用药:</Text>
                   {isEditingArchive ? (
                     <Input
                       value={patientArchive.existingMedication}
@@ -272,13 +272,13 @@ const Diagnosis: React.FC = () => {
                       placeholder="请输入既往用药"
                     />
                   ) : (
-                    <div className="archive-value">
+                    <Text className={styles.archiveValue}>
                       {patientArchive.existingMedication}
-                    </div>
+                    </Text>
                   )}
                 </div>
               </div>
-              <div className="archive-header">
+              <div className={styles.archiveHeader}>
                 {!isEditingArchive ? (
                   <Button
                     type="link"
@@ -286,7 +286,7 @@ const Diagnosis: React.FC = () => {
                     onClick={() => setIsEditingArchive(true)}
                   />
                 ) : (
-                  <div className="archive-actions">
+                  <Space>
                     <Button
                       type="link"
                       icon={<SaveOutlined />}
@@ -297,16 +297,15 @@ const Diagnosis: React.FC = () => {
                     />
                     <Button
                       type="link"
+                      icon={<CloseOutlined />}
                       onClick={() => setIsEditingArchive(false)}
-                    >
-                      <CloseOutlined />
-                    </Button>
-                  </div>
+                    />
+                  </Space>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </Flex>
 
         {/* 步骤内容 */}
         {renderStepContent()}

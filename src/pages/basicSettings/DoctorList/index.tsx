@@ -1,15 +1,12 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Input, message, Space } from 'antd';
-import React, { useRef, useState } from 'react';
-import './index.less';
 import {
   EyeOutlined,
   KeyOutlined,
   PlusCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, message, Space } from 'antd';
+import React, { useRef } from 'react';
 
 interface DoctorItem {
   id: string;
@@ -23,10 +20,6 @@ interface DoctorItem {
 
 const DoctorList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
-  const [searchName, setSearchName] = useState<string>('');
-  const [searchPhone, setSearchPhone] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
-  const [filteredPhone, setFilteredPhone] = useState<string>('');
 
   // 表格列定义
   const columns: ProColumns<DoctorItem>[] = [
@@ -34,47 +27,66 @@ const DoctorList: React.FC = () => {
       title: '姓名',
       dataIndex: 'name',
       width: 100,
+      fieldProps: {
+        placeholder: '请输入医师姓名',
+      },
     },
     {
       title: '性别',
       dataIndex: 'gender',
       width: 80,
+      search: false,
     },
     {
       title: '年龄',
       dataIndex: 'age',
       width: 80,
+      search: false,
     },
     {
       title: '联系方式',
       dataIndex: 'contactMethod',
       width: 150,
+      fieldProps: {
+        placeholder: '输入手机号',
+      },
     },
     {
       title: '工号',
       dataIndex: 'employeeNumber',
       width: 100,
+      search: false,
     },
     {
       title: '入职时间',
       dataIndex: 'joinTime',
       width: 150,
+      search: false,
     },
     {
       title: '操作',
       key: 'action',
       width: 200,
       fixed: 'right',
+      search: false,
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span> 详情</span>
-          </div>
-          <div className="action-item" onClick={() => handleViewQRCode(record)}>
-            <KeyOutlined />
-            <span> 重置密码</span>
-          </div>
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<KeyOutlined />}
+            onClick={() => handleResetPassword(record)}
+          >
+            重置密码
+          </Button>
         </Space>
       ),
     },
@@ -89,23 +101,9 @@ const DoctorList: React.FC = () => {
     console.log('查看详情:', record);
   };
 
-  const handleViewQRCode = (record: DoctorItem) => {
-    console.log('查看密码:', record);
-    message.info(`查看 ${record.name} 的密码`);
-  };
-
-  const handleQuery = () => {
-    setFilteredName(searchName);
-    setFilteredPhone(searchPhone);
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchName('');
-    setSearchPhone('');
-    setFilteredName('');
-    setFilteredPhone('');
-    actionRef.current?.reload();
+  const handleResetPassword = (record: DoctorItem) => {
+    console.log('重置密码:', record);
+    message.info(`重置 ${record.name} 的密码`);
   };
 
   // 获取模拟数据
@@ -204,20 +202,20 @@ const DoctorList: React.FC = () => {
     ];
   };
 
-  // 请求数据
-  const fetchDoctorList = async (_params: any) => {
+  // 请求数据 - 使用 ProTable 传入的 params
+  const fetchDoctorList = async (params: Record<string, any>) => {
     const mockData = getMockData();
     let filteredData = mockData;
 
-    if (filteredName) {
+    if (params.name) {
       filteredData = filteredData.filter((item) =>
-        item.name.includes(filteredName),
+        item.name.includes(params.name),
       );
     }
 
-    if (filteredPhone) {
+    if (params.contactMethod) {
       filteredData = filteredData.filter((item) =>
-        item.contactMethod.includes(filteredPhone),
+        item.contactMethod.includes(params.contactMethod),
       );
     }
 
@@ -230,78 +228,30 @@ const DoctorList: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="doctor-list-page">
-        <div className="doctor-list-card">
-          <div className="toolbar">
-            <div className="toolbar-left">
-              <div className="toolbar-item">
-                <span className="toolbar-label">姓名：</span>
-                <Input
-                  placeholder="请输入医师姓名"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                />
-              </div>
-              <div className="toolbar-item">
-                <span className="toolbar-label">手机号：</span>
-                <Input
-                  placeholder="输入手机号"
-                  allowClear
-                  style={{ width: 240 }}
-                  value={searchPhone}
-                  onChange={(e) => setSearchPhone(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="toolbar-right">
-              <Button
-                className="add-button"
-                variant="outlined"
-                onClick={handleAdd}
-              >
-                <PlusCircleOutlined />
-                添加
-              </Button>
-              <Button
-                className="query-button"
-                variant="solid"
-                onClick={handleQuery}
-              >
-                <SearchOutlined />
-                查询
-              </Button>
-              <Button
-                className="reset-button"
-                variant="outlined"
-                onClick={handleReset}
-              >
-                <ReloadOutlined />
-                重置
-              </Button>
-            </div>
-          </div>
-
-          <ProTable<DoctorItem>
-            actionRef={actionRef}
-            rowKey="id"
-            search={false}
-            options={{
-              reload: false,
-              density: false,
-              fullScreen: false,
-              setting: false,
-            }}
-            request={fetchDoctorList}
-            columns={columns}
-            scroll={{ x: 1000 }}
-            pagination={{
-              pageSize: 10,
-            }}
-          />
-        </div>
-      </div>
+      <ProTable<DoctorItem>
+        headerTitle="医师列表"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button
+            key="add"
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={handleAdd}
+          >
+            添加
+          </Button>,
+        ]}
+        request={fetchDoctorList}
+        columns={columns}
+        scroll={{ x: 1000 }}
+        pagination={{
+          pageSize: 10,
+        }}
+      />
     </PageContainer>
   );
 };

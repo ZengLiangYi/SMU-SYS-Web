@@ -6,7 +6,17 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, DatePicker, Input, Modal, message, Select, Space } from 'antd';
+import {
+  Button,
+  DatePicker,
+  Input,
+  Modal,
+  message,
+  Select,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
 import React, { useRef, useState } from 'react';
 import type {
@@ -14,6 +24,9 @@ import type {
   VisitRecord,
 } from '@/services/patient-user/typings';
 import { getTimeFormat } from '@/utils/constants';
+import useComponentStyles from './components.style';
+
+const { Title, Text } = Typography;
 
 interface PersonalInfoProps {
   userInfo: UserDetailInfo;
@@ -22,6 +35,7 @@ interface PersonalInfoProps {
 const PersonalInfo: React.FC<PersonalInfoProps> = ({
   userInfo: initialUserInfo,
 }) => {
+  const { styles, cx } = useComponentStyles();
   const visitTableRef = useRef<ActionType>(null);
   const [userInfo, setUserInfo] = useState<UserDetailInfo>(initialUserInfo);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -150,19 +164,21 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
       title: '状态',
       dataIndex: 'status',
       width: 100,
-      render: () => <span className="status-badge completed">已完成</span>,
+      render: () => <Tag color="blue">已完成</Tag>,
     },
     {
       title: '操作',
       key: 'action',
       width: 100,
       render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-        </Space>
+        <Button
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          onClick={() => handleViewDetail(record)}
+        >
+          详情
+        </Button>
       ),
     },
   ];
@@ -178,10 +194,12 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
   };
 
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">住院个人信息</h3>
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            住院个人信息
+          </Title>
           {!isEditingPersonal ? (
             <Button
               type="link"
@@ -212,10 +230,10 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             </Space>
           )}
         </div>
-        <div className="info-grid">
-          <div className="info-item">
-            <div className="info-label">姓名：</div>
-            <div className="info-value">
+        <div className={styles.infoGrid}>
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>姓名：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.name}
@@ -231,9 +249,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">性别：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>性别：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Select
                   value={editingPersonalData.gender}
@@ -255,9 +273,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">出生日期：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>出生日期：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <DatePicker
                   value={
@@ -279,9 +297,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">联系方式：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>联系方式：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.phone}
@@ -297,9 +315,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">饮食习惯：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>饮食习惯：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.drinkingHabit}
@@ -315,9 +333,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">生活习惯：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>生活习惯：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.lifeHabit}
@@ -333,9 +351,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">家族史：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>家族史：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.familyHistory}
@@ -351,9 +369,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">受教育程度：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>受教育程度：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.educationLevel}
@@ -369,9 +387,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">既往病史：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>既往病史：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.existingDisease}
@@ -387,9 +405,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">既往用药：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>既往用药：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.existingMedication}
@@ -405,9 +423,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">职业：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>职业：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.occupation}
@@ -423,9 +441,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">随访意愿：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>随访意愿：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.randomIntention}
@@ -441,9 +459,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">籍贯：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>籍贯：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.province}
@@ -459,9 +477,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">地址：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>地址：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.address}
@@ -477,9 +495,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item full-width">
-            <div className="info-label">不良嗜好：</div>
-            <div className="info-value">
+          <div className={cx(styles.infoItem, styles.infoItemFullWidth)}>
+            <Text className={styles.infoLabel}>不良嗜好：</Text>
+            <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
                   value={editingPersonalData.notDrugAllergy}
@@ -498,9 +516,11 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         </div>
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">联系人</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            联系人
+          </Title>
           {!isEditingContact ? (
             <Button
               type="link"
@@ -531,10 +551,10 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             </Space>
           )}
         </div>
-        <div className="info-grid">
-          <div className="info-item">
-            <div className="info-label">姓名：</div>
-            <div className="info-value">
+        <div className={styles.infoGrid}>
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>姓名：</Text>
+            <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
                   value={editingContactData.emergencyContactName}
@@ -550,9 +570,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">关系：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>关系：</Text>
+            <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
                   value={editingContactData.emergencyContactRelation}
@@ -568,9 +588,9 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               )}
             </div>
           </div>
-          <div className="info-item">
-            <div className="info-label">联系方式：</div>
-            <div className="info-value">
+          <div className={styles.infoItem}>
+            <Text className={styles.infoLabel}>联系方式：</Text>
+            <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
                   value={editingContactData.emergencyContactPhone}
@@ -589,9 +609,11 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         </div>
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">随访记录</h3>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            随访记录
+          </Title>
         </div>
         <ProTable<VisitRecord>
           actionRef={visitTableRef}
@@ -608,7 +630,6 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           pagination={{
             pageSize: 5,
           }}
-          className="visit-pro-table"
         />
       </div>
 
@@ -644,7 +665,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             </p>
             <p>
               <strong>状态：</strong>
-              <span className="status-badge completed">已完成</span>
+              <Tag color="blue">已完成</Tag>
             </p>
           </div>
         )}

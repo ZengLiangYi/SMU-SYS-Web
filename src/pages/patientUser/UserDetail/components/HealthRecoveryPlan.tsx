@@ -3,7 +3,7 @@ import {
   EditOutlined,
   PlusCircleOutlined,
 } from '@ant-design/icons';
-import { Button, Form, Input, Modal, message, Select } from 'antd';
+import { Button, Form, Input, Modal, message, Select, Typography } from 'antd';
 import React, { useState } from 'react';
 import type {
   CognitiveTrainingCard,
@@ -17,8 +17,12 @@ import {
   ExercisePrescription as ExercisePrescriptionComponent,
   MedicationTreatment as MedicationTreatmentComponent,
 } from '../../Diagnosis/components';
+import useComponentStyles from './components.style';
+
+const { Title } = Typography;
 
 const HealthRecoveryPlan: React.FC = () => {
+  const { styles } = useComponentStyles();
   const [form] = Form.useForm();
   const aiSuggestion =
     '根据患者的病情和治疗效果，给出综合建议，包括药物治疗、认知训练、饮食处方、运动处方等。';
@@ -246,15 +250,15 @@ const HealthRecoveryPlan: React.FC = () => {
   };
 
   return (
-    <div className="tab-content">
-      <div className="info-section">
-        <div className="ai-suggestion-box">
-          <div className="ai-suggestion-title">AI综合建议</div>
-          <div className="ai-suggestion-content">{aiSuggestion}</div>
+    <div className={styles.tabContent}>
+      <div className={styles.infoSection}>
+        <div className={styles.aiSuggestionBox}>
+          <div className={styles.aiSuggestionTitle}>AI综合建议</div>
+          <div className={styles.aiSuggestionContent}>{aiSuggestion}</div>
         </div>
       </div>
 
-      <div className="info-section">
+      <div className={styles.infoSection}>
         <MedicationTreatmentComponent
           medications={medicationList}
           onAdd={handleAddMedication}
@@ -263,31 +267,28 @@ const HealthRecoveryPlan: React.FC = () => {
         />
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">认知训练</h3>
-          <span className="section-subtitle">每日30分钟</span>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            认知训练
+          </Title>
+          <span className={styles.sectionSubtitle}>每日30分钟</span>
         </div>
-        <div className="cognitive-cards-container">
+        <div className={styles.cognitiveCardsContainer}>
           {cognitiveCards.map((item) => (
-            <div key={item.id} className="cognitive-card">
-              <div className="cognitive-card-content">
-                <div className="cognitive-card-name">{item.cardName}</div>
-                <div className="cognitive-card-difficulty">
+            <div key={item.id} className={styles.cognitiveCard}>
+              <div className={styles.cognitiveCardContent}>
+                <div className={styles.cognitiveCardName}>{item.cardName}</div>
+                <div className={styles.cognitiveCardDifficulty}>
                   {item.difficulty}
                 </div>
               </div>
-              <div className="cognitive-card-actions">
-                <Button
-                  type="link"
-                  className="gray-button"
-                  onClick={() => handleEditCognitive(item)}
-                >
+              <div className={styles.cognitiveCardActions}>
+                <Button type="link" onClick={() => handleEditCognitive(item)}>
                   <EditOutlined />
                 </Button>
                 <Button
                   type="link"
-                  className="gray-button"
                   onClick={() => handleDeleteCognitive(item.id)}
                 >
                   <DeleteOutlined />
@@ -295,49 +296,44 @@ const HealthRecoveryPlan: React.FC = () => {
               </div>
             </div>
           ))}
-          <div className="cognitive-card-add" onClick={handleAddCognitive}>
+          <div className={styles.cognitiveCardAdd} onClick={handleAddCognitive}>
             <div style={{ marginTop: 8, color: '#999' }}>+ 更多关卡</div>
           </div>
         </div>
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">饮食处方</h3>
-          <Button type="link" className="gray-button" onClick={handleEditDiet}>
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            饮食处方
+          </Title>
+          <Button type="link" onClick={handleEditDiet}>
             修改计划
           </Button>
         </div>
-        <div className="diet-prescription-box">{dietPrescription}</div>
+        <div className={styles.dietContent}>{dietPrescription}</div>
       </div>
 
-      <div className="info-section">
-        <div className="section-header">
-          <h3 className="section-title">运动处方</h3>
-          <Button
-            type="link"
-            className="gray-button"
-            onClick={handleAddExercise}
-          >
+      <div className={styles.infoSection}>
+        <div className={styles.sectionHeader}>
+          <Title level={5} className={styles.sectionTitle}>
+            运动处方
+          </Title>
+          <Button type="link" onClick={handleAddExercise}>
             +添加计划
           </Button>
         </div>
-        <div className="exercise-list">
+        <div className={styles.exerciseList}>
           {exerciseList.map((item) => (
-            <div key={item.id} className="exercise-item">
-              <div className="exercise-name">{item.exerciseName}</div>
-              <div className="exercise-duration">{item.duration}</div>
-              <div className="exercise-actions">
-                <Button
-                  type="link"
-                  className="gray-button"
-                  onClick={() => handleEditExercise(item)}
-                >
+            <div key={item.id} className={styles.exerciseItem}>
+              <div className={styles.exerciseName}>{item.exerciseName}</div>
+              <div className={styles.exerciseDuration}>{item.duration}</div>
+              <div>
+                <Button type="link" onClick={() => handleEditExercise(item)}>
                   <EditOutlined />
                 </Button>
                 <Button
                   type="link"
-                  className="gray-button"
                   onClick={() => handleDeleteExercise(item.id)}
                 >
                   <DeleteOutlined />

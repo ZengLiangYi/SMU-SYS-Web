@@ -1,17 +1,14 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Form, Input, Modal, message, Select, Space, Tag } from 'antd';
-import React, { useRef, useState } from 'react';
-import type { DiagnosisRecord } from '../../../services/patient-user/typings';
-import './index.less';
 import {
   EditOutlined,
   EyeOutlined,
   PlayCircleOutlined,
-  ReloadOutlined,
-  SearchOutlined,
 } from '@ant-design/icons';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
+import { Button, Form, Input, Modal, message, Select, Space, Tag } from 'antd';
+import React, { useRef, useState } from 'react';
+import type { DiagnosisRecord } from '../../../services/patient-user/typings';
 import { CROWD_CATEGORY, getCategoryColor } from '../../../utils/constants';
 import {
   CognitiveTraining,
@@ -19,9 +16,6 @@ import {
   ExercisePrescription,
   MedicationTreatment,
 } from '../Diagnosis/components';
-import '@/components/PrescriptionComponents/index.less';
-
-const { Option } = Select;
 
 interface DiagnosisListItem extends DiagnosisRecord {
   userName: string;
@@ -29,15 +23,18 @@ interface DiagnosisListItem extends DiagnosisRecord {
   referringDoctor: string;
 }
 
+// 生成 valueEnum
+const categoryValueEnum = Object.values(CROWD_CATEGORY).reduce(
+  (acc, cat) => {
+    acc[cat] = { text: cat };
+    return acc;
+  },
+  {} as Record<string, { text: string }>,
+);
+
 const DiagnosisList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const [form] = Form.useForm();
-  const [searchName, setSearchName] = useState<string>('');
-  const [searchCategory, setSearchCategory] = useState<string>('');
-  const [searchDoctor, setSearchDoctor] = useState<string>('');
-  const [filteredName, setFilteredName] = useState<string>('');
-  const [filteredCategory, setFilteredCategory] = useState<string>('');
-  const [filteredDoctor, setFilteredDoctor] = useState<string>('');
 
   // 详情和处方弹窗状态
   const [detailModalVisible, setDetailModalVisible] = useState(false);
@@ -64,88 +61,6 @@ const DiagnosisList: React.FC = () => {
   const [editingCognitive, setEditingCognitive] = useState<any>(null);
   const [editingExercise, setEditingExercise] = useState<any>(null);
 
-  // 表格列定义
-  const columns: ProColumns<DiagnosisListItem>[] = [
-    {
-      title: '日期',
-      dataIndex: 'date',
-      width: 100,
-      fixed: 'left',
-    },
-    {
-      title: '用户名',
-      dataIndex: 'userName',
-      width: 80,
-    },
-    {
-      title: '人群分类',
-      dataIndex: 'userCategory',
-      width: 120,
-      render: (_, record) => (
-        <Tag
-          className="category-tag"
-          color={getCategoryColor(record.userCategory)}
-        >
-          {record.userCategory}
-        </Tag>
-      ),
-    },
-    {
-      title: '接诊医生',
-      dataIndex: 'referringDoctor',
-      width: 80,
-    },
-    {
-      title: '诊断结果',
-      dataIndex: 'diagnosisResult',
-      width: 120,
-    },
-    {
-      title: '康复处方',
-      dataIndex: 'prescription',
-      width: 280,
-      render: (prescription) => formatPrescription(prescription),
-    },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      width: 80,
-      render: (_, record) => (
-        <span
-          className="status-tag"
-          style={{ border: `1px solid #336fff`, color: '#336fff' }}
-        >
-          {record.status === 1 ? '已完成' : '未完成'}
-        </span>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 180,
-      fixed: 'right',
-      render: (_, record) => (
-        <Space className="action-items">
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <EyeOutlined />
-            <span>详情</span>
-          </div>
-          <div className="action-item" onClick={() => handleViewDetail(record)}>
-            <PlayCircleOutlined />
-            <span>复诊</span>
-          </div>
-          <div
-            className="action-item"
-            onClick={() => handleEditPrescription(record)}
-          >
-            <EditOutlined />
-            <span>修改处方</span>
-          </div>
-        </Space>
-      ),
-    },
-  ];
-
   // 格式化处方显示
   const formatPrescription = (prescription: any) => {
     if (!prescription) return '暂无';
@@ -165,6 +80,107 @@ const DiagnosisList: React.FC = () => {
     return parts.join(' | ') || '暂无';
   };
 
+  // 表格列定义
+  const columns: ProColumns<DiagnosisListItem>[] = [
+    {
+      title: '日期',
+      dataIndex: 'date',
+      width: 100,
+      fixed: 'left',
+      search: false,
+    },
+    {
+      title: '用户名',
+      dataIndex: 'userName',
+      width: 80,
+      fieldProps: {
+        placeholder: '请输入患者姓名',
+      },
+    },
+    {
+      title: '人群分类',
+      dataIndex: 'userCategory',
+      width: 120,
+      valueType: 'select',
+      valueEnum: categoryValueEnum,
+      render: (_, record) => (
+        <Tag
+          color={getCategoryColor(record.userCategory)}
+          style={{ borderRadius: 12 }}
+        >
+          {record.userCategory}
+        </Tag>
+      ),
+    },
+    {
+      title: '接诊医生',
+      dataIndex: 'referringDoctor',
+      width: 80,
+      fieldProps: {
+        placeholder: '请输入医师姓名',
+      },
+    },
+    {
+      title: '诊断结果',
+      dataIndex: 'diagnosisResult',
+      width: 120,
+      search: false,
+    },
+    {
+      title: '康复处方',
+      dataIndex: 'prescription',
+      width: 280,
+      search: false,
+      render: (prescription) => formatPrescription(prescription),
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      width: 80,
+      search: false,
+      render: (_, record) => (
+        <Tag bordered color={record.status === 1 ? 'blue' : 'red'}>
+          {record.status === 1 ? '已完成' : '未完成'}
+        </Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 180,
+      fixed: 'right',
+      search: false,
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            详情
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<PlayCircleOutlined />}
+            onClick={() => handleViewDetail(record)}
+          >
+            复诊
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEditPrescription(record)}
+          >
+            修改处方
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
   // 操作处理函数
   const handleViewDetail = (record: DiagnosisListItem) => {
     setViewingRecord(record);
@@ -183,23 +199,6 @@ const DiagnosisList: React.FC = () => {
   const handleSubmitPrescription = () => {
     message.success('修改成功');
     setPrescriptionModalVisible(false);
-    actionRef.current?.reload();
-  };
-
-  const handleQuery = () => {
-    setFilteredName(searchName);
-    setFilteredCategory(searchCategory);
-    setFilteredDoctor(searchDoctor);
-    actionRef.current?.reload();
-  };
-
-  const handleReset = () => {
-    setSearchName('');
-    setSearchCategory('');
-    setSearchDoctor('');
-    setFilteredName('');
-    setFilteredCategory('');
-    setFilteredDoctor('');
     actionRef.current?.reload();
   };
 
@@ -467,25 +466,25 @@ const DiagnosisList: React.FC = () => {
     ];
   };
 
-  // 模拟数据请求
-  const fetchDiagnosisList = async (params: any) => {
+  // 模拟数据请求 - 使用 ProTable 传入的 params 进行过滤
+  const fetchDiagnosisList = async (params: Record<string, any>) => {
     const mockData = getMockData();
 
     // 应用搜索过滤
     let filteredData = mockData;
-    if (filteredName) {
+    if (params.userName) {
       filteredData = filteredData.filter((item) =>
-        item.userName.includes(filteredName),
+        item.userName.includes(params.userName),
       );
     }
-    if (filteredCategory) {
+    if (params.userCategory) {
       filteredData = filteredData.filter(
-        (item) => item.userCategory === filteredCategory,
+        (item) => item.userCategory === params.userCategory,
       );
     }
-    if (filteredDoctor) {
+    if (params.referringDoctor) {
       filteredData = filteredData.filter((item) =>
-        item.referringDoctor.includes(filteredDoctor),
+        item.referringDoctor.includes(params.referringDoctor),
       );
     }
 
@@ -497,86 +496,21 @@ const DiagnosisList: React.FC = () => {
   };
 
   return (
-    <PageContainer className="diagnosis-list-page">
-      <div className="diagnosis-list-card">
-        <div className="toolbar">
-          <div className="toolbar-left">
-            <div className="toolbar-item">
-              <span className="toolbar-label">姓名：</span>
-              <Input
-                placeholder="请输入患者姓名或紧急联系人姓名"
-                allowClear
-                style={{ width: 240 }}
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-              />
-            </div>
-            <div className="toolbar-item">
-              <span className="toolbar-label">人群分类：</span>
-              <Select
-                style={{ width: 200 }}
-                placeholder="全部"
-                allowClear
-                value={searchCategory || undefined}
-                onChange={(value) => setSearchCategory(value || '')}
-              >
-                <Option value="">全部</Option>
-                {Object.values(CROWD_CATEGORY).map((category) => (
-                  <Option key={category} value={category}>
-                    {category}
-                  </Option>
-                ))}
-              </Select>
-            </div>
-            <div className="toolbar-item">
-              <span className="toolbar-label">医师：</span>
-              <Input
-                placeholder="请输入医师姓名"
-                allowClear
-                style={{ width: 200 }}
-                value={searchDoctor}
-                onChange={(e) => setSearchDoctor(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="toolbar-right">
-            <Button
-              className="query-button"
-              variant="solid"
-              onClick={handleQuery}
-            >
-              <SearchOutlined />
-              查询
-            </Button>
-            <Button
-              className="reset-button"
-              variant="outlined"
-              onClick={handleReset}
-            >
-              <ReloadOutlined />
-              重置
-            </Button>
-          </div>
-        </div>
-
-        <ProTable<DiagnosisListItem>
-          actionRef={actionRef}
-          rowKey="id"
-          search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          request={fetchDiagnosisList}
-          columns={columns}
-          scroll={{ x: 1200 }}
-          pagination={{
-            pageSize: 10,
-          }}
-        />
-      </div>
+    <PageContainer>
+      <ProTable<DiagnosisListItem>
+        headerTitle="诊疗记录列表"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        request={fetchDiagnosisList}
+        columns={columns}
+        scroll={{ x: 1200 }}
+        pagination={{
+          pageSize: 10,
+        }}
+      />
 
       {/* 详情弹窗 */}
       <Modal
@@ -585,7 +519,7 @@ const DiagnosisList: React.FC = () => {
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={900}
-        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         {viewingRecord && (
           <div style={{ padding: '20px 0' }}>
@@ -614,7 +548,9 @@ const DiagnosisList: React.FC = () => {
               </p>
               <p style={{ marginBottom: 0, fontSize: 14 }}>
                 <strong>状态：</strong>
-                <span className="status-badge completed">已完成</span>
+                <Tag bordered color="blue">
+                  已完成
+                </Tag>
               </p>
             </div>
 
@@ -725,7 +661,7 @@ const DiagnosisList: React.FC = () => {
         onOk={handleSubmitPrescription}
         onCancel={() => setPrescriptionModalVisible(false)}
         width={900}
-        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         <div style={{ padding: '20px 0' }}>
           {/* 药物治疗 */}

@@ -1,3 +1,4 @@
+/* 字体定义 */
 @font-face {
   font-family: "AlibabaSans";
   font-style: normal;
@@ -39,6 +40,7 @@
     format("woff2");
 }
 
+/* 基础样式 */
 html,
 body,
 #root {
@@ -50,62 +52,54 @@ body,
     sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* 色弱模式 */
 .colorWeak {
   filter: invert(80%);
 }
 
+/* 布局修复 */
 .ant-layout {
   min-height: 100vh;
 }
+
 .ant-pro-sider.ant-layout-sider.ant-pro-sider-fixed {
   left: unset;
 }
 
+/* Canvas 样式 */
 canvas {
   display: block;
 }
 
-.ant-pro-table {
-  font-size: 13px;
-  
-  // 表头字体
-  .ant-table-thead > tr > th {
-      font-size: 13px;
-      color: #929292;
-      font-weight: 600;
-    }
-  
-  // 表格内容字体
-  .ant-table-tbody > tr > td {
-      font-size: 13px;
-      font-weight: 600;    
-    }
-}
-
+/* 字体渲染优化 */
 body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 列表样式重置 */
 ul,
 ol {
   list-style: none;
 }
 
+/* 响应式表格 */
 @media (max-width: 768px) {
   .ant-table {
     width: 100%;
     overflow-x: auto;
-    &-thead > tr,
-    &-tbody > tr {
-      > th,
-      > td {
-        white-space: pre;
-        > span {
-          display: block;
-        }
-      }
-    }
+  }
+  .ant-table-thead > tr > th,
+  .ant-table-thead > tr > td,
+  .ant-table-tbody > tr > th,
+  .ant-table-tbody > tr > td {
+    white-space: pre;
+  }
+  .ant-table-thead > tr > th > span,
+  .ant-table-thead > tr > td > span,
+  .ant-table-tbody > tr > th > span,
+  .ant-table-tbody > tr > td > span {
+    display: block;
   }
 }

@@ -1,7 +1,9 @@
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Typography } from 'antd';
 import React from 'react';
-import './index.less';
+import usePrescriptionStyles from './index.style';
+
+const { Title } = Typography;
 
 interface MedicationItem {
   id: string;
@@ -23,35 +25,33 @@ const MedicationTreatment: React.FC<MedicationTreatmentProps> = ({
   onEdit,
   onDelete,
 }) => {
+  const { styles } = usePrescriptionStyles();
+
   return (
-    <div className="prescription-section">
-      <div className="section-header">
-        <h3 className="section-title">药物治疗</h3>
-        <Button type="link" className="add-button" onClick={onAdd}>
+    <div className={styles.prescriptionSection}>
+      <div className={styles.sectionHeader}>
+        <Title level={5} className={styles.sectionTitle}>
+          药物治疗
+        </Title>
+        <Button type="link" onClick={onAdd}>
           +添加药物
         </Button>
       </div>
-      <div className="prescription-list">
+      <div className={styles.prescriptionList}>
         {medications.map((item) => (
-          <div key={item.id} className="prescription-item">
-            <div className="prescription-content">
-              <div className="prescription-name">{item.medicineName}</div>
-              <div className="prescription-detail">用法：{item.usage}</div>
+          <div key={item.id} className={styles.prescriptionItem}>
+            <div className={styles.prescriptionContent}>
+              <div className={styles.prescriptionName}>{item.medicineName}</div>
+              <div className={styles.prescriptionDetail}>
+                用法：{item.usage}
+              </div>
             </div>
-            <div className="prescription-dosage">{item.dosage}</div>
-            <div className="prescription-actions">
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onEdit(item)}
-              >
+            <div className={styles.prescriptionDosage}>{item.dosage}</div>
+            <div className={styles.prescriptionActions}>
+              <Button type="link" onClick={() => onEdit(item)}>
                 <EditOutlined />
               </Button>
-              <Button
-                type="link"
-                className="action-btn"
-                onClick={() => onDelete(item.id)}
-              >
+              <Button type="link" onClick={() => onDelete(item.id)}>
                 <DeleteOutlined />
               </Button>
             </div>
