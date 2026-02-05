@@ -47,11 +47,14 @@ src/
 │   ├── rehabilitationTraining/   # 康复训练模块
 │   └── basicSettings/        # 基础设置模块
 ├── utils/                    # 工具函数
+│   ├── constants.ts          # 常量定义（枚举值等）
+│   ├── date.ts               # 日期格式化工具
 │   └── upload.ts             # 文件上传工具
 └── services/                 # 服务层
     ├── typings.d.ts          # 全局 API 类型（API 命名空间）
     ├── auth/                 # 认证服务
     ├── static/               # 静态资源服务
+    ├── rehab-level/          # 康复训练关卡服务
     └── patient-user/         # 患者用户类型定义
 ```
 
@@ -183,6 +186,243 @@ import { getUploadProps, getFileUrl } from '@/utils/upload';
   onChange={({ fileList }) => setFileList(fileList)}
 />
 ```
+
+### 列表模块开发规范
+
+以 `TrainingList` 为参考，列表模块应遵循以下规范：
+
+#### 目录结构
+
+```
+src/pages/moduleName/ListPage/
+├── index.tsx                    # 列表主页面
+└── components/
+    ├── CreateXxxForm.tsx        # 新建表单（ModalForm）
+    ├── EditXxxForm.tsx          # 编辑表单（trigger 模式）
+    └── DetailModal.tsx          # 详情弹窗
+```
+
+**注意**：不使用 `components/index.ts` barrel 文件，直接导入具体组件文件。
+
+#### 服务层
+
+```
+src/services/module-name/
+├── index.ts                     # API 函数
+└── typings.d.ts                 # 类型定义（使用 interface）
+```
+
+**类型定义示例：**
+
+```typescript
+// src/services/rehab-level/typings.d.ts
+export interface RehabLevel {
+  id: string;
+  level_type: string;
+  name: string;
+  // ... 其他字段使用 snake_case（与 API 一致）
+}
+
+export interface RehabLevelListParams {
+  offset?: number;
+  limit?: number;
+  // ... 筛选参数
+}
+```
+
+**API 函数示例：**
+
+```typescript
+// src/services/rehab-level/index.ts
+import { request } from '@umijs/max';
+import type { RehabLevel, RehabLevelListParams } from './typings.d';
+
+export async function getRehabLevels(params: RehabLevelListParams) {
+  return request<API.ApiResponse<RehabLevelListResult>>(
+    '/api/doctor/rehab-levels',
+    { method: 'GET', params },
+  );
+}
+```
+
+#### 列表页面
+
+```typescript
+// index.tsx
+import { App, Button, Image, Popconfirm, Space } from 'antd';
+import { useRequest } from '@umijs/max';
+import { REHAB_LEVEL_TYPE_ENUM } from '@/utils/constants';
+import { formatDateTime } from '@/utils/date';
+import { getStaticUrl } from '@/services/static';
+import CreateXxxForm from './components/CreateXxxForm';  // 直接导入
+import EditXxxForm from './components/EditXxxForm';
+
+const ListPage: React.FC = () => {
+  const { message } = App.useApp();  // 使用 App.useApp() 获取 message
+  const actionRef = useRef<ActionType>(null);
+
+  // 删除使用 useRequest（manual 模式）
+  const { run: runDelete } = useRequest(deleteApi, {
+    manual: true,
+    onSuccess: () => {
+      message.success('删除成功');
+      actionRef.current?.reload();
+    },
+  });
+
+  const columns: ProColumns[] = [
+    {
+      title: '类型',
+      dataIndex: 'level_type',         // 使用 API 字段名（snake_case）
+      valueEnum: REHAB_LEVEL_TYPE_ENUM, // 枚举值从 constants 导入
+      fieldProps: { placeholder: '请选择类型…' },  // placeholder 用 …
+    },
+    {
+      title: '图片',
+      dataIndex: 'image_url',
+      render: (_, record) => (
+        <Image
+          src={getStaticUrl(record.image_url)}
+          width={60}
+          height={60}  // 必须指定 width/height 防止 CLS
+        />
+      ),
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      render: (_, record) => formatDateTime(record.created_at),
+    },
+    {
+      title: '操作',
+      render: (_, record) => (
+        <Space>
+          <EditXxxForm trigger={<Button>编辑</Button>} record={record} />
+          <Popconfirm onConfirm={() => runDelete(record.id)}>
+            <Button danger aria-label="删除">删除</Button>  {/* aria-label */}
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <ProTable
+      toolBarRender={() => [
+        <CreateXxxForm key="create" onOk={() => actionRef.current?.reload()} />,
+      ]}
+      request={async (params) => {
+        const { current = 1, pageSize = 10 } = params;
+        try {
+          const { data } = await getList({
+            offset: (current - 1) * pageSize,
+            limit: pageSize,
+          });
+          return { data: data.items, total: data.total, success: true };
+        } catch {
+          return { data: [], total: 0, success: false };
+        }
+      }}
+    />
+  );
+};
+```
+
+#### 表单弹窗
+
+**新建表单（CreateXxxForm）：**
+
+```typescript
+import { ModalForm, ProFormText, ProFormSelect } from '@ant-design/pro-components';
+import { useRequest } from '@umijs/max';
+import { App, Button } from 'antd';
+
+const CreateXxxForm: FC<{ onOk?: () => void }> = ({ onOk }) => {
+  const { message } = App.useApp();
+  const { run, loading } = useRequest(createApi, {
+    manual: true,
+    onSuccess: () => { message.success('创建成功'); onOk?.(); },
+    onError: () => { message.error('创建失败，请重试'); },
+  });
+
+  return (
+    <ModalForm
+      title="添加"
+      trigger={<Button type="primary">添加</Button>}
+      modalProps={{ destroyOnClose: true, okButtonProps: { loading } }}
+      onFinish={async (values) => {
+        try {
+          await run(values);
+          return true;  // 成功时关闭弹窗
+        } catch {
+          return false; // 失败时保持弹窗打开，让用户可以重试
+        }
+      }}
+    >
+      <ProFormSelect options={OPTIONS_FROM_CONSTANTS} />
+    </ModalForm>
+  );
+};
+```
+
+**编辑表单（EditXxxForm）- trigger 模式：**
+
+```typescript
+import { cloneElement, useState, useCallback } from 'react';
+
+const EditXxxForm: FC<{ trigger: ReactElement; record: Item; onOk?: () => void }> = ({
+  trigger, record, onOk,
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const onOpen = useCallback(() => setOpen(true), []);
+  const onCancel = useCallback(() => setOpen(false), []);
+
+  return (
+    <>
+      {cloneElement(trigger, { onClick: onOpen })}
+      <ModalForm
+        open={open}
+        onOpenChange={(v) => !v && onCancel()}
+        initialValues={record}
+        modalProps={{ destroyOnClose: true }}
+      >
+        {/* 表单字段 */}
+      </ModalForm>
+    </>
+  );
+};
+```
+
+#### 工具函数
+
+| 工具 | 路径 | 用途 |
+|------|------|------|
+| `REHAB_LEVEL_TYPES` | `@/utils/constants` | 枚举选项（ProFormSelect） |
+| `REHAB_LEVEL_TYPE_ENUM` | `@/utils/constants` | valueEnum（ProTable） |
+| `formatDateTime` | `@/utils/date` | 日期格式化（UTC） |
+| `getStaticUrl` | `@/services/static` | 静态资源 URL |
+| `getUploadProps` | `@/utils/upload` | Upload 组件配置 |
+| `getFileUrl` | `@/utils/upload` | 提取上传响应 URL |
+| `urlToUploadFile` | `@/utils/upload` | URL 转 UploadFile（回显） |
+
+#### 规范要点
+
+| 规范 | 说明 |
+|------|------|
+| 消息提示 | 使用 `App.useApp()` 获取 message |
+| API 调用 | 使用 `useRequest` hook（manual 模式） |
+| 表单弹窗 | 使用 `ModalForm` + `ProFormXxx` 组件 |
+| 删除确认 | 使用 `Popconfirm` 组件 |
+| 编辑触发 | 使用 trigger 模式 + `cloneElement` |
+| 字段命名 | 直接使用 API 字段名（snake_case） |
+| 枚举值 | 统一维护在 `@/utils/constants` |
+| 图片显示 | 指定 width/height 防止 CLS |
+| 图标按钮 | 添加 `aria-label` 提升可访问性 |
+| placeholder | 使用 `…` 结尾（Typography 规范） |
+| 日期格式化 | 使用 `formatDateTime`（保持 UTC） |
+| 组件导入 | 直接导入文件，不用 barrel |
+| 错误处理 | `onFinish` 中用 try-catch，失败返回 `false` 保持弹窗 |
 
 ## 常用命令
 

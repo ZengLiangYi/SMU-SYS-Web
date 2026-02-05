@@ -1,19 +1,12 @@
 import { Image, Modal } from 'antd';
 import React from 'react';
-
-interface TrainingItem {
-  id: string;
-  levelType: string;
-  levelName: string;
-  levelImage: string;
-  levelIntro: string;
-  levelRange: string;
-  createTime: string;
-}
+import type { RehabLevel } from '@/services/rehab-level/typings.d';
+import { getStaticUrl } from '@/services/static';
+import { formatDateTime } from '@/utils/date';
 
 interface DetailModalProps {
   visible: boolean;
-  record: TrainingItem | null;
+  record: RehabLevel | null;
   onCancel: () => void;
 }
 
@@ -29,14 +22,13 @@ const DetailModal: React.FC<DetailModalProps> = ({
       onCancel={onCancel}
       footer={null}
       width={700}
-      bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
     >
       {record && (
         <div style={{ padding: '20px 0' }}>
           <div style={{ marginBottom: 16, textAlign: 'center' }}>
             <Image
-              src={record.levelImage}
-              alt={record.levelName}
+              src={getStaticUrl(record.image_url)}
+              alt={record.name}
               width={120}
               height={120}
               style={{ objectFit: 'cover', borderRadius: 8 }}
@@ -44,23 +36,23 @@ const DetailModal: React.FC<DetailModalProps> = ({
           </div>
           <p style={{ marginBottom: 12, fontSize: 14 }}>
             <strong>关卡类型：</strong>
-            {record.levelType}
+            {record.level_type}
           </p>
           <p style={{ marginBottom: 12, fontSize: 14 }}>
             <strong>关卡名称：</strong>
-            {record.levelName}
+            {record.name}
           </p>
           <p style={{ marginBottom: 12, fontSize: 14 }}>
             <strong>关卡简介：</strong>
-            {record.levelIntro}
+            {record.description}
           </p>
           <p style={{ marginBottom: 12, fontSize: 14 }}>
             <strong>关卡等级范围：</strong>
-            {record.levelRange}
+            {record.level_range}
           </p>
           <p style={{ marginBottom: 0, fontSize: 14 }}>
             <strong>创建时间：</strong>
-            {record.createTime}
+            {formatDateTime(record.created_at)}
           </p>
         </div>
       )}

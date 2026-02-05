@@ -27,27 +27,32 @@ export default [
     name: '用户列表',
     icon: 'team',
     component: './patientUser/UserList',
+    access: 'canDoctor',
   },
   {
     path: '/patient-user/detail',
     component: './patientUser/UserDetail',
     hideInMenu: true,
+    access: 'canDoctor',
   },
   {
     path: '/patient-user/diagnosis',
     component: './patientUser/Diagnosis',
     hideInMenu: true,
+    access: 'canDoctor',
   },
   {
     path: '/diagnosis-list',
     name: '诊疗列表',
     icon: 'PlayCircleOutlined',
     component: './patientUser/DiagnosisList',
+    access: 'canDoctor',
   },
   {
     path: '/drug-treatment',
     name: '药物治疗管理',
     icon: 'ApiOutlined',
+    access: 'canDoctor',
     routes: [
       {
         path: '/drug-treatment',
@@ -70,6 +75,7 @@ export default [
     name: '康复训练管理',
     icon: 'trophy',
     component: './rehabilitationTraining/TrainingList',
+    access: 'canDoctor',
   },
   {
     path: '/basic-settings',
@@ -84,16 +90,19 @@ export default [
         path: '/basic-settings/diagnosis-system',
         name: '诊疗体系',
         component: './basicSettings/DiagnosisSystem',
+        access: 'canDoctor',
       },
       {
         path: '/basic-settings/referral-hospital',
         name: '转诊医院列表',
         component: './basicSettings/ReferralHospital',
+        access: 'canDoctor',
       },
       {
         path: '/basic-settings/doctor-list',
         name: '医师列表',
         component: './basicSettings/DoctorList',
+        access: 'canAdmin',
       },
     ],
   },

@@ -8,6 +8,12 @@ import { errorConfig } from './requestErrorConfig';
 
 const loginPath = '/user/login';
 
+// 角色对应的默认首页
+const roleHomePath = {
+  admin: '/basic-settings/doctor-list',
+  doctor: '/patient-user',
+};
+
 /**
  * @see https://umijs.org/docs/api/runtime-config#getinitialstate
  * */
@@ -98,9 +104,41 @@ export const layout: RunTimeLayoutConfig = ({
     },
     onPageChange: () => {
       const { location } = history;
-      // 如果没有登录，重定向到 login
-      if (!initialState?.currentUser && location.pathname !== loginPath) {
+      const { currentUser } = initialState ?? {};
+
+      // 早返回：未登录时重定向到登录页
+      if (!currentUser && location.pathname !== loginPath) {
         history.push(loginPath);
+        return;
+      }
+
+      // 早返回：无用户信息
+      if (!currentUser) return;
+
+      const role = currentUser.role as 'admin' | 'doctor';
+      const homePath = roleHomePath[role];
+
+      // 根路径重定向到角色首页
+      if (location.pathname === '/') {
+        history.replace(homePath);
+        return;
+      }
+
+      // Admin 只能访问医师列表
+      if (
+        role === 'admin' &&
+        !location.pathname.startsWith('/basic-settings/doctor-list')
+      ) {
+        history.replace(homePath);
+        return;
+      }
+
+      // Doctor 不能访问医师列表
+      if (
+        role === 'doctor' &&
+        location.pathname.startsWith('/basic-settings/doctor-list')
+      ) {
+        history.replace(homePath);
       }
     },
     bgLayoutImgList: [],

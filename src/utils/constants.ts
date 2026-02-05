@@ -73,3 +73,22 @@ export const getFeatureColor = (feature: string): string => {
   };
   return colorMap[feature] || 'default';
 };
+
+/**
+ * 康复训练关卡类型
+ */
+export const REHAB_LEVEL_TYPES = [
+  { label: '复合注意', value: '复合注意' },
+  { label: '学习记忆', value: '学习记忆' },
+  { label: '执行抑制', value: '执行抑制' },
+  { label: '语言言语', value: '语言言语' },
+  { label: '知觉运动', value: '知觉运动' },
+  { label: '社会认知', value: '社会认知' },
+] as const;
+
+/**
+ * 康复训练关卡类型 - ProTable valueEnum 格式
+ */
+export const REHAB_LEVEL_TYPE_ENUM = Object.fromEntries(
+  REHAB_LEVEL_TYPES.map(({ value }) => [value, { text: value }]),
+);

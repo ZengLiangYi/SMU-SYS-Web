@@ -108,9 +108,13 @@ const Login: React.FC = () => {
       message.success('登录成功！');
       await fetchUserInfo();
 
-      // 获取重定向地址
+      // 获取重定向地址，根据角色设置默认首页
       const urlParams = new URL(window.location.href).searchParams;
-      window.location.href = urlParams.get('redirect') || '/';
+      const redirect = urlParams.get('redirect');
+      const defaultPath = isAdmin
+        ? '/basic-settings/doctor-list'
+        : '/patient-user';
+      window.location.href = redirect || defaultPath;
     } catch (error) {
       // 错误提示由统一错误处理显示
       console.error(error);
