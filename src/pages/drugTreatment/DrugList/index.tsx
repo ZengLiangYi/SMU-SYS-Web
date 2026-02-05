@@ -1,69 +1,64 @@
-import {
-  EditOutlined,
-  EyeOutlined,
-  PlusCircleOutlined,
-} from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { Button, Image, Space } from 'antd';
+import { useRequest } from '@umijs/max';
+import { App, Button, Image, Popconfirm, Space } from 'antd';
 import React, { useRef, useState } from 'react';
-import { AddDrugModal, DetailModal, EditDrugModal } from './components';
-
-interface DrugItem {
-  id: string;
-  diseaseType: string;
-  drugName: string;
-  drugImage: string;
-  drugEffect: string;
-  drugContraindication: string;
-  registrationDoctor: string;
-  registrationTime: string;
-}
-
-// 疾病类型 valueEnum
-const diseaseTypeValueEnum = {
-  认知障碍: { text: '认知障碍' },
-  情绪障碍: { text: '情绪障碍' },
-  精神障碍: { text: '精神障碍' },
-  运动障碍: { text: '运动障碍' },
-};
+import { deleteMedicine, getMedicines } from '@/services/medicine';
+import type { Medicine } from '@/services/medicine/typings.d';
+import { getStaticUrl } from '@/services/static';
+import { formatDateTime } from '@/utils/date';
+import CreateMedicineForm from './components/CreateMedicineForm';
+import DetailModal from './components/DetailModal';
+import EditMedicineForm from './components/EditMedicineForm';
 
 const DrugList: React.FC = () => {
+  const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
 
-  // 弹窗状态
-  const [addModalVisible, setAddModalVisible] = useState(false);
+  // 详情弹窗状态
   const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<DrugItem | null>(null);
-  const [editingRecord, setEditingRecord] = useState<DrugItem | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<Medicine | null>(null);
+
+  // 删除请求
+  const { run: runDelete } = useRequest(deleteMedicine, {
+    manual: true,
+    onSuccess: () => {
+      message.success('删除成功');
+      actionRef.current?.reload();
+    },
+    onError: () => {
+      message.error('删除失败，请重试');
+    },
+  });
 
   // 表格列定义
-  const columns: ProColumns<DrugItem>[] = [
+  const columns: ProColumns<Medicine>[] = [
     {
-      title: '治疗疾病类型',
-      dataIndex: 'diseaseType',
-      width: 140,
-      valueType: 'select',
-      valueEnum: diseaseTypeValueEnum,
+      title: '药物类型',
+      dataIndex: 'treatment_type',
+      width: 120,
+      fieldProps: {
+        placeholder: '请输入药物类型…',
+      },
     },
     {
       title: '药物名称',
-      dataIndex: 'drugName',
+      dataIndex: 'name',
       width: 150,
       fieldProps: {
-        placeholder: '请输入药物名称',
+        placeholder: '请输入药物名称…',
       },
     },
     {
       title: '药物图片',
-      dataIndex: 'drugImage',
+      dataIndex: 'image_url',
       width: 100,
       search: false,
       render: (_, record) => (
         <Image
-          src={record.drugImage}
-          alt={record.drugName}
+          src={getStaticUrl(record.image_url)}
+          alt={record.name}
           width={60}
           height={60}
           style={{ objectFit: 'cover', borderRadius: 4 }}
@@ -72,34 +67,36 @@ const DrugList: React.FC = () => {
     },
     {
       title: '药物功效',
-      dataIndex: 'drugEffect',
-      width: 250,
+      dataIndex: 'efficacy',
+      width: 200,
       ellipsis: true,
       search: false,
     },
     {
-      title: '药物禁忌',
-      dataIndex: 'drugContraindication',
-      width: 250,
+      title: '用药禁忌',
+      dataIndex: 'contraindications',
+      width: 200,
       ellipsis: true,
       search: false,
     },
     {
       title: '登记医师',
-      dataIndex: 'registrationDoctor',
+      dataIndex: 'creator_name',
       width: 100,
       search: false,
+      render: (_, record) => record.creator_name ?? '-',
     },
     {
-      title: '登记时间',
-      dataIndex: 'registrationTime',
-      width: 120,
+      title: '创建时间',
+      dataIndex: 'created_at',
+      width: 160,
       search: false,
+      render: (_, record) => formatDateTime(record.created_at),
     },
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 200,
       fixed: 'right',
       search: false,
       render: (_, record) => (
@@ -112,151 +109,87 @@ const DrugList: React.FC = () => {
           >
             详情
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+          <EditMedicineForm
+            trigger={
+              <Button type="link" size="small" icon={<EditOutlined />}>
+                编辑
+              </Button>
+            }
+            record={record}
+            onOk={() => actionRef.current?.reload()}
+          />
+          <Popconfirm
+            title="确认删除"
+            description={`确定要删除药物「${record.name}」吗？`}
+            onConfirm={() => runDelete(record.id)}
+            okText="确定"
+            cancelText="取消"
           >
-            修改
-          </Button>
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              aria-label="删除"
+            >
+              删除
+            </Button>
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
-  // 操作处理函数
-  const handleAdd = () => {
-    setAddModalVisible(true);
-  };
-
-  const handleAddSuccess = () => {
-    setAddModalVisible(false);
-    actionRef.current?.reload();
-  };
-
-  const handleViewDetail = (record: DrugItem) => {
+  // 查看详情
+  const handleViewDetail = (record: Medicine) => {
     setViewingRecord(record);
     setDetailModalVisible(true);
   };
 
-  const handleEdit = (record: DrugItem) => {
-    setEditingRecord(record);
-    setEditModalVisible(true);
-  };
-
-  const handleEditSuccess = () => {
-    setEditModalVisible(false);
-    actionRef.current?.reload();
-  };
-
-  // 获取模拟数据
-  const getMockData = (): DrugItem[] => {
-    return [
-      {
-        id: '1',
-        diseaseType: '认知障碍',
-        drugName: '盐酸多奈哌齐片',
-        drugImage: '/images/pill.png',
-        drugEffect: '用于轻度或中度阿尔茨海默型痴呆症状的治疗...',
-        drugContraindication: '对本品过敏者禁用，孕妇及哺乳期妇女慎用...',
-        registrationDoctor: '孙英',
-        registrationTime: '1971/07/14',
-      },
-      {
-        id: '2',
-        diseaseType: '认知障碍',
-        drugName: '甲钴胺片',
-        drugImage: '/images/pill.png',
-        drugEffect: '用于周围神经病变的治疗，改善神经传导速度...',
-        drugContraindication: '对本品过敏者禁用，严重肾功能不全者慎用...',
-        registrationDoctor: '何之',
-        registrationTime: '1987/02/13',
-      },
-      {
-        id: '3',
-        diseaseType: '情绪障碍',
-        drugName: '舍曲林片',
-        drugImage: '/images/pill.png',
-        drugEffect: '用于治疗抑郁症的相关症状，包括伴随焦虑...',
-        drugContraindication: '对本品过敏者禁用，不可与单胺氧化酶抑制剂合用...',
-        registrationDoctor: '段宁',
-        registrationTime: '1978/04/04',
-      },
-    ];
-  };
-
-  // 请求数据 - 使用 ProTable 传入的 params
-  const fetchDrugList = async (params: Record<string, any>) => {
-    const mockData = getMockData();
-    let filteredData = mockData;
-
-    if (params.diseaseType) {
-      filteredData = filteredData.filter(
-        (item) => item.diseaseType === params.diseaseType,
-      );
-    }
-
-    if (params.drugName) {
-      filteredData = filteredData.filter((item) =>
-        item.drugName.includes(params.drugName),
-      );
-    }
-
-    return {
-      data: filteredData,
-      success: true,
-      total: filteredData.length,
-    };
-  };
-
   return (
     <PageContainer>
-      <ProTable<DrugItem>
+      <ProTable<Medicine>
         headerTitle="药物列表"
         actionRef={actionRef}
         rowKey="id"
-        search={{
-          labelWidth: 120,
-        }}
+        search={{ labelWidth: 'auto' }}
         toolBarRender={() => [
-          <Button
-            key="add"
-            type="primary"
-            icon={<PlusCircleOutlined />}
-            onClick={handleAdd}
-          >
-            添加
-          </Button>,
+          <CreateMedicineForm
+            key="create"
+            onOk={() => actionRef.current?.reload()}
+          />,
         ]}
-        request={fetchDrugList}
+        request={async (params) => {
+          const { current = 1, pageSize = 10, treatment_type, name } = params;
+          try {
+            const { data } = await getMedicines({
+              offset: (current - 1) * pageSize,
+              limit: pageSize,
+              treatment_type: treatment_type || undefined,
+              name: name || undefined,
+            });
+            return {
+              data: data.items,
+              total: data.total,
+              success: true,
+            };
+          } catch {
+            return { data: [], total: 0, success: false };
+          }
+        }}
         columns={columns}
         scroll={{ x: 1300 }}
         pagination={{
-          pageSize: 10,
+          defaultPageSize: 10,
+          showSizeChanger: true,
         }}
-      />
-
-      {/* 添加药物弹窗 */}
-      <AddDrugModal
-        visible={addModalVisible}
-        onCancel={() => setAddModalVisible(false)}
-        onSuccess={handleAddSuccess}
       />
 
       {/* 详情弹窗 */}
       <DetailModal
-        visible={detailModalVisible}
+        open={detailModalVisible}
         record={viewingRecord}
         onCancel={() => setDetailModalVisible(false)}
-      />
-
-      {/* 修改弹窗 */}
-      <EditDrugModal
-        visible={editModalVisible}
-        record={editingRecord}
-        onCancel={() => setEditModalVisible(false)}
-        onSuccess={handleEditSuccess}
       />
     </PageContainer>
   );
