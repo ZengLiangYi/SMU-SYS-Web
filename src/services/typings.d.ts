@@ -1,6 +1,6 @@
 /**
  * 全局 API 类型定义
- * 包含认证相关的通用类型
+ * 仅包含跨模块复用的通用类型
  */
 declare namespace API {
   // 统一响应结构
@@ -10,26 +10,14 @@ declare namespace API {
     data: T;
   };
 
-  // 医生用户
+  // 医生用户（被 auth、doctor-admin 等多模块复用）
   type DoctorUser = {
     id: string;
     code: string;
     name: string;
   };
 
-  // 医生登录响应
-  type DoctorLoginResult = {
-    access_token: string;
-    user: DoctorUser;
-  };
-
-  // 管理端登录响应
-  type AdminLoginResult = {
-    access_token: string;
-    expires_in: number;
-  };
-
-  // 当前用户
+  // 当前用户（全局用户状态）
   type CurrentUser = {
     id?: string;
     name?: string;

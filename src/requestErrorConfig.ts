@@ -1,5 +1,6 @@
 import type { RequestOptions } from '@@/plugin-request/request';
 import type { RequestConfig } from '@umijs/max';
+import { request as umiRequest } from '@umijs/max';
 import { message, notification } from 'antd';
 
 // 错误处理方案： 错误类型
@@ -10,6 +11,7 @@ enum ErrorShowType {
   NOTIFICATION = 3,
   REDIRECT = 9,
 }
+
 // 与后端约定的响应数据格式
 interface ResponseStructure {
   // Legacy format
@@ -22,6 +24,101 @@ interface ResponseStructure {
   msg?: string;
   // Shared
   data: any;
+}
+
+// ============ Token 刷新机制 ============
+
+// 刷新状态管理
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+// 订阅刷新完成
+function subscribeTokenRefresh(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+// 通知所有订阅者
+function onTokenRefreshed(newToken: string) {
+  refreshSubscribers.forEach((callback) => {
+    callback(newToken);
+  });
+  refreshSubscribers = [];
+}
+
+// 清除认证存储
+function clearAuthStorage() {
+  try {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_role');
+    localStorage.removeItem('currentUser');
+  } catch {
+    // localStorage 可能在某些环境下不可用
+  }
+}
+
+// 执行 token 刷新
+async function refreshToken(): Promise<string | null> {
+  try {
+    const refreshTokenValue = localStorage.getItem('refresh_token');
+    const role = localStorage.getItem('user_role');
+
+    // 早返回：无 refresh_token
+    if (!refreshTokenValue) return null;
+
+    // 根据角色选择刷新接口
+    const endpoint =
+      role === 'admin'
+        ? '/api/doctor-admin/auth/refresh'
+        : '/api/doctor/auth/refresh';
+
+    // 直接使用 fetch 避免循环依赖
+    const baseURL =
+      process.env.NODE_ENV === 'development'
+        ? ''
+        : 'https://alzheimer.dianchuang.club';
+
+    const response = await fetch(`${baseURL}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshTokenValue }),
+    });
+
+    // 早返回：刷新请求失败
+    if (!response.ok) return null;
+
+    const res = await response.json();
+
+    // 早返回：业务状态非 OK
+    if (res.status !== 'OK') return null;
+
+    // 更新存储
+    localStorage.setItem('access_token', res.data.access_token);
+    localStorage.setItem('refresh_token', res.data.refresh_token);
+
+    return res.data.access_token;
+  } catch {
+    return null;
+  }
+}
+
+// 重试请求
+async function retryRequest(
+  config: RequestOptions,
+  newToken: string,
+): Promise<any> {
+  const url = config.url;
+  if (!url) {
+    throw new Error('Request URL is required');
+  }
+  const newConfig = {
+    ...config,
+    headers: {
+      ...config.headers,
+      Authorization: `Bearer ${newToken}`,
+    },
+  };
+  return umiRequest(url, newConfig);
 }
 
 /**
@@ -56,6 +153,12 @@ export const errorConfig: RequestConfig = {
     // 错误接收及处理
     errorHandler: (error: any, opts: any) => {
       if (opts?.skipErrorHandler) throw error;
+
+      // 跳过 401/403 错误的默认处理（由响应拦截器处理刷新逻辑）
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        return;
+      }
+
       // 我们的 errorThrower 抛出的错误。
       if (error.name === 'BizError') {
         const errorInfo: ResponseStructure | undefined = error.info;
@@ -90,8 +193,6 @@ export const errorConfig: RequestConfig = {
         message.error(`Response status:${error.response.status}`);
       } else if (error.request) {
         // 请求已经成功发起，但没有收到响应
-        // \`error.request\` 在浏览器中是 XMLHttpRequest 的实例，
-        // 而在node.js中是 http.ClientRequest 的实例
         message.error('None response! Please retry.');
       } else {
         // 发送请求时出了点问题
@@ -118,33 +219,73 @@ export const errorConfig: RequestConfig = {
     },
   ],
 
-  // 响应拦截器 - 处理 401 和业务错误
+  // 响应拦截器 - 处理 401/403 并自动刷新 token
   responseInterceptors: [
-    (response) => {
-      // 401 处理：清除 token 并跳转登录
-      if (response.status === 401) {
-        try {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('user_role');
-          localStorage.removeItem('currentUser');
-        } catch {
-          // localStorage 可能在某些环境下不可用
+    [
+      (response) => {
+        // 拦截响应数据，进行个性化处理
+        const { data } = response as unknown as ResponseStructure;
+        const isError =
+          data?.success === false ||
+          (data?.status !== undefined && data?.status !== 'OK');
+
+        if (isError) {
+          message.error(data?.msg || data?.errorMessage || '请求失败！');
         }
-        window.location.href = '/user/login';
         return response;
-      }
+      },
+      async (error: any) => {
+        const { response, config } = error;
 
-      // 拦截响应数据，进行个性化处理
-      // Check both legacy and new API response formats
-      const { data } = response as unknown as ResponseStructure;
-      const isError =
-        data?.success === false ||
-        (data?.status !== undefined && data?.status !== 'OK');
+        // 早返回：非 401/403 错误
+        if (response?.status !== 401 && response?.status !== 403) {
+          throw error;
+        }
 
-      if (isError) {
-        message.error(data?.msg || data?.errorMessage || '请求失败！');
-      }
-      return response;
-    },
+        // 跳过登录接口的 401 错误，显示提示后让页面处理
+        if (config?.url?.includes('/auth/login')) {
+          const errorMsg = response?.data?.msg || '登录失败，请检查账号或密码';
+          message.error(errorMsg);
+          throw error;
+        }
+
+        // 跳过刷新接口本身的错误，避免无限循环
+        if (config?.url?.includes('/auth/refresh')) {
+          clearAuthStorage();
+          window.location.href = '/user/login';
+          throw error;
+        }
+
+        // 如果已经在刷新，等待刷新完成后重试
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            subscribeTokenRefresh((newToken: string) => {
+              retryRequest(config, newToken).then(resolve).catch(reject);
+            });
+          });
+        }
+
+        // 开始刷新 token
+        isRefreshing = true;
+
+        const newToken = await refreshToken();
+
+        if (newToken) {
+          // 刷新成功，通知所有等待的请求
+          onTokenRefreshed(newToken);
+          isRefreshing = false;
+
+          // 重试当前请求
+          return retryRequest(config, newToken);
+        }
+
+        // 刷新失败，清除存储并跳转登录
+        isRefreshing = false;
+        refreshSubscribers = [];
+        clearAuthStorage();
+        window.location.href = '/user/login';
+        throw error;
+      },
+    ],
   ],
 };

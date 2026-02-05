@@ -1,7 +1,7 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText } from '@ant-design/pro-components';
 import { Helmet, useModel } from '@umijs/max';
-import { Alert, App, Typography } from 'antd';
+import { App, Typography } from 'antd';
 import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
@@ -23,21 +23,7 @@ const useStyles = createStyles(() => {
   };
 });
 
-const LoginMessage: React.FC<{
-  content: string;
-}> = ({ content }) => {
-  return (
-    <Alert
-      style={{ marginBottom: 24 }}
-      message={content}
-      type="error"
-      showIcon
-    />
-  );
-};
-
 const Login: React.FC = () => {
-  const [userLoginState, setUserLoginState] = useState<{ status?: string }>({});
   const [loading, setLoading] = useState(false);
   const { initialState, setInitialState } = useModel('@@initialState');
   const { styles } = useStyles();
@@ -71,21 +57,20 @@ const Login: React.FC = () => {
         // 管理端登录 - 只需要密码
         const res = await adminLogin({ password });
 
-        // 早返回：登录失败
+        // 早返回：登录失败（错误提示由统一错误处理显示）
         if (res.status !== 'OK') {
-          setUserLoginState({ status: 'error' });
-          message.error(res.msg || '登录失败');
           return;
         }
 
         // 存储管理员信息（遵循 client-localstorage-schema）
         try {
           localStorage.setItem('access_token', res.data.access_token);
+          localStorage.setItem('refresh_token', res.data.refresh_token);
           localStorage.setItem('user_role', 'admin');
           localStorage.setItem(
             'currentUser',
             JSON.stringify({
-              name: '管理员',
+              name: '超级管理员',
               avatar: '/images/avatar.png',
               role: 'admin',
             }),
@@ -97,16 +82,15 @@ const Login: React.FC = () => {
         // 医生登录 - 工号 + 密码
         const res = await doctorLogin({ code: username, password });
 
-        // 早返回：登录失败
+        // 早返回：登录失败（错误提示由统一错误处理显示）
         if (res.status !== 'OK') {
-          setUserLoginState({ status: 'error' });
-          message.error(res.msg || '登录失败');
           return;
         }
 
         // 存储医生信息
         try {
           localStorage.setItem('access_token', res.data.access_token);
+          localStorage.setItem('refresh_token', res.data.refresh_token);
           localStorage.setItem('user_role', 'doctor');
           localStorage.setItem(
             'currentUser',
@@ -128,15 +112,12 @@ const Login: React.FC = () => {
       const urlParams = new URL(window.location.href).searchParams;
       window.location.href = urlParams.get('redirect') || '/';
     } catch (error) {
+      // 错误提示由统一错误处理显示
       console.error(error);
-      setUserLoginState({ status: 'error' });
-      message.error('登录失败，请重试！');
     } finally {
       setLoading(false);
     }
   };
-
-  const { status } = userLoginState;
 
   return (
     <div className={styles.container}>
@@ -154,12 +135,10 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
-          logo={<img alt="logo" src="/logo.svg" />}
+          logo={<img alt="logo" src="/logo.svg" width={44} height={44} />}
           title="医院管理系统"
           subTitle={
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              管理员请输入 admin，医生请输入工号
-            </Text>
+            <Text type="secondary">管理员请输入 admin，医生请输入工号</Text>
           }
           submitter={{
             searchConfig: {
@@ -179,19 +158,19 @@ const Login: React.FC = () => {
             );
           }}
         >
-          {status === 'error' && <LoginMessage content="账户或密码错误" />}
-
           <ProFormText
             name="username"
             fieldProps={{
               size: 'large',
-              prefix: <UserOutlined />,
+              prefix: <UserOutlined aria-hidden="true" />,
+              autoComplete: 'username',
+              spellCheck: false,
             }}
-            placeholder="请输入用户名（admin 或医生工号）"
+            placeholder="请输入账号…"
             rules={[
               {
                 required: true,
-                message: '请输入用户名!',
+                message: '请输入账号!',
               },
             ]}
           />
@@ -199,9 +178,10 @@ const Login: React.FC = () => {
             name="password"
             fieldProps={{
               size: 'large',
-              prefix: <LockOutlined />,
+              prefix: <LockOutlined aria-hidden="true" />,
+              autoComplete: 'current-password',
             }}
-            placeholder="请输入密码"
+            placeholder="请输入密码…"
             rules={[
               {
                 required: true,

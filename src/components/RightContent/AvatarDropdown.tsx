@@ -7,8 +7,9 @@ import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
 import { createStyles } from 'antd-style';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { flushSync } from 'react-dom';
+import { logout } from '@/services/auth';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -44,32 +45,39 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
   menu,
   children,
 }) => {
-  /**
-   * 退出登录，并且将当前的 url 保存
-   */
-  const loginOut = async () => {
-    // 清除 localStorage 中的用户信息
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
+  const { styles } = useStyles();
+  const { initialState, setInitialState } = useModel('@@initialState');
 
+  /**
+   * 退出登录
+   */
+  const loginOut = useCallback(async () => {
+    // 调用登出 API（吊销 refresh_token）
+    try {
+      await logout();
+    } catch {
+      // 即使 API 失败也继续清理本地状态
+    }
+
+    // 清除所有认证相关的 localStorage
+    try {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('currentUser');
+    } catch {
+      // localStorage 可能不可用
+    }
+
+    // 跳转到登录页
     const { search, pathname } = window.location;
-    const urlParams = new URL(window.location.href).searchParams;
-    const searchParams = new URLSearchParams({
-      redirect: pathname + search,
-    });
-    /** 此方法会跳转到 redirect 参数所在的位置 */
-    const redirect = urlParams.get('redirect');
-    // Note: There may be security issues, please note
-    if (window.location.pathname !== '/user/login' && !redirect) {
+    if (pathname !== '/user/login') {
       history.replace({
         pathname: '/user/login',
-        search: searchParams.toString(),
+        search: new URLSearchParams({ redirect: pathname + search }).toString(),
       });
     }
-  };
-  const { styles } = useStyles();
-
-  const { initialState, setInitialState } = useModel('@@initialState');
+  }, []);
 
   const onMenuClick: MenuProps['onClick'] = (event) => {
     const { key } = event;
