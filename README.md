@@ -46,9 +46,12 @@ src/
 │   ├── drugTreatment/        # 药物治疗模块
 │   ├── rehabilitationTraining/   # 康复训练模块
 │   └── basicSettings/        # 基础设置模块
+├── utils/                    # 工具函数
+│   └── upload.ts             # 文件上传工具
 └── services/                 # 服务层
     ├── typings.d.ts          # 全局 API 类型（API 命名空间）
     ├── auth/                 # 认证服务
+    ├── static/               # 静态资源服务
     └── patient-user/         # 患者用户类型定义
 ```
 
@@ -144,6 +147,41 @@ export default function access(initialState) {
     isLoggedIn: !!currentUser,
   };
 }
+```
+
+### 静态资源上传
+
+系统提供统一的静态资源上传能力，支持图片等文件上传到服务器。
+
+| 接口 | 方法 | URL | 认证 |
+|-----|-----|-----|-----|
+| 获取静态资源 | GET | `/api/system/static/{path}` | 公开 |
+| 上传静态资源 | POST | `/api/system/static/upload` | JWT |
+
+**服务层调用：**
+
+```typescript
+import { uploadStatic, getStaticUrl } from '@/services/static';
+
+// 上传文件
+const res = await uploadStatic({ file, dir: 'avatars' });
+console.log(res.data.url); // /api/system/static/uploads/xxx.png
+
+// 获取完整 URL
+const url = getStaticUrl('uploads/xxx.png');
+```
+
+**Ant Design Upload 组件集成：**
+
+```tsx
+import { getUploadProps, getFileUrl } from '@/utils/upload';
+
+<Upload
+  {...getUploadProps({ dir: 'drugs', accept: 'image/*' })}
+  listType="picture-card"
+  fileList={fileList}
+  onChange={({ fileList }) => setFileList(fileList)}
+/>
 ```
 
 ## 常用命令
