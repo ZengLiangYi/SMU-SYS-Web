@@ -4,7 +4,9 @@ export interface Medicine {
   treatment_type: string;
   name: string;
   image_url: string;
+  indications: string;
   efficacy: string;
+  usage: string;
   contraindications: string;
   creator_name: string | null;
   created_at: string;
@@ -31,7 +33,9 @@ export interface MedicineCreateRequest {
   treatment_type: string;
   name: string;
   image_url: string;
+  indications: string;
   efficacy: string;
+  usage: string;
   contraindications: string;
 }
 
@@ -40,6 +44,8 @@ export interface MedicineUpdateRequest {
   treatment_type?: string;
   name?: string;
   image_url?: string;
+  indications?: string;
   efficacy?: string;
+  usage?: string;
   contraindications?: string;
 }

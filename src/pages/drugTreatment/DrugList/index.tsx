@@ -66,16 +66,30 @@ const DrugList: React.FC = () => {
       ),
     },
     {
+      title: '适应症',
+      dataIndex: 'indications',
+      width: 150,
+      ellipsis: true,
+      search: false,
+    },
+    {
       title: '药物功效',
       dataIndex: 'efficacy',
-      width: 200,
+      width: 150,
+      ellipsis: true,
+      search: false,
+    },
+    {
+      title: '药物用法',
+      dataIndex: 'usage',
+      width: 150,
       ellipsis: true,
       search: false,
     },
     {
       title: '用药禁忌',
       dataIndex: 'contraindications',
-      width: 200,
+      width: 150,
       ellipsis: true,
       search: false,
     },
@@ -178,7 +192,7 @@ const DrugList: React.FC = () => {
           }
         }}
         columns={columns}
-        scroll={{ x: 1300 }}
+        scroll={{ x: 1500 }}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

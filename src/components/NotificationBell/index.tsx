@@ -1,0 +1,290 @@
+import { BellOutlined } from '@ant-design/icons';
+import { useModel, useRequest } from '@umijs/max';
+import {
+  App,
+  Badge,
+  Button,
+  Empty,
+  List,
+  Popover,
+  Tabs,
+  Typography,
+} from 'antd';
+import { createStyles } from 'antd-style';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+import { history } from '@umijs/max';
+import React, { useCallback, useState } from 'react';
+import {
+  getNotifications,
+  markNotificationsRead,
+} from '@/services/notification';
+import type { NotificationItem } from '@/services/notification/typings.d';
+import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
+
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
+
+const { Text, Paragraph } = Typography;
+
+const useStyles = createStyles(({ token }) => ({
+  bellWrapper: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    padding: '0 12px',
+    cursor: 'pointer',
+    borderRadius: token.borderRadius,
+    transition: 'background-color 0.2s',
+    border: 'none',
+    background: 'none',
+    color: 'inherit',
+    font: 'inherit',
+    outline: 'inherit',
+    '&:hover': {
+      backgroundColor: token.colorBgTextHover,
+    },
+  },
+  popoverContent: {
+    width: 336,
+  },
+  listItem: {
+    cursor: 'pointer',
+    padding: '12px 0',
+    transition: 'background-color 0.2s',
+    '&:hover': {
+      backgroundColor: token.colorBgTextHover,
+    },
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    backgroundColor: token.colorPrimary,
+    flexShrink: 0,
+    marginTop: 6,
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '8px 0 4px',
+    borderTop: `1px solid ${token.colorBorderSecondary}`,
+  },
+  tabContent: {
+    maxHeight: 340,
+    overflowY: 'auto' as const,
+  },
+}));
+
+const POLLING_INTERVAL = 30_000; // 30s
+const LIST_PAGE_SIZE = 20;
+
+const NotificationBell: React.FC = () => {
+  const { styles } = useStyles();
+  const { message } = App.useApp();
+  const { initialState } = useModel('@@initialState');
+  const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'unread' | 'read'>('unread');
+
+  const isDoctor =
+    !!initialState?.currentUser && initialState.currentUser.role === 'doctor';
+
+  // -------- 轮询未读总数（非医生时不启动） --------
+  const { data: unreadData, refresh: refreshUnreadCount } = useRequest(
+    () => getNotifications({ status: 'unread', limit: 1 }),
+    {
+      pollingInterval: POLLING_INTERVAL,
+      pollingWhenHidden: false,
+      ready: isDoctor,
+    },
+  );
+  const unreadCount = unreadData?.total ?? 0;
+
+  // -------- 列表数据 --------
+  const {
+    data: listData,
+    loading: listLoading,
+    run: fetchList,
+  } = useRequest(
+    (status: 'unread' | 'read') =>
+      getNotifications({ status, limit: LIST_PAGE_SIZE }),
+    {
+      manual: true,
+    },
+  );
+  const listItems: NotificationItem[] = listData?.items ?? [];
+
+  // -------- 标记已读 --------
+  const { run: runMarkRead, loading: markReadLoading } = useRequest(
+    markNotificationsRead,
+    {
+      manual: true,
+      onSuccess: () => {
+        refreshUnreadCount();
+        fetchList(activeTab);
+      },
+    },
+  );
+
+  // -------- 打开 / 关闭 Popover --------
+  const handleOpenChange = useCallback(
+    (visible: boolean) => {
+      setOpen(visible);
+      if (visible) {
+        fetchList(activeTab);
+      }
+    },
+    [activeTab, fetchList],
+  );
+
+  // -------- Tab 切换 --------
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const tab = key as 'unread' | 'read';
+      setActiveTab(tab);
+      fetchList(tab);
+    },
+    [fetchList],
+  );
+
+  // -------- 单条点击 --------
+  const handleItemClick = useCallback(
+    (item: NotificationItem) => {
+      // 未读则标记已读
+      if (item.status === 'unread') {
+        runMarkRead({ ids: [item.id] });
+      }
+
+      // 业务跳转
+      if (item.biz_type && item.biz_id) {
+        const routeFn = NOTIFICATION_BIZ_ROUTE_MAP[item.biz_type];
+        if (routeFn) {
+          setOpen(false);
+          history.push(routeFn(item.biz_id));
+        }
+      }
+    },
+    [runMarkRead],
+  );
+
+  // -------- 全部已读 --------
+  const handleReadAll = useCallback(async () => {
+    try {
+      await runMarkRead({ read_all: true });
+      message.success('已全部标记为已读');
+    } catch {
+      // onError 由 useRequest 全局处理，此处仅阻止 success 提示
+    }
+  }, [runMarkRead, message]);
+
+  // 非医生角色不渲染（hooks 已全部在上方调用，符合 Rules of Hooks）
+  if (!isDoctor) {
+    return null;
+  }
+
+  // -------- 列表渲染 --------
+  const renderList = () => (
+    <div className={styles.tabContent}>
+      <List
+        loading={listLoading || markReadLoading}
+        dataSource={listItems}
+        locale={{
+          emptyText: (
+            <Empty
+              description="暂无通知"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ),
+        }}
+        renderItem={(item) => (
+          <List.Item
+            className={styles.listItem}
+            onClick={() => handleItemClick(item)}
+            style={{ padding: '12px 16px' }}
+          >
+            <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+              {item.status === 'unread' && <div className={styles.unreadDot} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                  }}
+                >
+                  <Text strong ellipsis style={{ flex: 1 }}>
+                    {item.title}
+                  </Text>
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 12, flexShrink: 0, marginLeft: 8 }}
+                  >
+                    {dayjs(item.created_at).fromNow()}
+                  </Text>
+                </div>
+                <Paragraph
+                  type="secondary"
+                  ellipsis={{ rows: 2 }}
+                  style={{ marginBottom: 0, fontSize: 13 }}
+                >
+                  {item.content}
+                </Paragraph>
+              </div>
+            </div>
+          </List.Item>
+        )}
+      />
+    </div>
+  );
+
+  // -------- Popover 内容 --------
+  const popoverContent = (
+    <div className={styles.popoverContent}>
+      <Tabs
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        centered
+        items={[
+          {
+            key: 'unread',
+            label: `未读${unreadCount > 0 ? ` (${unreadCount})` : ''}`,
+            children: renderList(),
+          },
+          {
+            key: 'read',
+            label: '已读',
+            children: renderList(),
+          },
+        ]}
+      />
+      {activeTab === 'unread' && unreadCount > 0 && (
+        <div className={styles.footer}>
+          <Button type="link" size="small" onClick={handleReadAll}>
+            全部已读
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <Popover
+      content={popoverContent}
+      trigger="click"
+      open={open}
+      onOpenChange={handleOpenChange}
+      placement="bottomRight"
+      arrow={false}
+    >
+      <button className={styles.bellWrapper} type="button" aria-label="通知">
+        <Badge count={unreadCount} size="small" offset={[2, -2]}>
+          <BellOutlined style={{ fontSize: 18 }} />
+        </Badge>
+      </button>
+    </Popover>
+  );
+};
+
+export default NotificationBell;

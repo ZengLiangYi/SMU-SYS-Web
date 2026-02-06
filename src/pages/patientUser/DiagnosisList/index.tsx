@@ -5,7 +5,6 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
 import { Button, Form, Input, Modal, message, Select, Space, Tag } from 'antd';
 import React, { useRef, useState } from 'react';
 import type { DiagnosisRecord } from '../../../services/patient-user/typings';
@@ -40,7 +39,7 @@ const DiagnosisList: React.FC = () => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [prescriptionModalVisible, setPrescriptionModalVisible] =
     useState(false);
-  const [editingPrescription, setEditingPrescription] = useState<any>(null);
+  const [_editingPrescription, setEditingPrescription] = useState<any>(null);
   const [viewingRecord, setViewingRecord] = useState<DiagnosisListItem | null>(
     null,
   );
@@ -502,7 +501,7 @@ const DiagnosisList: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={{
-          labelWidth: 120,
+          labelWidth: 'auto',
         }}
         request={fetchDiagnosisList}
         columns={columns}

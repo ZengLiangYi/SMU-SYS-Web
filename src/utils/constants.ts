@@ -92,3 +92,15 @@ export const REHAB_LEVEL_TYPES = [
 export const REHAB_LEVEL_TYPE_ENUM = Object.fromEntries(
   REHAB_LEVEL_TYPES.map(({ value }) => [value, { text: value }]),
 );
+
+/**
+ * 通知业务类型 → 跳转路由映射
+ * 按需填充，key 为后端返回的 biz_type，value 为接收 biz_id 并返回路由路径的函数
+ */
+export const NOTIFICATION_BIZ_ROUTE_MAP: Record<
+  string,
+  (bizId: string) => string
+> = {
+  // 患者同意/拒绝绑定 → 跳转到患者详情
+  bind_request_result: (id) => `/patient-user/detail?id=${id}`,
+};

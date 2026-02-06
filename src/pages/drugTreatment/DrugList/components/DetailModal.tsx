@@ -35,14 +35,20 @@ const DetailModal: React.FC<DetailModalProps> = ({
             />
           </div>
           <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="药物类型">
+            <Descriptions.Item label="治疗类型">
               {record.treatment_type}
             </Descriptions.Item>
             <Descriptions.Item label="药物名称">
               {record.name}
             </Descriptions.Item>
+            <Descriptions.Item label="适应症" span={2}>
+              {record.indications}
+            </Descriptions.Item>
             <Descriptions.Item label="药物功效" span={2}>
               {record.efficacy}
+            </Descriptions.Item>
+            <Descriptions.Item label="药物用法" span={2}>
+              {record.usage}
             </Descriptions.Item>
             <Descriptions.Item label="用药禁忌" span={2}>
               {record.contraindications}

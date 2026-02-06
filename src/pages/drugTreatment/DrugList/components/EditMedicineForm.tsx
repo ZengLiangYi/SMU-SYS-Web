@@ -74,7 +74,9 @@ const EditMedicineForm: React.FC<EditMedicineFormProps> = ({
         initialValues={{
           treatment_type: record.treatment_type,
           name: record.name,
+          indications: record.indications,
           efficacy: record.efficacy,
+          usage: record.usage,
           contraindications: record.contraindications,
         }}
         width={600}
@@ -94,7 +96,9 @@ const EditMedicineForm: React.FC<EditMedicineFormProps> = ({
               treatment_type: values.treatment_type,
               name: values.name,
               image_url: imageUrl,
+              indications: values.indications,
               efficacy: values.efficacy,
+              usage: values.usage,
               contraindications: values.contraindications,
             });
             onCancel();
@@ -129,17 +133,31 @@ const EditMedicineForm: React.FC<EditMedicineFormProps> = ({
           </Upload>
         </Form.Item>
         <ProFormTextArea
+          name="indications"
+          label="适应症"
+          placeholder="请输入适应症…"
+          fieldProps={{ rows: 3 }}
+          rules={[{ required: true, message: '请输入适应症' }]}
+        />
+        <ProFormTextArea
           name="efficacy"
           label="药物功效"
           placeholder="请输入药物功效…"
-          fieldProps={{ rows: 4 }}
+          fieldProps={{ rows: 3 }}
           rules={[{ required: true, message: '请输入药物功效' }]}
+        />
+        <ProFormTextArea
+          name="usage"
+          label="药物用法"
+          placeholder="请输入药物用法…"
+          fieldProps={{ rows: 3 }}
+          rules={[{ required: true, message: '请输入药物用法' }]}
         />
         <ProFormTextArea
           name="contraindications"
           label="用药禁忌"
           placeholder="请输入用药禁忌…"
-          fieldProps={{ rows: 4 }}
+          fieldProps={{ rows: 3 }}
           rules={[{ required: true, message: '请输入用药禁忌' }]}
         />
       </ModalForm>

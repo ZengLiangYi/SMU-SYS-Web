@@ -48,8 +48,8 @@ const UserList: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   // 聊天视图的搜索状态（单独保留）
-  const [chatSearchName, setChatSearchName] = useState<string>('');
-  const [chatSearchCategory, setChatSearchCategory] = useState<string>('');
+  const [chatSearchName, _setChatSearchName] = useState<string>('');
+  const [chatSearchCategory, _setChatSearchCategory] = useState<string>('');
 
   // 表格列定义
   const columns: ProColumns<UserListItem>[] = [
@@ -403,7 +403,7 @@ const UserList: React.FC = () => {
                   actionRef={actionRef}
                   rowKey="id"
                   search={{
-                    labelWidth: 120,
+                    labelWidth: 'auto',
                   }}
                   request={fetchUserList}
                   columns={columns}
