@@ -10,6 +10,7 @@ import { createStyles } from 'antd-style';
 import React, { useCallback } from 'react';
 import { flushSync } from 'react-dom';
 import { logout } from '@/services/auth';
+import { disconnectSocket } from '@/services/websocket';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
@@ -52,6 +53,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
    * 退出登录
    */
   const loginOut = useCallback(async () => {
+    // 断开 WebSocket 连接
+    disconnectSocket();
+
     // 调用登出 API（吊销 refresh_token）
     try {
       await logout();

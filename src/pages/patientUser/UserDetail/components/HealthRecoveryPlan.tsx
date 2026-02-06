@@ -1,22 +1,28 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusCircleOutlined,
-} from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { Button, Form, Input, Modal, message, Select, Typography } from 'antd';
 import React, { useState } from 'react';
-import type {
-  CognitiveTrainingCard,
-  DietPrescription,
-  ExercisePrescription,
-  MedicationTreatment,
-} from '@/services/patient-user/typings';
-import {
-  CognitiveTraining as CognitiveTrainingComponent,
-  DietPrescription as DietPrescriptionComponent,
-  ExercisePrescription as ExercisePrescriptionComponent,
-  MedicationTreatment as MedicationTreatmentComponent,
-} from '../../Diagnosis/components';
+
+// 本地类型定义（暂无对应 API，保留 mock 数据）
+interface MedicationTreatment {
+  id: string;
+  medicineName: string;
+  usage: string;
+  dosage: string;
+}
+
+interface CognitiveTrainingCard {
+  id: string;
+  cardName: string;
+  difficulty: string;
+}
+
+interface ExercisePrescription {
+  id: string;
+  exerciseName: string;
+  duration: string;
+}
+
+import { MedicationTreatment as MedicationTreatmentComponent } from '../../Diagnosis/components';
 import useComponentStyles from './components.style';
 
 const { Title } = Typography;

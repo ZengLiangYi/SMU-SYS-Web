@@ -10,9 +10,7 @@ interface PatientAvatarInfoContentProps {
   gender: string;
   age: number;
   phone: string;
-  category: string;
-  showAlert?: boolean;
-  alertText?: string;
+  categories: string[];
 }
 
 const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
@@ -20,7 +18,7 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
   gender,
   age,
   phone,
-  category,
+  categories,
 }) => {
   return (
     <div>
@@ -35,7 +33,7 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
             <Text strong style={{ fontSize: 18 }}>
               {name}
             </Text>
-            {gender === 'male' ? (
+            {gender === '男' ? (
               <ManOutlined style={{ color: '#336fff' }} />
             ) : (
               <WomanOutlined style={{ color: '#ff4d4f' }} />
@@ -45,11 +43,17 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
           <Text type="secondary" style={{ marginBottom: 8 }}>
             联系方式：{phone}
           </Text>
-          <div>
-            <Tag color={getCategoryColor(category)} style={{ borderRadius: 4 }}>
-              {category}
-            </Tag>
-          </div>
+          <Space size={4} wrap>
+            {categories.map((cat) => (
+              <Tag
+                key={cat}
+                color={getCategoryColor(cat)}
+                style={{ borderRadius: 4 }}
+              >
+                {cat}
+              </Tag>
+            ))}
+          </Space>
         </Flex>
       </Flex>
     </div>

@@ -1,174 +1,187 @@
-export interface UserListItem {
+// -------- 患者列表项 --------
+export interface PatientListItem {
   id: string;
   name: string;
-  gender: 'male' | 'female';
+  gender: string;
   age: number;
-  phone: string;
-  emergencyContact: string;
-  diagnosisScore: number;
-  prescriptionScore: number;
-  category: string;
-  status: number;
+  contact_name: string | null;
+  treatment_score: number | null;
+  prescription_daily_score: number | null;
+  categories: string[];
+  diagnosis_status: string | null;
 }
 
-export interface UserListParams {
+// -------- 患者列表查询参数 --------
+export interface PatientListParams {
+  offset?: number;
+  limit?: number;
+}
+
+// -------- 患者列表响应 --------
+export interface PatientListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: PatientListItem[];
+}
+
+// -------- 患者联系人 --------
+export interface PatientContact {
+  name: string;
+  relation: string;
+  phone: string;
+}
+
+// -------- 患者详情 --------
+export interface PatientDetail {
+  id: string;
+  doctor_id: string | null;
+  phone: string;
+  name: string;
+  gender: string;
+  age: number;
+  birth_date: string;
+  categories: string[];
+  diet_habits: string | null;
+  lifestyle_habits: string | null;
+  family_history: string | null;
+  education_level: string | null;
+  medical_history: string | null;
+  medication_history: string | null;
+  occupation: string | null;
+  followup_willing: boolean | null;
+  native_place: string | null;
+  address: string | null;
+  bad_habits: string | null;
+  contacts: PatientContact[];
+}
+
+// -------- 更新患者请求 --------
+export interface PatientUpdateRequest {
   name?: string;
-  category?: string;
-  current?: number;
-  pageSize?: number;
+  gender?: string;
+  phone?: string;
+  birth_date?: string;
+  categories?: string[];
+  diet_habits?: string | null;
+  lifestyle_habits?: string | null;
+  family_history?: string | null;
+  education_level?: string | null;
+  medical_history?: string | null;
+  medication_history?: string | null;
+  occupation?: string | null;
+  followup_willing?: boolean | null;
+  native_place?: string | null;
+  address?: string | null;
+  bad_habits?: string | null;
+  contacts?: PatientContact[] | null;
 }
 
-// 用户详细信息
-export interface UserDetailInfo {
+// -------- 随访记录 --------
+export interface FollowupListItem {
   id: string;
-  name: string;
-  gender: 'male' | 'female';
-  age: number;
-  phone: string;
-  category: string;
-  birthday: string;
-  drinkingHabit: string;
-  familyHistory: string;
-  existingDisease: string;
-  occupation: string;
-  province: string;
-  notDrugAllergy: string;
-  lifeHabit: string;
-  educationLevel: string;
-  existingMedication: string;
-  randomIntention: string;
-  address: string;
-  emergencyContactName: string;
-  emergencyContactRelation: string;
-  emergencyContactPhone: string;
-  AIComprehensiveEfficacyEvaluationSuggestion: string;
-  diagnosisScore: number;
-  diagnosisScoreUpdateTime: string;
+  doctor_name: string | null;
+  subject: string;
+  duration_minutes: number;
+  is_completed: boolean;
+  created_at: string;
 }
 
-// 随访记录
-export interface VisitRecord {
-  id: string;
-  date: string;
-  doctor: string;
-  topic: string;
-  duration: string;
-  status: number;
+export interface FollowupListParams {
+  offset?: number;
+  limit?: number;
 }
 
-// 转诊记录（院内）
-export interface TransferRecord {
-  id: string;
-  transferTime: string;
-  transferOutDoctor: string;
-  referralDoctor: string;
-  note: string;
+export interface FollowupListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: FollowupListItem[];
 }
 
-// 转诊记录（院外）
-export interface OutTransferRecord {
+// -------- 转诊记录 --------
+export interface InternalReferralItem {
   id: string;
-  transferTime: string;
-  transferHospital: string;
-  referralDoctor: string;
-  phone: string;
-  hasReplyTransfer: string;
+  referral_date: string;
+  from_doctor_name: string | null;
+  to_doctor_name: string | null;
+  note: string | null;
 }
 
-// 诊疗记录
-export interface DiagnosisRecord {
+export interface ExternalReferralItem {
   id: string;
-  date: string;
-  referralDoctor: string;
-  diagnosisResult: string;
-  rehabilitationPlan?: string; // 旧版文字处方（兼容）
-  prescription?: {
-    // 新版结构化处方
-    medications: MedicationTreatment[];
-    cognitiveCards: CognitiveTrainingCard[];
-    dietContent: string;
-    exercises: ExercisePrescription[];
-  };
-  status: number;
+  referral_date: string;
+  from_doctor_name: string | null;
+  hospital_name: string | null;
+  to_doctor_name: string | null;
+  to_doctor_phone: string | null;
+  is_accepted: boolean;
 }
 
-// 用药记录
-export interface MedicationRecord {
+export interface ReferralListResult {
+  internal: InternalReferralItem[];
+  external: ExternalReferralItem[];
+}
+
+// -------- 用药记录 --------
+export interface MedicationRecordItem {
   id: string;
-  medicineName: string;
-  medicineImage: string;
-  usageTime: string;
-  dosage: number;
+  medicine_name: string;
+  medicine_image_url: string;
+  taken_at: string;
+  quantity: number;
   unit: string;
-  status: number;
 }
 
-// 行为记录
-export interface BehaviorRecord {
+export interface MedicationRecordListParams {
+  offset?: number;
+  limit?: number;
+}
+
+export interface MedicationRecordListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: MedicationRecordItem[];
+}
+
+// -------- 饮食记录 --------
+export interface DietRecordItem {
   id: string;
-  behaviorDetail: string;
-  status: number;
+  meal_date: string;
+  meal_type: 'breakfast' | 'lunch' | 'dinner';
+  image_url: string;
 }
 
-// 饮食记录
-export interface DietRecord {
+export interface DietRecordListParams {
+  offset?: number;
+  limit?: number;
+}
+
+export interface DietRecordListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: DietRecordItem[];
+}
+
+// -------- 运动记录 --------
+export interface ExerciseRecordItem {
   id: string;
-  time: string;
-  image: string;
-  note: string;
+  activity_name: string;
+  quantity: number;
+  unit: string;
+  exercised_at: string;
 }
 
-// 运动记录
-export interface ExerciseRecord {
-  id: string;
-  behaviorDetail: string;
-  status: number;
+export interface ExerciseRecordListParams {
+  offset?: number;
+  limit?: number;
 }
 
-// 认知训练记录
-export interface CognitiveTrainingRecord {
-  id: string;
-  trainingTime: string;
-  trainingDuration: string;
-  cardName: string;
-  cardImage: string;
-  cardCount: number;
-  times: number;
-  level: number;
-  completionStatus: number;
+export interface ExerciseRecordListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: ExerciseRecordItem[];
 }
-
-// 评分历史记录
-export interface ScoreHistoryRecord {
-  id: string;
-  date: string;
-  comprehensiveScore: number;
-}
-
-// 药物治疗
-export interface MedicationTreatment {
-  id: string;
-  medicineName: string;
-  usage: string;
-  dosage: string;
-}
-
-// 认知训练卡片
-export interface CognitiveTrainingCard {
-  id: string;
-  cardName: string;
-  difficulty: string;
-}
-
-// 饮食处方
-export interface DietPrescription {
-  content: string;
-}
-
-// 运动处方
-export interface ExercisePrescription {
-  id: string;
-  exerciseName: string;
-  duration: string;
-}
-

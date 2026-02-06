@@ -6,12 +6,13 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
+import { useRequest } from '@umijs/max';
 import {
+  App,
   Button,
   DatePicker,
   Input,
   Modal,
-  message,
   Select,
   Space,
   Tag,
@@ -19,152 +20,150 @@ import {
 } from 'antd';
 import dayjs from 'dayjs';
 import React, { useRef, useState } from 'react';
+import { getFollowups, updatePatient } from '@/services/patient-user';
 import type {
-  UserDetailInfo,
-  VisitRecord,
-} from '@/services/patient-user/typings';
-import { getTimeFormat } from '@/utils/constants';
+  FollowupListItem,
+  PatientContact,
+  PatientDetail,
+} from '@/services/patient-user/typings.d';
+import { formatDateTime } from '@/utils/date';
 import useComponentStyles from './components.style';
 
 const { Title, Text } = Typography;
 
 interface PersonalInfoProps {
-  userInfo: UserDetailInfo;
+  patientId: string;
+  patientDetail: PatientDetail;
+  onSaved?: () => void;
 }
 
 const PersonalInfo: React.FC<PersonalInfoProps> = ({
-  userInfo: initialUserInfo,
+  patientId,
+  patientDetail,
+  onSaved,
 }) => {
   const { styles, cx } = useComponentStyles();
+  const { message } = App.useApp();
   const visitTableRef = useRef<ActionType>(null);
-  const [userInfo, setUserInfo] = useState<UserDetailInfo>(initialUserInfo);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<VisitRecord | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<FollowupListItem | null>(
+    null,
+  );
 
-  // 行内编辑状态
+  // -------- 行内编辑状态 --------
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
   const [isEditingContact, setIsEditingContact] = useState(false);
-  const [editingPersonalData, setEditingPersonalData] =
-    useState<UserDetailInfo>(initialUserInfo);
-  const [editingContactData, setEditingContactData] = useState({
-    emergencyContactName: initialUserInfo.emergencyContactName,
-    emergencyContactRelation: initialUserInfo.emergencyContactRelation,
-    emergencyContactPhone: initialUserInfo.emergencyContactPhone,
+  const [editData, setEditData] = useState({
+    name: patientDetail.name,
+    gender: patientDetail.gender,
+    birth_date: patientDetail.birth_date,
+    phone: patientDetail.phone,
+    diet_habits: patientDetail.diet_habits ?? '',
+    lifestyle_habits: patientDetail.lifestyle_habits ?? '',
+    family_history: patientDetail.family_history ?? '',
+    education_level: patientDetail.education_level ?? '',
+    medical_history: patientDetail.medical_history ?? '',
+    medication_history: patientDetail.medication_history ?? '',
+    occupation: patientDetail.occupation ?? '',
+    followup_willing: patientDetail.followup_willing,
+    native_place: patientDetail.native_place ?? '',
+    address: patientDetail.address ?? '',
+    bad_habits: patientDetail.bad_habits ?? '',
+  });
+  const firstContact: PatientContact | undefined = patientDetail.contacts?.[0];
+  const [editContact, setEditContact] = useState<PatientContact>({
+    name: firstContact?.name ?? '',
+    relation: firstContact?.relation ?? '',
+    phone: firstContact?.phone ?? '',
   });
 
-  // 模拟随访记录数据
-  const getVisitRecords = (): VisitRecord[] => {
-    return [
-      {
-        id: '1',
-        date: '2013/12/08',
-        doctor: '康雄',
-        topic: '老年痴呆',
-        duration: '20时12分',
-        status: 1,
+  // -------- 更新 API --------
+  const { run: runUpdate, loading: saving } = useRequest(
+    (data: Record<string, any>) => updatePatient(patientId, data),
+    {
+      manual: true,
+      onSuccess: () => {
+        message.success('保存成功');
+        onSaved?.();
       },
-      {
-        id: '2',
-        date: '2018/04/10',
-        doctor: '刘群',
-        topic: '老年痴呆',
-        duration: '06时56分',
-        status: 1,
-      },
-      {
-        id: '3',
-        date: '1992/05/22',
-        doctor: '江旭',
-        topic: '老年痴呆',
-        duration: '13时29分',
-        status: 1,
-      },
-      {
-        id: '4',
-        date: '1992/05/22',
-        doctor: '江旭',
-        topic: '老年痴呆',
-        duration: '22时57分',
-        status: 1,
-      },
-    ];
-  };
+    },
+  );
 
-  // 个人信息编辑
-  const handleEditPersonalInfo = () => {
-    setEditingPersonalData(userInfo);
-    setIsEditingPersonal(true);
-  };
-
+  // -------- 个人信息编辑 --------
   const handleSavePersonalInfo = () => {
-    setUserInfo(editingPersonalData);
+    runUpdate(editData);
     setIsEditingPersonal(false);
-    message.success('保存成功');
   };
 
   const handleCancelPersonalEdit = () => {
-    setEditingPersonalData(userInfo);
+    setEditData({
+      name: patientDetail.name,
+      gender: patientDetail.gender,
+      birth_date: patientDetail.birth_date,
+      phone: patientDetail.phone,
+      diet_habits: patientDetail.diet_habits ?? '',
+      lifestyle_habits: patientDetail.lifestyle_habits ?? '',
+      family_history: patientDetail.family_history ?? '',
+      education_level: patientDetail.education_level ?? '',
+      medical_history: patientDetail.medical_history ?? '',
+      medication_history: patientDetail.medication_history ?? '',
+      occupation: patientDetail.occupation ?? '',
+      followup_willing: patientDetail.followup_willing,
+      native_place: patientDetail.native_place ?? '',
+      address: patientDetail.address ?? '',
+      bad_habits: patientDetail.bad_habits ?? '',
+    });
     setIsEditingPersonal(false);
   };
 
-  // 联系人编辑
-  const handleEditContact = () => {
-    setEditingContactData({
-      emergencyContactName: userInfo.emergencyContactName,
-      emergencyContactRelation: userInfo.emergencyContactRelation,
-      emergencyContactPhone: userInfo.emergencyContactPhone,
-    });
-    setIsEditingContact(true);
-  };
-
+  // -------- 联系人编辑 --------
   const handleSaveContact = () => {
-    setUserInfo({ ...userInfo, ...editingContactData });
+    runUpdate({ contacts: [editContact] });
     setIsEditingContact(false);
-    message.success('保存成功');
   };
 
   const handleCancelContactEdit = () => {
-    setEditingContactData({
-      emergencyContactName: userInfo.emergencyContactName,
-      emergencyContactRelation: userInfo.emergencyContactRelation,
-      emergencyContactPhone: userInfo.emergencyContactPhone,
+    setEditContact({
+      name: firstContact?.name ?? '',
+      relation: firstContact?.relation ?? '',
+      phone: firstContact?.phone ?? '',
     });
     setIsEditingContact(false);
   };
 
-  // 查看随访记录详情
-  const handleViewDetail = (record: VisitRecord) => {
-    setViewingRecord(record);
-    setDetailModalVisible(true);
-  };
-
-  // 随访记录列定义
-  const visitColumns: ProColumns<VisitRecord>[] = [
+  // -------- 随访记录 --------
+  const visitColumns: ProColumns<FollowupListItem>[] = [
     {
       title: '日期',
-      dataIndex: 'date',
-      width: 120,
+      dataIndex: 'created_at',
+      width: 160,
+      render: (_, record) => formatDateTime(record.created_at),
     },
     {
       title: '随访医生',
-      dataIndex: 'doctor',
+      dataIndex: 'doctor_name',
       width: 100,
+      render: (_, record) => record.doctor_name ?? '--',
     },
     {
       title: '主题',
-      dataIndex: 'topic',
+      dataIndex: 'subject',
       width: 120,
     },
     {
-      title: '时长',
-      dataIndex: 'duration',
-      width: 120,
+      title: '时长(分钟)',
+      dataIndex: 'duration_minutes',
+      width: 100,
     },
     {
       title: '状态',
-      dataIndex: 'status',
+      dataIndex: 'is_completed',
       width: 100,
-      render: () => <Tag color="blue">已完成</Tag>,
+      render: (_, record) => (
+        <Tag color={record.is_completed ? 'blue' : 'red'}>
+          {record.is_completed ? '已完成' : '未完成'}
+        </Tag>
+      ),
     },
     {
       title: '操作',
@@ -175,7 +174,10 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           type="link"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => handleViewDetail(record)}
+          onClick={() => {
+            setViewingRecord(record);
+            setDetailModalVisible(true);
+          }}
         >
           详情
         </Button>
@@ -183,15 +185,48 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
     },
   ];
 
-  // 获取随访记录数据
-  const fetchVisitRecords = async () => {
-    const mockData = getVisitRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
+  const fetchVisitRecords = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 5 } = params;
+    try {
+      const { data } = await getFollowups(patientId, {
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
   };
+
+  // -------- 信息字段渲染辅助 --------
+  const renderField = (
+    label: string,
+    value: string,
+    key: string,
+    fullWidth = false,
+  ) => (
+    <div
+      className={cx(styles.infoItem, fullWidth && styles.infoItemFullWidth)}
+      key={key}
+    >
+      <Text className={styles.infoLabel}>{label}：</Text>
+      <div className={styles.infoValue}>
+        {isEditingPersonal ? (
+          <Input
+            value={(editData as any)[key] ?? ''}
+            onChange={(e) =>
+              setEditData((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+          />
+        ) : (
+          value || '--'
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className={styles.tabContent}>
@@ -205,7 +240,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               type="link"
               className="edit-button"
               icon={<EditOutlined />}
-              onClick={handleEditPersonalInfo}
+              onClick={() => setIsEditingPersonal(true)}
             >
               编辑
             </Button>
@@ -215,6 +250,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
                 type="link"
                 className="edit-button"
                 icon={<SaveOutlined />}
+                loading={saving}
                 onClick={handleSavePersonalInfo}
               >
                 保存
@@ -236,16 +272,13 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Input
-                  value={editingPersonalData.name}
+                  value={editData.name}
                   onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      name: e.target.value,
-                    })
+                    setEditData((prev) => ({ ...prev, name: e.target.value }))
                   }
                 />
               ) : (
-                userInfo.name
+                patientDetail.name
               )}
             </div>
           </div>
@@ -254,22 +287,17 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             <div className={styles.infoValue}>
               {isEditingPersonal ? (
                 <Select
-                  value={editingPersonalData.gender}
+                  value={editData.gender}
                   onChange={(value) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      gender: value,
-                    })
+                    setEditData((prev) => ({ ...prev, gender: value }))
                   }
                   style={{ width: '100%' }}
                 >
-                  <Select.Option value="male">男</Select.Option>
-                  <Select.Option value="female">女</Select.Option>
+                  <Select.Option value="男">男</Select.Option>
+                  <Select.Option value="女">女</Select.Option>
                 </Select>
-              ) : userInfo.gender === 'male' ? (
-                '男'
               ) : (
-                '女'
+                patientDetail.gender
               )}
             </div>
           </div>
@@ -279,243 +307,99 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               {isEditingPersonal ? (
                 <DatePicker
                   value={
-                    editingPersonalData.birthday
-                      ? dayjs(editingPersonalData.birthday, 'YYYY/MM/DD')
-                      : null
+                    editData.birth_date ? dayjs(editData.birth_date) : null
                   }
                   onChange={(date) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      birthday: date ? date.format('YYYY/MM/DD') : '',
-                    })
+                    setEditData((prev) => ({
+                      ...prev,
+                      birth_date: date ? date.format('YYYY-MM-DD') : '',
+                    }))
                   }
-                  format="YYYY/MM/DD"
+                  format="YYYY-MM-DD"
                   style={{ width: '100%' }}
                 />
               ) : (
-                getTimeFormat(userInfo.birthday)
+                patientDetail.birth_date || '--'
               )}
             </div>
           </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>联系方式：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.phone}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      phone: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.phone
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>饮食习惯：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.drinkingHabit}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      drinkingHabit: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.drinkingHabit
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>生活习惯：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.lifeHabit}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      lifeHabit: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.lifeHabit
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>家族史：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.familyHistory}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      familyHistory: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.familyHistory
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>受教育程度：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.educationLevel}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      educationLevel: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.educationLevel
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>既往病史：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.existingDisease}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      existingDisease: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.existingDisease
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>既往用药：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.existingMedication}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      existingMedication: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.existingMedication
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>职业：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.occupation}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      occupation: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.occupation
-              )}
-            </div>
-          </div>
+          {renderField('联系方式', patientDetail.phone, 'phone')}
+          {renderField(
+            '饮食习惯',
+            patientDetail.diet_habits ?? '',
+            'diet_habits',
+          )}
+          {renderField(
+            '生活习惯',
+            patientDetail.lifestyle_habits ?? '',
+            'lifestyle_habits',
+          )}
+          {renderField(
+            '家族史',
+            patientDetail.family_history ?? '',
+            'family_history',
+          )}
+          {renderField(
+            '受教育程度',
+            patientDetail.education_level ?? '',
+            'education_level',
+          )}
+          {renderField(
+            '既往病史',
+            patientDetail.medical_history ?? '',
+            'medical_history',
+          )}
+          {renderField(
+            '既往用药',
+            patientDetail.medication_history ?? '',
+            'medication_history',
+          )}
+          {renderField('职业', patientDetail.occupation ?? '', 'occupation')}
           <div className={styles.infoItem}>
             <Text className={styles.infoLabel}>随访意愿：</Text>
             <div className={styles.infoValue}>
               {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.randomIntention}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      randomIntention: e.target.value,
-                    })
+                <Select
+                  value={editData.followup_willing}
+                  onChange={(value) =>
+                    setEditData((prev) => ({
+                      ...prev,
+                      followup_willing: value,
+                    }))
                   }
-                />
+                  style={{ width: '100%' }}
+                  allowClear
+                >
+                  <Select.Option value={true}>愿意</Select.Option>
+                  <Select.Option value={false}>不愿意</Select.Option>
+                </Select>
+              ) : patientDetail.followup_willing != null ? (
+                patientDetail.followup_willing ? (
+                  '愿意'
+                ) : (
+                  '不愿意'
+                )
               ) : (
-                userInfo.randomIntention
+                '--'
               )}
             </div>
           </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>籍贯：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.province}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      province: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.province
-              )}
-            </div>
-          </div>
-          <div className={styles.infoItem}>
-            <Text className={styles.infoLabel}>地址：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.address}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      address: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.address
-              )}
-            </div>
-          </div>
-          <div className={cx(styles.infoItem, styles.infoItemFullWidth)}>
-            <Text className={styles.infoLabel}>不良嗜好：</Text>
-            <div className={styles.infoValue}>
-              {isEditingPersonal ? (
-                <Input
-                  value={editingPersonalData.notDrugAllergy}
-                  onChange={(e) =>
-                    setEditingPersonalData({
-                      ...editingPersonalData,
-                      notDrugAllergy: e.target.value,
-                    })
-                  }
-                />
-              ) : (
-                userInfo.notDrugAllergy
-              )}
-            </div>
-          </div>
+          {renderField(
+            '籍贯',
+            patientDetail.native_place ?? '',
+            'native_place',
+          )}
+          {renderField('地址', patientDetail.address ?? '', 'address')}
+          {renderField(
+            '不良嗜好',
+            patientDetail.bad_habits ?? '',
+            'bad_habits',
+            true,
+          )}
         </div>
       </div>
 
+      {/* 联系人 */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
@@ -526,7 +410,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
               type="link"
               className="edit-button"
               icon={<EditOutlined />}
-              onClick={handleEditContact}
+              onClick={() => setIsEditingContact(true)}
             >
               编辑
             </Button>
@@ -536,6 +420,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
                 type="link"
                 className="edit-button"
                 icon={<SaveOutlined />}
+                loading={saving}
                 onClick={handleSaveContact}
               >
                 保存
@@ -557,16 +442,16 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
-                  value={editingContactData.emergencyContactName}
+                  value={editContact.name}
                   onChange={(e) =>
-                    setEditingContactData({
-                      ...editingContactData,
-                      emergencyContactName: e.target.value,
-                    })
+                    setEditContact((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
                   }
                 />
               ) : (
-                userInfo.emergencyContactName
+                (firstContact?.name ?? '--')
               )}
             </div>
           </div>
@@ -575,16 +460,16 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
-                  value={editingContactData.emergencyContactRelation}
+                  value={editContact.relation}
                   onChange={(e) =>
-                    setEditingContactData({
-                      ...editingContactData,
-                      emergencyContactRelation: e.target.value,
-                    })
+                    setEditContact((prev) => ({
+                      ...prev,
+                      relation: e.target.value,
+                    }))
                   }
                 />
               ) : (
-                userInfo.emergencyContactRelation
+                (firstContact?.relation ?? '--')
               )}
             </div>
           </div>
@@ -593,43 +478,37 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
             <div className={styles.infoValue}>
               {isEditingContact ? (
                 <Input
-                  value={editingContactData.emergencyContactPhone}
+                  value={editContact.phone}
                   onChange={(e) =>
-                    setEditingContactData({
-                      ...editingContactData,
-                      emergencyContactPhone: e.target.value,
-                    })
+                    setEditContact((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
                   }
                 />
               ) : (
-                userInfo.emergencyContactPhone
+                (firstContact?.phone ?? '--')
               )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* 随访记录 */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
             随访记录
           </Title>
         </div>
-        <ProTable<VisitRecord>
+        <ProTable<FollowupListItem>
           actionRef={visitTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
+          options={false}
           request={fetchVisitRecords}
           columns={visitColumns}
-          pagination={{
-            pageSize: 5,
-          }}
+          pagination={{ defaultPageSize: 5, showSizeChanger: true }}
         />
       </div>
 
@@ -649,23 +528,25 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           <div>
             <p>
               <strong>日期：</strong>
-              {viewingRecord.date}
+              {formatDateTime(viewingRecord.created_at)}
             </p>
             <p>
               <strong>随访医生：</strong>
-              {viewingRecord.doctor}
+              {viewingRecord.doctor_name ?? '--'}
             </p>
             <p>
               <strong>主题：</strong>
-              {viewingRecord.topic}
+              {viewingRecord.subject}
             </p>
             <p>
               <strong>时长：</strong>
-              {viewingRecord.duration}
+              {viewingRecord.duration_minutes}分钟
             </p>
             <p>
               <strong>状态：</strong>
-              <Tag color="blue">已完成</Tag>
+              <Tag color={viewingRecord.is_completed ? 'blue' : 'red'}>
+                {viewingRecord.is_completed ? '已完成' : '未完成'}
+              </Tag>
             </p>
           </div>
         )}

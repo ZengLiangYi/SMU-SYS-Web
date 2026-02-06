@@ -21,6 +21,7 @@ import {
   markNotificationsRead,
 } from '@/services/notification';
 import type { NotificationItem } from '@/services/notification/typings.d';
+import { useSocket } from '@/services/websocket/useSocket';
 import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
 
 dayjs.extend(relativeTime);
@@ -78,7 +79,7 @@ const useStyles = createStyles(({ token }) => ({
   },
 }));
 
-const POLLING_INTERVAL = 30_000; // 30s
+const POLLING_INTERVAL = 60_000; // 60s（WebSocket 作为主推送通道后降低轮询频率）
 const LIST_PAGE_SIZE = 20;
 
 const NotificationBell: React.FC = () => {
@@ -115,6 +116,15 @@ const NotificationBell: React.FC = () => {
     },
   );
   const listItems: NotificationItem[] = listData?.items ?? [];
+
+  // -------- WebSocket 实时推送 --------
+  useSocket('notification:new', (_payload) => {
+    // 收到新通知时：刷新未读计数，如果 Popover 打开则刷新列表
+    refreshUnreadCount();
+    if (open && activeTab === 'unread') {
+      fetchList('unread');
+    }
+  });
 
   // -------- 标记已读 --------
   const { run: runMarkRead, loading: markReadLoading } = useRequest(

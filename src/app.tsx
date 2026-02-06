@@ -4,6 +4,7 @@ import { history } from '@umijs/max';
 import { AvatarDropdown, AvatarName } from '@/components';
 import NotificationBell from '@/components/NotificationBell';
 import { getDoctorMe } from '@/services/auth';
+import { connectSocket } from '@/services/websocket';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 
@@ -39,6 +40,8 @@ export async function getInitialState(): Promise<{
         // 医生：调用 /me 接口获取最新信息
         const res = await getDoctorMe();
         if (res.status === 'OK') {
+          // 建立 WebSocket 连接（医生角色）
+          connectSocket(token);
           return {
             ...res.data,
             avatar: '/images/avatar.png',
@@ -143,7 +146,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 
     menuHeaderRender: undefined,
     childrenRender: (children) => {
-      return <>{children}</>;
+      return children;
     },
     ...initialState?.settings,
   };

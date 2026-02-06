@@ -3,7 +3,14 @@ import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Typography } from 'antd';
 import React from 'react';
-import type { ScoreHistoryRecord } from '@/services/patient-user/typings';
+
+// 本地类型定义（暂无对应 API，保留 mock 数据）
+interface ScoreHistoryRecord {
+  id: string;
+  date: string;
+  comprehensiveScore: number;
+}
+
 import useComponentStyles from './components.style';
 
 const { Title } = Typography;

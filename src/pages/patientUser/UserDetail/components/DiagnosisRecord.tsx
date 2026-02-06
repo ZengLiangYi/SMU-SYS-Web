@@ -12,7 +12,28 @@ import {
   Typography,
 } from 'antd';
 import React, { useRef, useState } from 'react';
-import type { DiagnosisRecord as DiagnosisRecordType } from '@/services/patient-user/typings';
+
+// 本地类型定义（暂无对应 API，保留 mock 数据）
+interface DiagnosisRecordType {
+  id: string;
+  date: string;
+  referralDoctor: string;
+  diagnosisResult: string;
+  rehabilitationPlan?: string;
+  prescription?: {
+    medications: {
+      id: string;
+      medicineName: string;
+      usage: string;
+      dosage: string;
+    }[];
+    cognitiveCards: { id: string; cardName: string; difficulty: string }[];
+    dietContent: string;
+    exercises: { id: string; exerciseName: string; duration: string }[];
+  };
+  status: number;
+}
+
 import {
   CognitiveTraining,
   DietPrescription,
@@ -24,7 +45,7 @@ import useComponentStyles from './components.style';
 const { Title } = Typography;
 
 const DiagnosisRecord: React.FC = () => {
-  const { styles, cx } = useComponentStyles();
+  const { styles } = useComponentStyles();
   const diagnosisTableRef = useRef<ActionType>(null);
   const [form] = Form.useForm();
   const [detailModalVisible, setDetailModalVisible] = useState(false);

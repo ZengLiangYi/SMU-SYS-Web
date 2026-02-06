@@ -1,140 +1,112 @@
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Typography } from 'antd';
+import { Tag, Typography } from 'antd';
 import React, { useRef } from 'react';
+import { getReferrals } from '@/services/patient-user';
 import type {
-  OutTransferRecord,
-  TransferRecord as TransferRecordType,
-} from '@/services/patient-user/typings';
+  ExternalReferralItem,
+  InternalReferralItem,
+} from '@/services/patient-user/typings.d';
 import useComponentStyles from './components.style';
 
 const { Title } = Typography;
 
-const TransferRecord: React.FC = () => {
+interface TransferRecordProps {
+  patientId: string;
+}
+
+const TransferRecord: React.FC<TransferRecordProps> = ({ patientId }) => {
   const { styles } = useComponentStyles();
   const inTransferTableRef = useRef<ActionType>(null);
   const outTransferTableRef = useRef<ActionType>(null);
 
-  // 获取院内转诊记录数据
-  const getInTransferRecords = (): TransferRecordType[] => {
-    return [
-      {
-        id: '1',
-        transferTime: '2013/12/08',
-        transferOutDoctor: '薛贞',
-        referralDoctor: '康雄',
-        note: '转诊了',
-      },
-      {
-        id: '2',
-        transferTime: '2018/04/10',
-        transferOutDoctor: '武泽',
-        referralDoctor: '刘群',
-        note: '转诊了',
-      },
-      {
-        id: '3',
-        transferTime: '1992/05/22',
-        transferOutDoctor: '林梅',
-        referralDoctor: '江旭',
-        note: '转诊了',
-      },
-    ];
-  };
-
-  // 获取院外转诊记录数据
-  const getOutTransferRecords = (): OutTransferRecord[] => {
-    return [
-      {
-        id: '1',
-        transferTime: '2013/12/08',
-        transferHospital: '大医院',
-        referralDoctor: '康雄',
-        phone: '19158064846',
-        hasReplyTransfer: '是',
-      },
-      {
-        id: '2',
-        transferTime: '2018/04/10',
-        transferHospital: '大医院',
-        referralDoctor: '刘群',
-        phone: '16724372692',
-        hasReplyTransfer: '是',
-      },
-    ];
-  };
-
-  // 院内转诊记录列定义
-  const inTransferColumns: ProColumns<TransferRecordType>[] = [
-    {
-      title: '转诊时间',
-      dataIndex: 'transferTime',
-      width: 120,
-    },
+  // -------- 院内转诊列定义 --------
+  const inTransferColumns: ProColumns<InternalReferralItem>[] = [
+    { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
     {
       title: '转出医生',
-      dataIndex: 'transferOutDoctor',
+      dataIndex: 'from_doctor_name',
       width: 100,
+      render: (_, record) => record.from_doctor_name ?? '--',
     },
     {
       title: '接诊医生',
-      dataIndex: 'referralDoctor',
+      dataIndex: 'to_doctor_name',
       width: 100,
+      render: (_, record) => record.to_doctor_name ?? '--',
     },
     {
       title: '备注',
       dataIndex: 'note',
       width: 200,
+      render: (_, record) => record.note ?? '--',
     },
   ];
 
-  // 院外转诊记录列定义
-  const outTransferColumns: ProColumns<OutTransferRecord>[] = [
+  // -------- 院外转诊列定义 --------
+  const outTransferColumns: ProColumns<ExternalReferralItem>[] = [
+    { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
     {
-      title: '转诊时间',
-      dataIndex: 'transferTime',
-      width: 120,
+      title: '转出医生',
+      dataIndex: 'from_doctor_name',
+      width: 100,
+      render: (_, record) => record.from_doctor_name ?? '--',
     },
     {
       title: '转诊医院',
-      dataIndex: 'transferHospital',
+      dataIndex: 'hospital_name',
       width: 120,
+      render: (_, record) => record.hospital_name ?? '--',
     },
     {
-      title: '转诊医生',
-      dataIndex: 'referralDoctor',
+      title: '接诊医生',
+      dataIndex: 'to_doctor_name',
       width: 100,
+      render: (_, record) => record.to_doctor_name ?? '--',
     },
     {
       title: '联系方式',
-      dataIndex: 'phone',
+      dataIndex: 'to_doctor_phone',
       width: 140,
+      render: (_, record) => record.to_doctor_phone ?? '--',
     },
     {
-      title: '是否回复转诊',
-      dataIndex: 'hasReplyTransfer',
+      title: '是否同意',
+      dataIndex: 'is_accepted',
       width: 100,
+      render: (_, record) => (
+        <Tag color={record.is_accepted ? 'blue' : 'red'}>
+          {record.is_accepted ? '已同意' : '未同意'}
+        </Tag>
+      ),
     },
   ];
 
-  // 获取院内转诊记录
-  const fetchInTransferRecords = async () => {
-    const mockData = getInTransferRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
+  // -------- 获取转诊记录（一次请求，分拆两个表） --------
+  const fetchInternalReferrals = async () => {
+    try {
+      const { data } = await getReferrals(patientId);
+      return {
+        data: data.internal,
+        success: true,
+        total: data.internal.length,
+      };
+    } catch {
+      return { data: [], success: false, total: 0 };
+    }
   };
 
-  // 获取院外转诊记录
-  const fetchOutTransferRecords = async () => {
-    const mockData = getOutTransferRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
+  const fetchExternalReferrals = async () => {
+    try {
+      const { data } = await getReferrals(patientId);
+      return {
+        data: data.external,
+        success: true,
+        total: data.external.length,
+      };
+    } catch {
+      return { data: [], success: false, total: 0 };
+    }
   };
 
   return (
@@ -145,22 +117,15 @@ const TransferRecord: React.FC = () => {
             院内转诊
           </Title>
         </div>
-        <ProTable<TransferRecordType>
+        <ProTable<InternalReferralItem>
           actionRef={inTransferTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          scroll={{ x: 1000 }}
-          request={fetchInTransferRecords}
+          options={false}
+          scroll={{ x: 600 }}
+          request={fetchInternalReferrals}
           columns={inTransferColumns}
-          pagination={{
-            pageSize: 5,
-          }}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
 
@@ -170,22 +135,15 @@ const TransferRecord: React.FC = () => {
             院外转诊
           </Title>
         </div>
-        <ProTable<OutTransferRecord>
+        <ProTable<ExternalReferralItem>
           actionRef={outTransferTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          scroll={{ x: 1000 }}
-          request={fetchOutTransferRecords}
+          options={false}
+          scroll={{ x: 800 }}
+          request={fetchExternalReferrals}
           columns={outTransferColumns}
-          pagination={{
-            pageSize: 5,
-          }}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
     </div>

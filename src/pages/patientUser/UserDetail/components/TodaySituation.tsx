@@ -5,20 +5,54 @@ import {
 } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Tag, Typography } from 'antd';
+import { Button, Image, Tag, Typography } from 'antd';
 import React, { useRef } from 'react';
+import {
+  getDietRecords,
+  getExerciseRecords,
+  getMedicationRecords,
+} from '@/services/patient-user';
 import type {
-  BehaviorRecord,
-  CognitiveTrainingRecord,
-  DietRecord,
-  ExerciseRecord,
-  MedicationRecord,
-} from '@/services/patient-user/typings';
+  DietRecordItem,
+  ExerciseRecordItem,
+  MedicationRecordItem,
+} from '@/services/patient-user/typings.d';
+import { getStaticUrl } from '@/services/static';
+import { formatDateTime } from '@/utils/date';
 import useComponentStyles from './components.style';
 
 const { Title, Text } = Typography;
 
-const TodaySituation: React.FC = () => {
+// -------- 暂无 API 的本地类型（保留 mock） --------
+interface BehaviorRecord {
+  id: string;
+  behaviorDetail: string;
+  status: number;
+}
+
+interface CognitiveTrainingRecord {
+  id: string;
+  trainingTime: string;
+  trainingDuration: string;
+  cardName: string;
+  cardImage: string;
+  cardCount: number;
+  times: number;
+  level: number;
+  completionStatus: number;
+}
+
+interface TodaySituationProps {
+  patientId: string;
+}
+
+const MEAL_TYPE_MAP: Record<string, string> = {
+  breakfast: '早餐',
+  lunch: '午餐',
+  dinner: '晚餐',
+};
+
+const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
   const { styles } = useComponentStyles();
   const medicationTableRef = useRef<ActionType>(null);
   const behaviorTableRef = useRef<ActionType>(null);
@@ -26,257 +60,183 @@ const TodaySituation: React.FC = () => {
   const exerciseTableRef = useRef<ActionType>(null);
   const cognitiveTrainingTableRef = useRef<ActionType>(null);
 
-  // Mock data functions
-  const getMedicationRecords = (): MedicationRecord[] => {
-    return [
-      {
-        id: '1',
-        medicineName: '降压药',
-        medicineImage: '',
-        usageTime: '06:44',
-        dosage: 1,
-        unit: '粒',
-        status: 1,
-      },
-      {
-        id: '2',
-        medicineName: '降压药',
-        medicineImage: '',
-        usageTime: '20:34',
-        dosage: 1,
-        unit: '粒',
-        status: 1,
-      },
-      {
-        id: '3',
-        medicineName: '降压药',
-        medicineImage: '',
-        usageTime: '22:30',
-        dosage: 1,
-        unit: '粒',
-        status: 1,
-      },
-      {
-        id: '4',
-        medicineName: '降压药',
-        medicineImage: '',
-        usageTime: '07:48',
-        dosage: 1,
-        unit: '粒',
-        status: 1,
-      },
-      {
-        id: '5',
-        medicineName: '降压药',
-        medicineImage: '',
-        usageTime: '03:57',
-        dosage: 1,
-        unit: '粒',
-        status: 1,
-      },
-    ];
-  };
+  // -------- Mock data（暂无 API）--------
+  const getBehaviorRecords = (): BehaviorRecord[] => [
+    { id: '1', behaviorDetail: '晚上11点前睡觉', status: 1 },
+    { id: '2', behaviorDetail: '不抽烟', status: 1 },
+  ];
 
-  const getBehaviorRecords = (): BehaviorRecord[] => {
-    return [
-      { id: '1', behaviorDetail: '晚上11点前睡觉', status: 1 },
-      { id: '2', behaviorDetail: '不抽烟', status: 1 },
-    ];
-  };
+  const getCognitiveTrainingRecords = (): CognitiveTrainingRecord[] => [
+    {
+      id: '1',
+      trainingTime: '11:57',
+      trainingDuration: '18分钟',
+      cardName: '第一关',
+      cardImage: '',
+      cardCount: 99,
+      times: 5,
+      level: 1,
+      completionStatus: 1,
+    },
+  ];
 
-  const getDietRecords = (): DietRecord[] => {
-    return [
-      { id: '1', time: '18:38', image: '', note: '早餐' },
-      { id: '2', time: '18:03', image: '', note: '中餐' },
-      { id: '3', time: '11:27', image: '', note: '晚餐' },
-    ];
-  };
-
-  const getExerciseRecords = (): ExerciseRecord[] => {
-    return [{ id: '1', behaviorDetail: '跑步15分钟', status: 1 }];
-  };
-
-  const getCognitiveTrainingRecords = (): CognitiveTrainingRecord[] => {
-    return [
-      {
-        id: '1',
-        trainingTime: '11:57',
-        trainingDuration: '18时43分',
-        cardName: '第一关',
-        cardImage: '',
-        cardCount: 99,
-        times: 5,
-        level: 1,
-        completionStatus: 1,
-      },
-      {
-        id: '2',
-        trainingTime: '12:32',
-        trainingDuration: '07时18分',
-        cardName: '第一关',
-        cardImage: '',
-        cardCount: 99,
-        times: 4,
-        level: 1,
-        completionStatus: 1,
-      },
-      {
-        id: '3',
-        trainingTime: '07:04',
-        trainingDuration: '19时59分',
-        cardName: '第一关',
-        cardImage: '',
-        cardCount: 99,
-        times: 3,
-        level: 1,
-        completionStatus: 1,
-      },
-      {
-        id: '4',
-        trainingTime: '22:24',
-        trainingDuration: '21时22分',
-        cardName: '第一关',
-        cardImage: '',
-        cardCount: 99,
-        times: 2,
-        level: 1,
-        completionStatus: 1,
-      },
-      {
-        id: '5',
-        trainingTime: '05:23',
-        trainingDuration: '07时10分',
-        cardName: '第一关',
-        cardImage: '',
-        cardCount: 99,
-        times: 1,
-        level: 1,
-        completionStatus: 1,
-      },
-    ];
-  };
-
-  // Columns definitions
-  const medicationColumns: ProColumns<MedicationRecord>[] = [
-    { title: '药品名称', dataIndex: 'medicineName', width: 120 },
+  // -------- 用药记录（真实 API） --------
+  const medicationColumns: ProColumns<MedicationRecordItem>[] = [
+    { title: '药品名称', dataIndex: 'medicine_name', width: 120 },
     {
       title: '药品图片',
-      dataIndex: 'medicineImage',
-      width: 100,
-      render: () => (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            background: '#f0f0f0',
-            borderRadius: 4,
-          }}
-        />
-      ),
-    },
-    { title: '用药时间', dataIndex: 'usageTime', width: 100 },
-    { title: '药品数量', dataIndex: 'dosage', width: 100 },
-    { title: '药品单位', dataIndex: 'unit', width: 100 },
-    {
-      title: '按钮',
-      key: 'action',
-      width: 100,
+      dataIndex: 'medicine_image_url',
+      width: 80,
       render: (_, record) =>
-        record.status === 1 ? (
-          <Text className={styles.completeStatus}>
-            <CheckCircleOutlined />
-            完成
-          </Text>
+        record.medicine_image_url ? (
+          <Image
+            src={getStaticUrl(record.medicine_image_url)}
+            width={40}
+            height={40}
+            style={{ objectFit: 'cover', borderRadius: 4 }}
+          />
         ) : (
-          <Text className={styles.uncompleteStatus}>
-            <CloseCircleOutlined />
-            未完成
-          </Text>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              background: '#f0f0f0',
+              borderRadius: 4,
+            }}
+          />
+        ),
+    },
+    {
+      title: '服用时间',
+      dataIndex: 'taken_at',
+      width: 160,
+      render: (_, record) => formatDateTime(record.taken_at),
+    },
+    { title: '数量', dataIndex: 'quantity', width: 80 },
+    { title: '单位', dataIndex: 'unit', width: 80 },
+  ];
+
+  const fetchMedicationRecords = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 10 } = params;
+    try {
+      const { data } = await getMedicationRecords(patientId, {
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
+  };
+
+  // -------- 饮食记录（真实 API） --------
+  const dietColumns: ProColumns<DietRecordItem>[] = [
+    { title: '日期', dataIndex: 'meal_date', width: 120 },
+    {
+      title: '餐次',
+      dataIndex: 'meal_type',
+      width: 80,
+      render: (_, record) =>
+        MEAL_TYPE_MAP[record.meal_type] ?? record.meal_type,
+    },
+    {
+      title: '图片',
+      dataIndex: 'image_url',
+      width: 80,
+      render: (_, record) =>
+        record.image_url ? (
+          <Image
+            src={getStaticUrl(record.image_url)}
+            width={40}
+            height={40}
+            style={{ objectFit: 'cover', borderRadius: 4 }}
+          />
+        ) : (
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              background: '#f0f0f0',
+              borderRadius: 4,
+            }}
+          />
         ),
     },
   ];
 
+  const fetchDietRecords = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 10 } = params;
+    try {
+      const { data } = await getDietRecords(patientId, {
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
+  };
+
+  // -------- 运动记录（真实 API） --------
+  const exerciseColumns: ProColumns<ExerciseRecordItem>[] = [
+    { title: '运动项目', dataIndex: 'activity_name', width: 150 },
+    { title: '数量', dataIndex: 'quantity', width: 80 },
+    { title: '单位', dataIndex: 'unit', width: 80 },
+    {
+      title: '运动时间',
+      dataIndex: 'exercised_at',
+      width: 160,
+      render: (_, record) => formatDateTime(record.exercised_at),
+    },
+  ];
+
+  const fetchExerciseRecords = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 10 } = params;
+    try {
+      const { data } = await getExerciseRecords(patientId, {
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
+  };
+
+  // -------- 行为记录（mock）--------
   const behaviorColumns: ProColumns<BehaviorRecord>[] = [
     { title: '行为细则', dataIndex: 'behaviorDetail', width: 300 },
     {
-      title: '按钮',
+      title: '状态',
       key: 'action',
       width: 100,
       render: (_, record) =>
         record.status === 1 ? (
           <Text className={styles.completeStatus}>
-            <CheckCircleOutlined />
-            完成
+            <CheckCircleOutlined /> 完成
           </Text>
         ) : (
           <Text className={styles.uncompleteStatus}>
-            <CloseCircleOutlined />
-            未完成
+            <CloseCircleOutlined /> 未完成
           </Text>
         ),
     },
   ];
 
-  const dietColumns: ProColumns<DietRecord>[] = [
-    { title: '时间', dataIndex: 'time', width: 120 },
-    {
-      title: '图片',
-      dataIndex: 'image',
-      width: 100,
-      render: () => (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            background: '#f0f0f0',
-            borderRadius: 4,
-          }}
-        />
-      ),
-    },
-    { title: '备注', dataIndex: 'note', width: 200 },
-  ];
-
-  const exerciseColumns: ProColumns<ExerciseRecord>[] = [
-    { title: '行为细则', dataIndex: 'behaviorDetail', width: 300 },
-    {
-      title: '按钮',
-      key: 'action',
-      width: 100,
-      render: (_, record) =>
-        record.status === 1 ? (
-          <Text className={styles.completeStatus}>
-            <CheckCircleOutlined />
-            完成
-          </Text>
-        ) : (
-          <Text className={styles.uncompleteStatus}>
-            <CloseCircleOutlined />
-            未完成
-          </Text>
-        ),
-    },
-  ];
-
+  // -------- 认知训练记录（mock）--------
   const cognitiveTrainingColumns: ProColumns<CognitiveTrainingRecord>[] = [
     { title: '训练时间', dataIndex: 'trainingTime', width: 100 },
     { title: '训练时长', dataIndex: 'trainingDuration', width: 120 },
     { title: '关卡名称', dataIndex: 'cardName', width: 100 },
-    {
-      title: '关卡图片',
-      dataIndex: 'cardImage',
-      width: 100,
-      render: () => (
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            background: '#f0f0f0',
-            borderRadius: 4,
-          }}
-        />
-      ),
-    },
     { title: '关卡分数', dataIndex: 'cardCount', width: 100 },
     { title: '次数', dataIndex: 'times', width: 80 },
     { title: '关卡等级', dataIndex: 'level', width: 100 },
@@ -292,7 +252,7 @@ const TodaySituation: React.FC = () => {
         ),
     },
     {
-      title: '按钮',
+      title: '操作',
       key: 'action',
       width: 100,
       render: () => (
@@ -303,34 +263,29 @@ const TodaySituation: React.FC = () => {
     },
   ];
 
+  const proTableOptions = false;
+
   return (
     <div className={styles.tabContent}>
+      {/* 用药记录（真实 API） */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
             用药记录
           </Title>
         </div>
-        <ProTable<MedicationRecord>
+        <ProTable<MedicationRecordItem>
           actionRef={medicationTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          request={async () => ({
-            data: getMedicationRecords(),
-            success: true,
-            total: getMedicationRecords().length,
-          })}
+          options={proTableOptions}
+          request={fetchMedicationRecords}
           columns={medicationColumns}
-          pagination={false}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
 
+      {/* 行为记录（mock） */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
@@ -341,12 +296,7 @@ const TodaySituation: React.FC = () => {
           actionRef={behaviorTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
+          options={proTableOptions}
           request={async () => ({
             data: getBehaviorRecords(),
             success: true,
@@ -357,58 +307,43 @@ const TodaySituation: React.FC = () => {
         />
       </div>
 
+      {/* 饮食记录（真实 API） */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
             饮食记录
           </Title>
         </div>
-        <ProTable<DietRecord>
+        <ProTable<DietRecordItem>
           actionRef={dietTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          request={async () => ({
-            data: getDietRecords(),
-            success: true,
-            total: getDietRecords().length,
-          })}
+          options={proTableOptions}
+          request={fetchDietRecords}
           columns={dietColumns}
-          pagination={false}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
 
+      {/* 运动记录（真实 API） */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
             运动记录
           </Title>
         </div>
-        <ProTable<ExerciseRecord>
+        <ProTable<ExerciseRecordItem>
           actionRef={exerciseTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          request={async () => ({
-            data: getExerciseRecords(),
-            success: true,
-            total: getExerciseRecords().length,
-          })}
+          options={proTableOptions}
+          request={fetchExerciseRecords}
           columns={exerciseColumns}
-          pagination={false}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
 
+      {/* 认知训练记录（mock） */}
       <div className={styles.infoSection}>
         <div className={styles.sectionHeader}>
           <Title level={5} className={styles.sectionTitle}>
@@ -419,19 +354,14 @@ const TodaySituation: React.FC = () => {
           actionRef={cognitiveTrainingTableRef}
           rowKey="id"
           search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
+          options={proTableOptions}
           request={async () => ({
             data: getCognitiveTrainingRecords(),
             success: true,
             total: getCognitiveTrainingRecords().length,
           })}
           columns={cognitiveTrainingColumns}
-          pagination={{ pageSize: 5 }}
+          pagination={{ defaultPageSize: 5 }}
         />
       </div>
     </div>
