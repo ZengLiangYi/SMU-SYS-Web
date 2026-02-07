@@ -9,7 +9,7 @@ interface PrescriptionData {
 }
 
 interface PrescriptionDetailModalProps {
-  visible: boolean;
+  open: boolean;
   title?: string;
   prescription: PrescriptionData | null;
   extraInfo?: React.ReactNode;
@@ -17,7 +17,7 @@ interface PrescriptionDetailModalProps {
 }
 
 const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
-  visible,
+  open,
   title = '康复处方详情',
   prescription,
   extraInfo,
@@ -26,11 +26,11 @@ const PrescriptionDetailModal: React.FC<PrescriptionDetailModalProps> = ({
   return (
     <Modal
       title={title}
-      open={visible}
+      open={open}
       onCancel={onCancel}
       footer={null}
       width={900}
-      bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+      styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
     >
       <div style={{ padding: '20px 0' }}>
         {extraInfo && (

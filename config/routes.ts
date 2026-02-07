@@ -24,22 +24,35 @@ export default [
   },
   {
     path: '/patient-user',
-    name: '用户列表',
+    name: '患者管理',
     icon: 'team',
-    component: './patientUser/UserList',
     access: 'canDoctor',
-  },
-  {
-    path: '/patient-user/detail',
-    component: './patientUser/UserDetail',
-    hideInMenu: true,
-    access: 'canDoctor',
-  },
-  {
-    path: '/patient-user/diagnosis',
-    component: './patientUser/Diagnosis',
-    hideInMenu: true,
-    access: 'canDoctor',
+    routes: [
+      {
+        path: '/patient-user',
+        redirect: '/patient-user/list',
+      },
+      {
+        path: '/patient-user/list',
+        name: '用户列表',
+        component: './patientUser/UserList',
+      },
+      {
+        path: '/patient-user/chat',
+        name: '用户聊天',
+        component: './patientUser/UserChat',
+      },
+      {
+        path: '/patient-user/detail/:id',
+        component: './patientUser/UserDetail',
+        hideInMenu: true,
+      },
+      {
+        path: '/patient-user/diagnosis',
+        component: './patientUser/Diagnosis',
+        hideInMenu: true,
+      },
+    ],
   },
   {
     path: '/diagnosis-list',

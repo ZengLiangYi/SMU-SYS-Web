@@ -1,5 +1,5 @@
 import { BellOutlined } from '@ant-design/icons';
-import { useModel, useRequest } from '@umijs/max';
+import { history, useModel, useRequest } from '@umijs/max';
 import {
   App,
   Badge,
@@ -12,19 +12,14 @@ import {
 } from 'antd';
 import { createStyles } from 'antd-style';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/zh-cn';
-import { history } from '@umijs/max';
 import React, { useCallback, useState } from 'react';
 import {
   getNotifications,
   markNotificationsRead,
 } from '@/services/notification';
 import type { NotificationItem } from '@/services/notification/typings.d';
+import { useSocket } from '@/services/websocket/useSocket';
 import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
-
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
 
 const { Text, Paragraph } = Typography;
 
@@ -78,7 +73,7 @@ const useStyles = createStyles(({ token }) => ({
   },
 }));
 
-const POLLING_INTERVAL = 30_000; // 30s
+const POLLING_INTERVAL = 60_000; // 60s（WebSocket 作为主推送通道后降低轮询频率）
 const LIST_PAGE_SIZE = 20;
 
 const NotificationBell: React.FC = () => {
@@ -115,6 +110,15 @@ const NotificationBell: React.FC = () => {
     },
   );
   const listItems: NotificationItem[] = listData?.items ?? [];
+
+  // -------- WebSocket 实时推送 --------
+  useSocket('notification:new', (_payload) => {
+    // 收到新通知时：刷新未读计数，如果 Popover 打开则刷新列表
+    refreshUnreadCount();
+    if (open && activeTab === 'unread') {
+      fetchList('unread');
+    }
+  });
 
   // -------- 标记已读 --------
   const { run: runMarkRead, loading: markReadLoading } = useRequest(
@@ -162,7 +166,7 @@ const NotificationBell: React.FC = () => {
         const routeFn = NOTIFICATION_BIZ_ROUTE_MAP[item.biz_type];
         if (routeFn) {
           setOpen(false);
-          history.push(routeFn(item.biz_id));
+          history.push(routeFn(item.biz_id, item.extra));
         }
       }
     },

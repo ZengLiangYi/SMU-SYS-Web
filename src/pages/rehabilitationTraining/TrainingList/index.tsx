@@ -181,7 +181,7 @@ const TrainingList: React.FC = () => {
 
       {/* 详情弹窗 */}
       <DetailModal
-        visible={detailModalVisible}
+        open={detailModalVisible}
         record={viewingRecord}
         onCancel={() => setDetailModalVisible(false)}
       />

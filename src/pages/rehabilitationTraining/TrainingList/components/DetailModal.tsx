@@ -5,20 +5,20 @@ import { getStaticUrl } from '@/services/static';
 import { formatDateTime } from '@/utils/date';
 
 interface DetailModalProps {
-  visible: boolean;
+  open: boolean;
   record: RehabLevel | null;
   onCancel: () => void;
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({
-  visible,
+  open,
   record,
   onCancel,
 }) => {
   return (
     <Modal
       title="关卡详情"
-      open={visible}
+      open={open}
       onCancel={onCancel}
       footer={null}
       width={700}

@@ -1,225 +1,121 @@
 import { EyeOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Button, Typography } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Col,
+  Flex,
+  Progress,
+  Row,
+  Typography,
+} from 'antd';
 import React from 'react';
-import type { ScoreHistoryRecord } from '@/services/patient-user/typings';
-import useComponentStyles from './components.style';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+
+// -------- 本地类型定义（暂无对应 API） --------
+interface ScoreHistoryRecord {
+  id: string;
+  date: string;
+  comprehensiveScore: number;
+}
+
+// TODO: 替换为后端 API 接口
+const MOCK_COMPREHENSIVE_SCORE = 88.8;
+
+const MOCK_CATEGORY_SCORES = [
+  { name: '用药', score: 95, color: '#5b8ff9' },
+  { name: '认知', score: 75, color: '#b799ff' },
+  { name: '饮食', score: 60, color: '#a44cff' },
+  { name: '运动', score: 40, color: '#b8d4ff' },
+];
+
+const MOCK_SCORE_HISTORY: ScoreHistoryRecord[] = [
+  { id: '1', date: '1997/04/17', comprehensiveScore: 88.88 },
+  { id: '2', date: '2001/05/26', comprehensiveScore: 88.88 },
+  { id: '3', date: '1995/02/02', comprehensiveScore: 88.88 },
+  { id: '4', date: '1983/09/11', comprehensiveScore: 88.88 },
+  { id: '5', date: '1977/10/25', comprehensiveScore: 88.88 },
+];
+
+const scoreHistoryColumns: ProColumns<ScoreHistoryRecord>[] = [
+  { title: '日期', dataIndex: 'date', width: 200 },
+  { title: '综合评分', dataIndex: 'comprehensiveScore', width: 200 },
+  {
+    title: '操作',
+    key: 'action',
+    width: 150,
+    render: () => (
+      <Button type="link" size="small" icon={<EyeOutlined />}>
+        详情
+      </Button>
+    ),
+  },
+];
 
 const RehabilitationHistory: React.FC = () => {
-  const { styles } = useComponentStyles();
-
-  const getComprehensiveScore = () => {
-    return 88.8;
-  };
-
-  const getMedicationScore = () => {
-    return [
-      {
-        name: '用药',
-        score: 95,
-      },
-      {
-        name: '认知',
-        score: 75,
-      },
-      {
-        name: '饮食',
-        score: 60,
-      },
-      {
-        name: '运动',
-        score: 40,
-      },
-    ];
-  };
-
-  // 获取评分历史记录数据
-  const getScoreHistoryRecords = (): ScoreHistoryRecord[] => {
-    return [
-      {
-        id: '1',
-        date: '1997/04/17',
-        comprehensiveScore: 88.88,
-      },
-      {
-        id: '2',
-        date: '2001/05/26',
-        comprehensiveScore: 88.88,
-      },
-      {
-        id: '3',
-        date: '1995/02/02',
-        comprehensiveScore: 88.88,
-      },
-      {
-        id: '4',
-        date: '1983/09/11',
-        comprehensiveScore: 88.88,
-      },
-      {
-        id: '5',
-        date: '1977/10/25',
-        comprehensiveScore: 88.88,
-      },
-    ];
-  };
-
-  // 评分历史记录列定义
-  const scoreHistoryColumns: ProColumns<ScoreHistoryRecord>[] = [
-    {
-      title: '日期',
-      dataIndex: 'date',
-      width: 200,
-    },
-    {
-      title: '综合评分',
-      dataIndex: 'comprehensiveScore',
-      width: 200,
-    },
-    {
-      title: '按钮',
-      key: 'action',
-      width: 150,
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => console.log('查看详情:', record)}
-        >
-          详情
-        </Button>
-      ),
-    },
-  ];
-
-  // 获取评分历史记录
-  const fetchScoreHistoryRecords = async () => {
-    const mockData = getScoreHistoryRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
-  };
   return (
-    <div className={styles.tabContent}>
-      <div className={styles.infoSection}>
-        <div className={styles.scoreVisualizationContainer}>
-          <div className={styles.scoreVisualizationLeft}>
-            <div className={styles.scoreSummaryDisplay}>
-              <div className={styles.scoreSummaryLabel}>综合评分：</div>
-              <div className={styles.scoreSummaryValue}>
-                {getComprehensiveScore()}
-              </div>
-            </div>
-            <div className={styles.scoreCharts}>
-              <div className={styles.scoreChartItem}>
-                <div className={styles.chartLabel}>用药</div>
-                <div className={styles.chartBarContainer}>
-                  <div
-                    className={styles.chartBar}
-                    style={{
-                      width: `${getMedicationScore()[0].score}%`,
-                      background: '#5b8ff9',
-                    }}
-                  />
-                </div>
-              </div>
-              <div className={styles.scoreChartItem}>
-                <div className={styles.chartLabel}>认知</div>
-                <div className={styles.chartBarContainer}>
-                  <div
-                    className={styles.chartBar}
-                    style={{
-                      width: `${getMedicationScore()[1].score}%`,
-                      background: '#b799ff',
-                    }}
-                  />
-                </div>
-              </div>
-              <div className={styles.scoreChartItem}>
-                <div className={styles.chartLabel}>饮食</div>
-                <div className={styles.chartBarContainer}>
-                  <div
-                    className={styles.chartBar}
-                    style={{
-                      width: `${getMedicationScore()[2].score}%`,
-                      background: '#a44cff',
-                    }}
-                  />
-                </div>
-              </div>
-              <div className={styles.scoreChartItem}>
-                <div className={styles.chartLabel}>运动</div>
-                <div className={styles.chartBarContainer}>
-                  <div
-                    className={styles.chartBar}
-                    style={{
-                      width: `${getMedicationScore()[3].score}%`,
-                      background: '#b8d4ff',
-                    }}
-                  />
-                </div>
-              </div>
-              <div className={styles.chartScales}>
-                <span className={styles.chartScale} style={{ left: 0 }}>
-                  0
-                </span>
-                <span className={styles.chartScale} style={{ left: '20%' }}>
-                  20
-                </span>
-                <span className={styles.chartScale} style={{ left: '40%' }}>
-                  40
-                </span>
-                <span className={styles.chartScale} style={{ left: '60%' }}>
-                  60
-                </span>
-                <span className={styles.chartScale} style={{ left: '80%' }}>
-                  80
-                </span>
-                <span className={styles.chartScale} style={{ left: '100%' }}>
-                  100
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.scoreVisualizationRight}>
-            <div className={styles.scoreRecommendationBox}>
-              <div className={styles.scoreRecommendationTitle}>日建议：</div>
-              <div className={styles.scoreRecommendationContent}>
-                建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div>
+      {/* -------- 评分可视化 -------- */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
+        <Col span={12}>
+          <Card>
+            <Flex align="baseline" gap={8} style={{ marginBottom: 16 }}>
+              <Text strong>综合评分：</Text>
+              <Text strong style={{ fontSize: 36 }}>
+                {MOCK_COMPREHENSIVE_SCORE}
+              </Text>
+            </Flex>
+            {MOCK_CATEGORY_SCORES.map((item) => (
+              <Flex
+                key={item.name}
+                align="center"
+                gap={12}
+                style={{ marginBottom: 12 }}
+              >
+                <Text
+                  type="secondary"
+                  style={{ minWidth: 40, textAlign: 'right' }}
+                >
+                  {item.name}
+                </Text>
+                <Progress
+                  percent={item.score}
+                  showInfo={false}
+                  strokeColor={item.color}
+                  style={{ flex: 1, margin: 0 }}
+                />
+              </Flex>
+            ))}
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Alert
+            type="warning"
+            message="日建议"
+            description="建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容"
+            showIcon
+            style={{ height: '100%' }}
+          />
+        </Col>
+      </Row>
 
-      <div className={styles.infoSection}>
-        <div className={styles.sectionHeader}>
-          <Title level={5} className={styles.sectionTitle}>
-            评分历史
-          </Title>
-        </div>
-        <ProTable<ScoreHistoryRecord>
-          rowKey="id"
-          search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          request={fetchScoreHistoryRecords}
-          columns={scoreHistoryColumns}
-          pagination={{
-            pageSize: 5,
-          }}
-        />
-      </div>
+      {/* -------- 评分历史表格 -------- */}
+      <Title level={5}>评分历史</Title>
+      <ProTable<ScoreHistoryRecord>
+        rowKey="id"
+        search={false}
+        options={false}
+        request={async () => ({
+          data: MOCK_SCORE_HISTORY,
+          success: true,
+          total: MOCK_SCORE_HISTORY.length,
+        })}
+        columns={scoreHistoryColumns}
+        pagination={{ pageSize: 5 }}
+      />
     </div>
   );
 };

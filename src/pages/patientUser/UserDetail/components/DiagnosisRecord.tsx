@@ -1,122 +1,118 @@
 import { EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import {
-  Button,
-  Form,
-  Input,
-  Modal,
-  message,
-  Select,
-  Tag,
-  Typography,
-} from 'antd';
+import { ProDescriptions, ProTable } from '@ant-design/pro-components';
+import { App, Button, Modal, Tag, Typography } from 'antd';
 import React, { useRef, useState } from 'react';
-import type { DiagnosisRecord as DiagnosisRecordType } from '@/services/patient-user/typings';
-import {
-  CognitiveTraining,
-  DietPrescription,
-  ExercisePrescription,
-  MedicationTreatment,
-} from '../../Diagnosis/components';
-import useComponentStyles from './components.style';
+import CognitiveTraining from '@/components/PrescriptionComponents/CognitiveTraining';
+import DietPrescription from '@/components/PrescriptionComponents/DietPrescription';
+import ExercisePrescription from '@/components/PrescriptionComponents/ExercisePrescription';
+// 直接路径引用，避免 barrel import (bundle-barrel-imports)
+import MedicationTreatment from '@/components/PrescriptionComponents/MedicationTreatment';
 
 const { Title } = Typography;
 
+// -------- 本地类型定义（暂无对应 API） --------
+interface DiagnosisRecordType {
+  id: string;
+  date: string;
+  referralDoctor: string;
+  diagnosisResult: string;
+  rehabilitationPlan?: string;
+  prescription?: {
+    medications: {
+      id: string;
+      medicineName: string;
+      usage: string;
+      dosage: string;
+    }[];
+    cognitiveCards: { id: string; cardName: string; difficulty: string }[];
+    dietContent: string;
+    exercises: { id: string; exerciseName: string; duration: string }[];
+  };
+  status: number;
+}
+
+// TODO: 替换为后端 API 接口
+const MOCK_DIAGNOSIS_RECORDS: DiagnosisRecordType[] = [
+  {
+    id: '1',
+    date: '2013/12/08',
+    referralDoctor: '康雄',
+    diagnosisResult: '轻度认知障碍',
+    prescription: {
+      medications: [
+        {
+          id: '1',
+          medicineName: '盐酸多奈哌齐片',
+          usage: '每日1次，晨起口服',
+          dosage: '5mg x 7片',
+        },
+        {
+          id: '2',
+          medicineName: '甲钴胺片',
+          usage: '每日3次，晨饭口服',
+          dosage: '0.5mg x 20片',
+        },
+      ],
+      cognitiveCards: [
+        { id: '1', cardName: '记忆力翻牌', difficulty: '难度：中等' },
+        { id: '2', cardName: '逻辑排序', difficulty: '难度：高' },
+      ],
+      dietContent:
+        '建议地中海饮食模式：多食深海鱼类、坚果、蔬菜、减少咸肉摄入。补充富含维生素B12的食物。',
+      exercises: [
+        {
+          id: '1',
+          exerciseName: '有氧运动 (快走/慢跑)',
+          duration: '30分钟/天',
+        },
+        { id: '2', exerciseName: '手指操 (精细动作)', duration: '10分钟/天' },
+      ],
+    },
+    status: 1,
+  },
+];
+
 const DiagnosisRecord: React.FC = () => {
-  const { styles, cx } = useComponentStyles();
+  const { message } = App.useApp();
   const diagnosisTableRef = useRef<ActionType>(null);
-  const [form] = Form.useForm();
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [prescriptionModalVisible, setPrescriptionModalVisible] =
-    useState(false);
-  const [editingPrescription, setEditingPrescription] = useState<any>(null);
+  const [dataSource, setDataSource] = useState<DiagnosisRecordType[]>(
+    MOCK_DIAGNOSIS_RECORDS,
+  );
   const [viewingRecord, setViewingRecord] =
     useState<DiagnosisRecordType | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
 
   // 处方编辑状态
+  const [editingPrescription, setEditingPrescription] =
+    useState<DiagnosisRecordType | null>(null);
+  const [prescriptionModalVisible, setPrescriptionModalVisible] =
+    useState(false);
   const [medications, setMedications] = useState<any[]>([]);
   const [cognitiveCards, setCognitiveCards] = useState<any[]>([]);
   const [dietContent, setDietContent] = useState('');
   const [exercises, setExercises] = useState<any[]>([]);
 
-  // Modal 状态
-  const [medicationModalVisible, setMedicationModalVisible] = useState(false);
-  const [cognitiveModalVisible, setCognitiveModalVisible] = useState(false);
-  const [dietModalVisible, setDietModalVisible] = useState(false);
-  const [exerciseModalVisible, setExerciseModalVisible] = useState(false);
-
-  const [editingMedication, setEditingMedication] = useState<any>(null);
-  const [editingCognitive, setEditingCognitive] = useState<any>(null);
-  const [editingExercise, setEditingExercise] = useState<any>(null);
-  const [dataSource, setDataSource] = useState<any[]>([
-    {
-      id: '1',
-      date: '2013/12/08',
-      referralDoctor: '康雄',
-      diagnosisResult: '轻度认知障碍',
-      prescription: {
-        medications: [
-          {
-            id: '1',
-            medicineName: '盐酸多奈哌齐片',
-            usage: '每日1次，晨起口服',
-            dosage: '5mg x 7片',
-          },
-          {
-            id: '2',
-            medicineName: '甲钴胺片',
-            usage: '每日3次，晨饭口服',
-            dosage: '0.5mg x 20片',
-          },
-        ],
-        cognitiveCards: [
-          { id: '1', cardName: '记忆力翻牌', difficulty: '难度：中等' },
-          { id: '2', cardName: '逻辑排序', difficulty: '难度：高' },
-        ],
-        dietContent:
-          '建议地中海饮食模式：多食深海鱼类、坚果、蔬菜、减少咸肉摄入。补充富含维生素B12的食物。',
-        exercises: [
-          {
-            id: '1',
-            exerciseName: '有氧运动 (快走/慢跑)',
-            duration: '30分钟/天',
-          },
-          { id: '2', exerciseName: '手指操 (精细动作)', duration: '10分钟/天' },
-        ],
-      },
-      status: 1,
-    },
-  ]);
-
-  // 查看详情
-  const handleViewDetail = (record: DiagnosisRecordType) => {
-    setViewingRecord(record);
-    setDetailModalVisible(true);
-  };
-
-  // 修改处方
-  const handleEditPrescription = (record: any) => {
+  const handleEditPrescription = (record: DiagnosisRecordType) => {
     setEditingPrescription(record);
-    setMedications(record.prescription.medications || []);
-    setCognitiveCards(record.prescription.cognitiveCards || []);
-    setDietContent(record.prescription.dietContent || '');
-    setExercises(record.prescription.exercises || []);
+    setMedications(record.prescription?.medications ?? []);
+    setCognitiveCards(record.prescription?.cognitiveCards ?? []);
+    setDietContent(record.prescription?.dietContent ?? '');
+    setExercises(record.prescription?.exercises ?? []);
     setPrescriptionModalVisible(true);
   };
 
-  // 提交处方修改
   const handleSubmitPrescription = () => {
+    if (!editingPrescription) return;
     const updatedPrescription = {
       medications,
       cognitiveCards,
       dietContent,
       exercises,
     };
-
-    setDataSource(
-      dataSource.map((item) =>
-        item.id === editingPrescription?.id
+    setDataSource((prev) =>
+      prev.map((item) =>
+        item.id === editingPrescription.id
           ? { ...item, prescription: updatedPrescription }
           : item,
       ),
@@ -126,202 +122,30 @@ const DiagnosisRecord: React.FC = () => {
     diagnosisTableRef.current?.reload();
   };
 
-  // 药物治疗操作
-  const handleAddMedication = () => {
-    setEditingMedication(null);
-    form.resetFields();
-    setMedicationModalVisible(true);
-  };
-
-  const handleEditMedication = (item: any) => {
-    setEditingMedication(item);
-    form.setFieldsValue(item);
-    setMedicationModalVisible(true);
-  };
-
-  const handleDeleteMedication = (id: string) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这个药物吗？',
-      onOk: () => {
-        setMedications(medications.filter((item) => item.id !== id));
-        message.success('删除成功');
-      },
-    });
-  };
-
-  const handleSubmitMedication = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingMedication) {
-        setMedications(
-          medications.map((item) =>
-            item.id === editingMedication.id ? { ...item, ...values } : item,
-          ),
-        );
-        message.success('修改成功');
-      } else {
-        const newItem = { id: Date.now().toString(), ...values };
-        setMedications([...medications, newItem]);
-        message.success('添加成功');
-      }
-      setMedicationModalVisible(false);
-      form.resetFields();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  // 认知训练操作
-  const handleAddCognitive = () => {
-    setEditingCognitive(null);
-    form.resetFields();
-    setCognitiveModalVisible(true);
-  };
-
-  const handleEditCognitive = (item: any) => {
-    setEditingCognitive(item);
-    form.setFieldsValue(item);
-    setCognitiveModalVisible(true);
-  };
-
-  const handleDeleteCognitive = (id: string) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这个训练卡片吗？',
-      onOk: () => {
-        setCognitiveCards(cognitiveCards.filter((item) => item.id !== id));
-        message.success('删除成功');
-      },
-    });
-  };
-
-  const handleSubmitCognitive = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingCognitive) {
-        setCognitiveCards(
-          cognitiveCards.map((item) =>
-            item.id === editingCognitive.id ? { ...item, ...values } : item,
-          ),
-        );
-        message.success('修改成功');
-      } else {
-        const newItem = { id: Date.now().toString(), ...values };
-        setCognitiveCards([...cognitiveCards, newItem]);
-        message.success('添加成功');
-      }
-      setCognitiveModalVisible(false);
-      form.resetFields();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  // 饮食处方操作
-  const handleEditDiet = () => {
-    form.setFieldsValue({ dietContent });
-    setDietModalVisible(true);
-  };
-
-  const handleSubmitDiet = async () => {
-    try {
-      const values = await form.validateFields();
-      setDietContent(values.dietContent);
-      setDietModalVisible(false);
-      message.success('修改成功');
-      form.resetFields();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  // 运动处方操作
-  const handleAddExercise = () => {
-    setEditingExercise(null);
-    form.resetFields();
-    setExerciseModalVisible(true);
-  };
-
-  const handleEditExercise = (item: any) => {
-    setEditingExercise(item);
-    form.setFieldsValue(item);
-    setExerciseModalVisible(true);
-  };
-
-  const handleDeleteExercise = (id: string) => {
-    Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这个运动计划吗？',
-      onOk: () => {
-        setExercises(exercises.filter((item) => item.id !== id));
-        message.success('删除成功');
-      },
-    });
-  };
-
-  const handleSubmitExercise = async () => {
-    try {
-      const values = await form.validateFields();
-      if (editingExercise) {
-        setExercises(
-          exercises.map((item) =>
-            item.id === editingExercise.id ? { ...item, ...values } : item,
-          ),
-        );
-        message.success('修改成功');
-      } else {
-        const newItem = { id: Date.now().toString(), ...values };
-        setExercises([...exercises, newItem]);
-        message.success('添加成功');
-      }
-      setExerciseModalVisible(false);
-      form.resetFields();
-    } catch (error) {
-      console.error('表单验证失败:', error);
-    }
-  };
-
-  // 格式化处方显示
-  const formatPrescription = (prescription: any) => {
+  const formatPrescription = (
+    prescription: DiagnosisRecordType['prescription'],
+  ) => {
+    if (!prescription) return '暂无';
     const parts = [];
-    if (prescription.medications?.length > 0) {
+    if (prescription.medications?.length > 0)
       parts.push(`药物${prescription.medications.length}种`);
-    }
-    if (prescription.cognitiveCards?.length > 0) {
+    if (prescription.cognitiveCards?.length > 0)
       parts.push(`认知训练${prescription.cognitiveCards.length}项`);
-    }
-    if (prescription.dietContent) {
-      parts.push('饮食处方');
-    }
-    if (prescription.exercises?.length > 0) {
+    if (prescription.dietContent) parts.push('饮食处方');
+    if (prescription.exercises?.length > 0)
       parts.push(`运动${prescription.exercises.length}项`);
-    }
     return parts.join(' | ') || '暂无';
   };
 
-  // 诊疗记录列定义
   const diagnosisColumns: ProColumns<DiagnosisRecordType>[] = [
-    {
-      title: '日期',
-      dataIndex: 'date',
-      width: 120,
-    },
-    {
-      title: '接诊医生',
-      dataIndex: 'referralDoctor',
-      width: 100,
-    },
-    {
-      title: '诊断结果',
-      dataIndex: 'diagnosisResult',
-      width: 120,
-    },
+    { title: '日期', dataIndex: 'date', width: 120 },
+    { title: '接诊医生', dataIndex: 'referralDoctor', width: 100 },
+    { title: '诊断结果', dataIndex: 'diagnosisResult', width: 120 },
     {
       title: '康复处方',
       dataIndex: 'prescription',
       width: 280,
-      render: (prescription) => formatPrescription(prescription),
+      render: (_, record) => formatPrescription(record.prescription),
     },
     {
       title: '状态',
@@ -339,7 +163,10 @@ const DiagnosisRecord: React.FC = () => {
             type="link"
             size="small"
             icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record)}
+            onClick={() => {
+              setViewingRecord(record);
+              setDetailModalVisible(true);
+            }}
           >
             详情
           </Button>
@@ -356,352 +183,165 @@ const DiagnosisRecord: React.FC = () => {
     },
   ];
 
-  // 获取诊疗记录
-  const fetchDiagnosisRecords = async () => {
-    return {
-      data: dataSource,
-      success: true,
-      total: dataSource.length,
-    };
-  };
-
   return (
-    <div className={styles.tabContent}>
+    <div>
       <ProTable<DiagnosisRecordType>
         actionRef={diagnosisTableRef}
         rowKey="id"
         search={false}
-        options={{
-          reload: false,
-          density: false,
-          fullScreen: false,
-          setting: false,
-        }}
+        options={false}
         scroll={{ x: 1000 }}
-        request={fetchDiagnosisRecords}
+        request={async () => ({
+          data: dataSource,
+          success: true,
+          total: dataSource.length,
+        })}
         columns={diagnosisColumns}
-        pagination={{
-          pageSize: 8,
-        }}
+        pagination={{ pageSize: 8 }}
       />
 
-      {/* 详情弹窗 */}
+      {/* -------- 详情弹窗 -------- */}
       <Modal
         title="诊疗记录详情"
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={null}
         width={900}
+        destroyOnHidden
         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         {viewingRecord && (
-          <div style={{ padding: '20px 0' }}>
-            <div
-              style={{
-                marginBottom: 24,
-                paddingBottom: 16,
-                borderBottom: '1px solid #f0f0f0',
-              }}
-            >
-              <p style={{ marginBottom: 12, fontSize: 14 }}>
-                <strong>日期：</strong>
-                {viewingRecord.date}
-              </p>
-              <p style={{ marginBottom: 12, fontSize: 14 }}>
-                <strong>接诊医生：</strong>
-                {viewingRecord.referralDoctor}
-              </p>
-              <p style={{ marginBottom: 12, fontSize: 14 }}>
-                <strong>诊断结果：</strong>
-                {viewingRecord.diagnosisResult}
-              </p>
-              <p style={{ marginBottom: 0, fontSize: 14 }}>
-                <strong>状态：</strong>
-                <Tag color="blue">已完成</Tag>
-              </p>
-            </div>
-
-            {viewingRecord.prescription ? (
-              <div>
-                <Title level={5} style={{ marginBottom: 16 }}>
+          <div>
+            <ProDescriptions
+              column={2}
+              dataSource={viewingRecord}
+              columns={[
+                { title: '日期', dataIndex: 'date' },
+                { title: '接诊医生', dataIndex: 'referralDoctor' },
+                { title: '诊断结果', dataIndex: 'diagnosisResult' },
+                {
+                  title: '状态',
+                  dataIndex: 'status',
+                  render: () => <Tag color="blue">已完成</Tag>,
+                },
+              ]}
+            />
+            {viewingRecord.prescription && (
+              <>
+                <Title level={5} style={{ marginTop: 16 }}>
                   康复处方详情
                 </Title>
-
-                {/* 药物治疗 - 只读 */}
                 {viewingRecord.prescription.medications?.length > 0 && (
-                  <div className={styles.prescriptionSection}>
-                    <div className={styles.sectionHeader}>
-                      <Title level={5} className={styles.sectionTitle}>
-                        药物治疗
-                      </Title>
-                    </div>
-                    <div className={styles.prescriptionList}>
-                      {viewingRecord.prescription.medications.map(
-                        (item: any) => (
-                          <div
-                            key={item.id}
-                            className={styles.prescriptionItem}
-                          >
-                            <div className={styles.prescriptionContent}>
-                              <div className={styles.prescriptionName}>
-                                {item.medicineName}
-                              </div>
-                              <div className={styles.prescriptionDetail}>
-                                用法：{item.usage}
-                              </div>
-                            </div>
-                            <div className={styles.prescriptionDosage}>
-                              {item.dosage}
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </div>
+                  <MedicationTreatment
+                    medications={viewingRecord.prescription.medications}
+                    onAdd={() => {}}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                  />
                 )}
-
-                {/* 认知训练 - 只读 */}
                 {viewingRecord.prescription.cognitiveCards?.length > 0 && (
-                  <div className={styles.prescriptionSection}>
-                    <div className={styles.sectionHeader}>
-                      <Title level={5} className={styles.sectionTitle}>
-                        认知训练
-                      </Title>
-                      <span className={styles.sectionSubtitle}>每日30分钟</span>
-                    </div>
-                    <div className={styles.cognitiveCardsContainer}>
-                      {viewingRecord.prescription.cognitiveCards.map(
-                        (item: any) => (
-                          <div key={item.id} className={styles.cognitiveCard}>
-                            <div className={styles.cognitiveCardContent}>
-                              <div className={styles.cognitiveCardName}>
-                                {item.cardName}
-                              </div>
-                              <div className={styles.cognitiveCardDifficulty}>
-                                {item.difficulty}
-                              </div>
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
+                  <div style={{ marginTop: 16 }}>
+                    <CognitiveTraining
+                      cards={viewingRecord.prescription.cognitiveCards}
+                      onAdd={() => {}}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                    />
                   </div>
                 )}
-
-                {/* 饮食处方 - 只读 */}
                 {viewingRecord.prescription.dietContent && (
-                  <div className={styles.prescriptionSection}>
-                    <div className={styles.sectionHeader}>
-                      <Title level={5} className={styles.sectionTitle}>
-                        饮食处方
-                      </Title>
-                    </div>
-                    <div className={styles.dietContent}>
-                      {viewingRecord.prescription.dietContent}
-                    </div>
+                  <div style={{ marginTop: 16 }}>
+                    <DietPrescription
+                      content={viewingRecord.prescription.dietContent}
+                      onEdit={() => {}}
+                    />
                   </div>
                 )}
-
-                {/* 运动处方 - 只读 */}
                 {viewingRecord.prescription.exercises?.length > 0 && (
-                  <div className={styles.prescriptionSection}>
-                    <div className={styles.sectionHeader}>
-                      <Title level={5} className={styles.sectionTitle}>
-                        运动处方
-                      </Title>
-                    </div>
-                    <div className={styles.exerciseList}>
-                      {viewingRecord.prescription.exercises.map((item: any) => (
-                        <div key={item.id} className={styles.exerciseItem}>
-                          <div className={styles.exerciseContent}>
-                            <div className={styles.exerciseName}>
-                              {item.exerciseName}
-                            </div>
-                          </div>
-                          <div className={styles.exerciseDuration}>
-                            {item.duration}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                  <div style={{ marginTop: 16 }}>
+                    <ExercisePrescription
+                      exercises={viewingRecord.prescription.exercises}
+                      onAdd={() => {}}
+                      onEdit={() => {}}
+                      onDelete={() => {}}
+                    />
                   </div>
                 )}
-              </div>
-            ) : (
-              <div
-                style={{ padding: 16, background: '#f5f5f5', borderRadius: 8 }}
-              >
-                <strong>康复处方：</strong>
-                {viewingRecord.rehabilitationPlan}
-              </div>
+              </>
             )}
           </div>
         )}
       </Modal>
 
-      {/* 修改处方弹窗 */}
+      {/* -------- 修改处方弹窗 -------- */}
       <Modal
         title="修改康复处方"
         open={prescriptionModalVisible}
         onOk={handleSubmitPrescription}
         onCancel={() => setPrescriptionModalVisible(false)}
         width={900}
+        destroyOnHidden
         styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
-        <div style={{ padding: '20px 0' }}>
-          {/* 药物治疗 */}
+        <div style={{ paddingTop: 16 }}>
           <MedicationTreatment
             medications={medications}
-            onAdd={handleAddMedication}
-            onEdit={handleEditMedication}
-            onDelete={handleDeleteMedication}
+            onAdd={() => {
+              setMedications((prev) => [
+                ...prev,
+                {
+                  id: Date.now().toString(),
+                  medicineName: '',
+                  usage: '',
+                  dosage: '',
+                },
+              ]);
+            }}
+            onEdit={(item: any) => {
+              // Inline edit handled by parent state
+            }}
+            onDelete={(id: string) => {
+              setMedications((prev) => prev.filter((m) => m.id !== id));
+            }}
           />
-
-          {/* 认知训练 */}
-          <div style={{ marginTop: '24px' }}>
+          <div style={{ marginTop: 24 }}>
             <CognitiveTraining
               cards={cognitiveCards}
-              onAdd={handleAddCognitive}
-              onEdit={handleEditCognitive}
-              onDelete={handleDeleteCognitive}
+              onAdd={() => {
+                setCognitiveCards((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now().toString(),
+                    cardName: '',
+                    difficulty: '难度：初级',
+                  },
+                ]);
+              }}
+              onEdit={(item: any) => {}}
+              onDelete={(id: string) => {
+                setCognitiveCards((prev) => prev.filter((c) => c.id !== id));
+              }}
             />
           </div>
-
-          {/* 饮食处方 */}
-          <div style={{ marginTop: '24px' }}>
-            <DietPrescription content={dietContent} onEdit={handleEditDiet} />
+          <div style={{ marginTop: 24 }}>
+            <DietPrescription content={dietContent} onEdit={() => {}} />
           </div>
-
-          {/* 运动处方 */}
-          <div style={{ marginTop: '24px' }}>
+          <div style={{ marginTop: 24 }}>
             <ExercisePrescription
               exercises={exercises}
-              onAdd={handleAddExercise}
-              onEdit={handleEditExercise}
-              onDelete={handleDeleteExercise}
+              onAdd={() => {
+                setExercises((prev) => [
+                  ...prev,
+                  { id: Date.now().toString(), exerciseName: '', duration: '' },
+                ]);
+              }}
+              onEdit={(item: any) => {}}
+              onDelete={(id: string) => {
+                setExercises((prev) => prev.filter((e) => e.id !== id));
+              }}
             />
           </div>
         </div>
-      </Modal>
-
-      {/* 药物治疗 Modal */}
-      <Modal
-        title={editingMedication ? '编辑药物' : '添加药物'}
-        open={medicationModalVisible}
-        onOk={handleSubmitMedication}
-        onCancel={() => {
-          setMedicationModalVisible(false);
-          form.resetFields();
-        }}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="药品名称"
-            name="medicineName"
-            rules={[{ required: true, message: '请输入药品名称' }]}
-          >
-            <Input placeholder="请输入药品名称" />
-          </Form.Item>
-          <Form.Item
-            label="用法"
-            name="usage"
-            rules={[{ required: true, message: '请输入用法' }]}
-          >
-            <Input placeholder="请输入用法" />
-          </Form.Item>
-          <Form.Item
-            label="剂量"
-            name="dosage"
-            rules={[{ required: true, message: '请输入剂量' }]}
-          >
-            <Input placeholder="请输入剂量" />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 认知训练 Modal */}
-      <Modal
-        title={editingCognitive ? '编辑训练卡片' : '添加训练卡片'}
-        open={cognitiveModalVisible}
-        onOk={handleSubmitCognitive}
-        onCancel={() => {
-          setCognitiveModalVisible(false);
-          form.resetFields();
-        }}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="卡片名称"
-            name="cardName"
-            rules={[{ required: true, message: '请输入卡片名称' }]}
-          >
-            <Input placeholder="请输入卡片名称" />
-          </Form.Item>
-          <Form.Item
-            label="难度"
-            name="difficulty"
-            rules={[{ required: true, message: '请选择难度' }]}
-          >
-            <Select placeholder="请选择难度">
-              <Select.Option value="难度：初级">难度：初级</Select.Option>
-              <Select.Option value="难度：中等">难度：中等</Select.Option>
-              <Select.Option value="难度：高">难度：高</Select.Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 饮食处方 Modal */}
-      <Modal
-        title="编辑饮食处方"
-        open={dietModalVisible}
-        onOk={handleSubmitDiet}
-        onCancel={() => {
-          setDietModalVisible(false);
-          form.resetFields();
-        }}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="饮食建议"
-            name="dietContent"
-            rules={[{ required: true, message: '请输入饮食建议' }]}
-          >
-            <Input.TextArea rows={6} placeholder="请输入饮食建议" />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* 运动处方 Modal */}
-      <Modal
-        title={editingExercise ? '编辑运动计划' : '添加运动计划'}
-        open={exerciseModalVisible}
-        onOk={handleSubmitExercise}
-        onCancel={() => {
-          setExerciseModalVisible(false);
-          form.resetFields();
-        }}
-        width={600}
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="运动名称"
-            name="exerciseName"
-            rules={[{ required: true, message: '请输入运动名称' }]}
-          >
-            <Input placeholder="请输入运动名称" />
-          </Form.Item>
-          <Form.Item
-            label="时长"
-            name="duration"
-            rules={[{ required: true, message: '请输入时长' }]}
-          >
-            <Input placeholder="请输入时长" />
-          </Form.Item>
-        </Form>
       </Modal>
     </div>
   );

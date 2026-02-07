@@ -45,6 +45,7 @@ html,
 body,
 #root {
   height: 100%;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
   font-family:
@@ -55,15 +56,6 @@ body,
 /* 色弱模式 */
 .colorWeak {
   filter: invert(80%);
-}
-
-/* 布局修复 */
-.ant-layout {
-  min-height: 100vh;
-}
-
-.ant-pro-sider.ant-layout-sider.ant-pro-sider-fixed {
-  left: unset;
 }
 
 /* Canvas 样式 */
@@ -82,24 +74,4 @@ body {
 ul,
 ol {
   list-style: none;
-}
-
-/* 响应式表格 */
-@media (max-width: 768px) {
-  .ant-table {
-    width: 100%;
-    overflow-x: auto;
-  }
-  .ant-table-thead > tr > th,
-  .ant-table-thead > tr > td,
-  .ant-table-tbody > tr > th,
-  .ant-table-tbody > tr > td {
-    white-space: pre;
-  }
-  .ant-table-thead > tr > th > span,
-  .ant-table-thead > tr > td > span,
-  .ant-table-tbody > tr > th > span,
-  .ant-table-tbody > tr > td > span {
-    display: block;
-  }
 }

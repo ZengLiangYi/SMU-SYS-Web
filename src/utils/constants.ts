@@ -1,14 +1,28 @@
 /**
- * 人群分类枚举
+ * 人群分类枚举（与后端 PatientCategory 保持一致）
  */
 export const CROWD_CATEGORY = {
   NORMAL: '认知正常人员',
-  SCD_WARNING: 'SCD人群（预警期）',
-  MCI_CONTROL: 'MCI人群（预控期）',
+  SCD_WARNING: 'SCD 人群（预警期）',
+  MCI_CONTROL: 'MCI 人群（预控期）',
   SUSPICIOUS: '可疑认知障碍患者',
   HIGH_RISK: '高危险人群',
   DIAGNOSED: '已确诊患者',
 };
+
+/**
+ * 人群分类选项列表（ProFormSelect 使用）
+ */
+export const CROWD_CATEGORY_OPTIONS = Object.values(CROWD_CATEGORY).map(
+  (value) => ({ label: value, value }),
+);
+
+/**
+ * 人群分类 valueEnum（ProTable 列筛选使用）
+ */
+export const CROWD_CATEGORY_ENUM = Object.fromEntries(
+  Object.values(CROWD_CATEGORY).map((value) => [value, { text: value }]),
+);
 
 /**
  * 获取人群分类对应的颜色
@@ -99,8 +113,9 @@ export const REHAB_LEVEL_TYPE_ENUM = Object.fromEntries(
  */
 export const NOTIFICATION_BIZ_ROUTE_MAP: Record<
   string,
-  (bizId: string) => string
+  (bizId: string, extra?: Record<string, any> | null) => string
 > = {
-  // 患者同意/拒绝绑定 → 跳转到患者详情
-  bind_request_result: (id) => `/patient-user/detail?id=${id}`,
+  // 患者同意/拒绝绑定 → 跳转到患者详情（patient_id 在 extra 中）
+  bind_request_result: (_bizId, extra) =>
+    `/patient-user/detail/${extra?.patient_id ?? ''}`,
 };

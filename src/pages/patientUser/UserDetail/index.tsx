@@ -1,177 +1,203 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { history } from '@umijs/max';
-import { Button, Card, Flex, Space, Tabs, Typography } from 'antd';
-import React, { useState } from 'react';
-import { PatientAvatarInfoContent } from '@/components';
-import type { UserDetailInfo } from '@/services/patient-user/typings';
-import { CROWD_CATEGORY, getTimeFormat } from '@/utils/constants';
 import {
-  DiagnosisRecord,
-  EffectEvaluation,
-  HealthRecoveryPlan,
-  PersonalInfo,
-  RehabilitationHistory,
-  TodaySituation,
-  TransferRecord,
-} from './components';
-import useStyles from './index.style';
+  history,
+  useModel,
+  useParams,
+  useRequest,
+  useSearchParams,
+} from '@umijs/max';
+import { App, Button, Empty, Flex, Space, Spin, Typography } from 'antd';
+import React, { Suspense } from 'react';
+import { PatientAvatarInfoContent } from '@/components';
+import { createBindRequest } from '@/services/bind-request';
+import { getPatient } from '@/services/patient-user';
+import { formatDateTime } from '@/utils/date';
+import PersonalInfo from './components/PersonalInfo';
+import TodaySituation from './components/TodaySituation';
+import TransferRecord from './components/TransferRecord';
 
-const { Title, Text } = Typography;
+// -------- 重型组件按需加载 (bundle-dynamic-imports) --------
+const DiagnosisRecord = React.lazy(
+  () => import('./components/DiagnosisRecord'),
+);
+const EffectEvaluation = React.lazy(
+  () => import('./components/EffectEvaluation'),
+);
+const HealthRecoveryPlan = React.lazy(
+  () => import('./components/HealthRecoveryPlan'),
+);
+const RehabilitationHistory = React.lazy(
+  () => import('./components/RehabilitationHistory'),
+);
+
+const { Text } = Typography;
+
+const TAB_LIST = [
+  { key: 'personalInfo', tab: '个人信息' },
+  { key: 'transferRecord', tab: '转诊记录' },
+  { key: 'diagnosisRecord', tab: '诊疗记录' },
+  { key: 'effectEvaluation', tab: '疗效评估' },
+  { key: 'healthRecoveryPlan', tab: '当前康复处方' },
+  { key: 'rehabilitationHistory', tab: '康复评分历史' },
+  { key: 'todaySituation', tab: '今日情况' },
+];
+
+const LazyFallback = (
+  <Spin style={{ display: 'block', padding: 80, textAlign: 'center' }} />
+);
 
 const UserDetail: React.FC = () => {
-  const { styles } = useStyles();
-  const [activeTab, setActiveTab] = useState<string>('personalInfo');
+  const { message } = App.useApp();
+  const { initialState } = useModel('@@initialState');
+  const { id: patientId = '' } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') ?? 'personalInfo';
 
-  // 模拟用户数据
-  const userInfo: UserDetailInfo = {
-    id: '1',
-    name: '胡超',
-    gender: 'male',
-    age: 78,
-    phone: '19829548475',
-    category: CROWD_CATEGORY.MCI_CONTROL,
-    birthday: '1900-01-01',
-    drinkingHabit: '清淡少盐',
-    familyHistory: '无',
-    existingDisease: '高血压、糖尿病',
-    occupation: '工人',
-    province: '广东省深圳市',
-    notDrugAllergy: '无',
-    lifeHabit: '干净卫生',
-    educationLevel: '大学',
-    existingMedication: '降压药',
-    randomIntention: '愿意',
-    address: '广东省深圳市前海湾1号',
-    emergencyContactName: '胡小王',
-    emergencyContactRelation: '儿子',
-    emergencyContactPhone: '13966661111',
-    AIComprehensiveEfficacyEvaluationSuggestion: '暂无',
-    diagnosisScore: 99,
-    diagnosisScoreUpdateTime: '2026-01-22 10:00:00',
+  // -------- 获取患者详情 --------
+  const {
+    data: patientDetail,
+    loading,
+    refresh,
+  } = useRequest(() => getPatient(patientId), {
+    ready: !!patientId,
+    refreshDeps: [patientId],
+  });
+
+  // -------- 绑定请求 --------
+  const { run: runBind, loading: bindLoading } = useRequest(createBindRequest, {
+    manual: true,
+    onSuccess: () => {
+      message.success('绑定请求已发送，等待患者确认\u2026');
+    },
+  });
+
+  // -------- 绑定状态判断 --------
+  const isBound = patientDetail?.doctor_id === initialState?.currentUser?.id;
+  const isUnbound = !patientDetail?.doctor_id;
+
+  const handleBind = () => {
+    if (!patientId) return;
+    runBind({ patient_id: patientId });
   };
 
-  const tabItems = [
-    {
-      key: 'personalInfo',
-      label: '个人信息',
-      children: <PersonalInfo userInfo={userInfo} />,
-    },
-    {
-      key: 'transferRecord',
-      label: '转诊记录',
-      children: <TransferRecord />,
-    },
-    {
-      key: 'diagnosisRecord',
-      label: '诊疗记录',
-      children: <DiagnosisRecord />,
-    },
-    {
-      key: 'effectEvaluation',
-      label: '疗效评估',
-      children: (
-        <EffectEvaluation
-          aiSuggestion={userInfo.AIComprehensiveEfficacyEvaluationSuggestion}
-        />
-      ),
-    },
-    {
-      key: 'healthRecoveryPlan',
-      label: '当前康复处方',
-      children: <HealthRecoveryPlan />,
-    },
-    {
-      key: 'rehabilitationHistory',
-      label: '康复评分历史',
-      children: <RehabilitationHistory />,
-    },
-    {
-      key: 'todaySituation',
-      label: '今日情况',
-      children: <TodaySituation />,
-    },
-  ];
-
   const handleDiagnosis = () => {
-    history.push(`/patient-user/diagnosis?id=${userInfo.id}`);
+    history.push(`/patient-user/diagnosis?id=${patientId}`);
+  };
+
+  const handleTabChange = (key: string) => {
+    setSearchParams({ tab: key }, { replace: true });
+  };
+
+  if (!patientId) {
+    return (
+      <PageContainer title={false}>
+        <Empty description="未指定患者 ID" />
+      </PageContainer>
+    );
+  }
+
+  if (loading || !patientDetail) {
+    return (
+      <PageContainer title={false}>
+        <Spin style={{ display: 'block', padding: 80, textAlign: 'center' }} />
+      </PageContainer>
+    );
+  }
+
+  // -------- Tab 内容渲染 --------
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'personalInfo':
+        return (
+          <PersonalInfo
+            patientId={patientId}
+            patientDetail={patientDetail}
+            onSaved={refresh}
+          />
+        );
+      case 'transferRecord':
+        return <TransferRecord patientId={patientId} />;
+      case 'diagnosisRecord':
+        return (
+          <Suspense fallback={LazyFallback}>
+            <DiagnosisRecord />
+          </Suspense>
+        );
+      case 'effectEvaluation':
+        return (
+          <Suspense fallback={LazyFallback}>
+            <EffectEvaluation />
+          </Suspense>
+        );
+      case 'healthRecoveryPlan':
+        return (
+          <Suspense fallback={LazyFallback}>
+            <HealthRecoveryPlan />
+          </Suspense>
+        );
+      case 'rehabilitationHistory':
+        return (
+          <Suspense fallback={LazyFallback}>
+            <RehabilitationHistory />
+          </Suspense>
+        );
+      case 'todaySituation':
+        return <TodaySituation patientId={patientId} />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <PageContainer title={false}>
-      <Card className={styles.userDetailCard}>
-        {/* 页面头部 */}
-        <Flex
-          justify="space-between"
-          align="center"
-          className={styles.userDetailHeader}
-        >
-          <Title level={4} className={styles.pageTitle}>
-            个人信息
-          </Title>
-          <Space>
-            <Button
-              style={{
-                background: '#4ea8ff',
-                borderColor: '#279cea',
-                color: '#fff',
-              }}
-            >
-              随访
-            </Button>
-            <Button
-              style={{
-                background: '#ff5340',
-                borderColor: '#e12f0f',
-                color: '#fff',
-              }}
-            >
-              转诊
-            </Button>
-            <Button
-              style={{
-                background: '#61e054',
-                borderColor: '#4ec731',
-                color: '#fff',
-              }}
-              onClick={handleDiagnosis}
-            >
-              诊断
-            </Button>
-          </Space>
-        </Flex>
-
-        {/* 用户基本信息 */}
-        <div className={styles.userBasicInfo}>
-          <Text className={styles.aiSuggestion}>
-            AI综合疗效评估建议：
-            {userInfo.AIComprehensiveEfficacyEvaluationSuggestion}
-          </Text>
-          <Flex
-            justify="space-between"
-            gap={24}
-            className={styles.userInfoContainer}
-          >
-            <div className={styles.userInfoLeft}>
-              <PatientAvatarInfoContent {...userInfo} />
-            </div>
-            <div className={styles.userDiagnosisScore}>
-              <div className={styles.scoreValue}>{userInfo.diagnosisScore}</div>
-              <div className={styles.scoreLabel}>当前疗效评分是</div>
-              <div className={styles.scoreUpdateTime}>
-                {getTimeFormat(userInfo.diagnosisScoreUpdateTime)}更新
-              </div>
-            </div>
+    <PageContainer
+      header={{
+        title: patientDetail.name,
+        children: (
+          <Flex justify="space-between" align="flex-start" gap={24}>
+            <PatientAvatarInfoContent
+              name={patientDetail.name}
+              gender={patientDetail.gender}
+              age={patientDetail.age}
+              phone={patientDetail.phone}
+              categories={patientDetail.categories}
+            />
+            <Flex vertical align="center" gap={4} style={{ minWidth: 120 }}>
+              <Text strong style={{ fontSize: 40 }}>
+                --
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                当前疗效评分
+              </Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {formatDateTime(new Date().toISOString())}更新
+              </Text>
+            </Flex>
           </Flex>
-        </div>
-
-        {/* Tab 区域 */}
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          items={tabItems}
-          style={{ padding: '0 24px' }}
-        />
-      </Card>
+        ),
+        extra: (
+          <Space>
+            {isUnbound && (
+              <Button type="primary" loading={bindLoading} onClick={handleBind}>
+                发起绑定
+              </Button>
+            )}
+            {isBound && (
+              <>
+                <Button type="primary">随访</Button>
+                <Button danger>转诊</Button>
+                <Button type="primary" onClick={handleDiagnosis}>
+                  诊断
+                </Button>
+              </>
+            )}
+          </Space>
+        ),
+      }}
+      tabList={TAB_LIST}
+      tabActiveKey={activeTab}
+      onTabChange={handleTabChange}
+    >
+      {renderTabContent()}
     </PageContainer>
   );
 };

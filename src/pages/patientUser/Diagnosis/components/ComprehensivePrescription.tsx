@@ -1,4 +1,4 @@
-import { Form, Input, Modal, message, Select } from 'antd';
+import { App, Form, Input, Modal, Select } from 'antd';
 import React, { useState } from 'react';
 import {
   CognitiveTraining,
@@ -14,6 +14,7 @@ interface ComprehensivePrescriptionProps {
 const ComprehensivePrescription: React.FC<ComprehensivePrescriptionProps> = ({
   onComplete: _onComplete,
 }) => {
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm();
 
   // 药物治疗
@@ -74,7 +75,7 @@ const ComprehensivePrescription: React.FC<ComprehensivePrescriptionProps> = ({
   };
 
   const handleDeleteMedication = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个药物吗？',
       onOk: () => {
@@ -120,7 +121,7 @@ const ComprehensivePrescription: React.FC<ComprehensivePrescriptionProps> = ({
   };
 
   const handleDeleteCognitive = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个训练卡片吗？',
       onOk: () => {
@@ -184,7 +185,7 @@ const ComprehensivePrescription: React.FC<ComprehensivePrescriptionProps> = ({
   };
 
   const handleDeleteExercise = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个运动计划吗？',
       onOk: () => {

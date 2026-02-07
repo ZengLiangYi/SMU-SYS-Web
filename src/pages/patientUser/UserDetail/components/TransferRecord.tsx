@@ -1,193 +1,119 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { Typography } from 'antd';
-import React, { useRef } from 'react';
+import { useRequest } from '@umijs/max';
+import { Spin, Tag, Typography } from 'antd';
+import React from 'react';
+import { getReferrals } from '@/services/patient-user';
 import type {
-  OutTransferRecord,
-  TransferRecord as TransferRecordType,
-} from '@/services/patient-user/typings';
-import useComponentStyles from './components.style';
+  ExternalReferralItem,
+  InternalReferralItem,
+} from '@/services/patient-user/typings.d';
 
 const { Title } = Typography;
 
-const TransferRecord: React.FC = () => {
-  const { styles } = useComponentStyles();
-  const inTransferTableRef = useRef<ActionType>(null);
-  const outTransferTableRef = useRef<ActionType>(null);
+interface TransferRecordProps {
+  patientId: string;
+}
 
-  // 获取院内转诊记录数据
-  const getInTransferRecords = (): TransferRecordType[] => {
-    return [
-      {
-        id: '1',
-        transferTime: '2013/12/08',
-        transferOutDoctor: '薛贞',
-        referralDoctor: '康雄',
-        note: '转诊了',
-      },
-      {
-        id: '2',
-        transferTime: '2018/04/10',
-        transferOutDoctor: '武泽',
-        referralDoctor: '刘群',
-        note: '转诊了',
-      },
-      {
-        id: '3',
-        transferTime: '1992/05/22',
-        transferOutDoctor: '林梅',
-        referralDoctor: '江旭',
-        note: '转诊了',
-      },
-    ];
-  };
+// -------- 院内转诊列定义 --------
+const inTransferColumns: ProColumns<InternalReferralItem>[] = [
+  { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
+  {
+    title: '转出医生',
+    dataIndex: 'from_doctor_name',
+    width: 100,
+    render: (_, record) => record.from_doctor_name ?? '--',
+  },
+  {
+    title: '接诊医生',
+    dataIndex: 'to_doctor_name',
+    width: 100,
+    render: (_, record) => record.to_doctor_name ?? '--',
+  },
+  {
+    title: '备注',
+    dataIndex: 'note',
+    width: 200,
+    render: (_, record) => record.note ?? '--',
+  },
+];
 
-  // 获取院外转诊记录数据
-  const getOutTransferRecords = (): OutTransferRecord[] => {
-    return [
-      {
-        id: '1',
-        transferTime: '2013/12/08',
-        transferHospital: '大医院',
-        referralDoctor: '康雄',
-        phone: '19158064846',
-        hasReplyTransfer: '是',
-      },
-      {
-        id: '2',
-        transferTime: '2018/04/10',
-        transferHospital: '大医院',
-        referralDoctor: '刘群',
-        phone: '16724372692',
-        hasReplyTransfer: '是',
-      },
-    ];
-  };
+// -------- 院外转诊列定义 --------
+const outTransferColumns: ProColumns<ExternalReferralItem>[] = [
+  { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
+  {
+    title: '转出医生',
+    dataIndex: 'from_doctor_name',
+    width: 100,
+    render: (_, record) => record.from_doctor_name ?? '--',
+  },
+  {
+    title: '转诊医院',
+    dataIndex: 'hospital_name',
+    width: 120,
+    render: (_, record) => record.hospital_name ?? '--',
+  },
+  {
+    title: '接诊医生',
+    dataIndex: 'to_doctor_name',
+    width: 100,
+    render: (_, record) => record.to_doctor_name ?? '--',
+  },
+  {
+    title: '联系方式',
+    dataIndex: 'to_doctor_phone',
+    width: 140,
+    render: (_, record) => record.to_doctor_phone ?? '--',
+  },
+  {
+    title: '是否同意',
+    dataIndex: 'is_accepted',
+    width: 100,
+    render: (_, record) => (
+      <Tag color={record.is_accepted ? 'blue' : 'red'}>
+        {record.is_accepted ? '已同意' : '未同意'}
+      </Tag>
+    ),
+  },
+];
 
-  // 院内转诊记录列定义
-  const inTransferColumns: ProColumns<TransferRecordType>[] = [
-    {
-      title: '转诊时间',
-      dataIndex: 'transferTime',
-      width: 120,
-    },
-    {
-      title: '转出医生',
-      dataIndex: 'transferOutDoctor',
-      width: 100,
-    },
-    {
-      title: '接诊医生',
-      dataIndex: 'referralDoctor',
-      width: 100,
-    },
-    {
-      title: '备注',
-      dataIndex: 'note',
-      width: 200,
-    },
-  ];
+const TransferRecord: React.FC<TransferRecordProps> = ({ patientId }) => {
+  // 单次 API 调用获取院内+院外转诊数据
+  const { data, loading } = useRequest(() => getReferrals(patientId), {
+    ready: !!patientId,
+  });
 
-  // 院外转诊记录列定义
-  const outTransferColumns: ProColumns<OutTransferRecord>[] = [
-    {
-      title: '转诊时间',
-      dataIndex: 'transferTime',
-      width: 120,
-    },
-    {
-      title: '转诊医院',
-      dataIndex: 'transferHospital',
-      width: 120,
-    },
-    {
-      title: '转诊医生',
-      dataIndex: 'referralDoctor',
-      width: 100,
-    },
-    {
-      title: '联系方式',
-      dataIndex: 'phone',
-      width: 140,
-    },
-    {
-      title: '是否回复转诊',
-      dataIndex: 'hasReplyTransfer',
-      width: 100,
-    },
-  ];
-
-  // 获取院内转诊记录
-  const fetchInTransferRecords = async () => {
-    const mockData = getInTransferRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
-  };
-
-  // 获取院外转诊记录
-  const fetchOutTransferRecords = async () => {
-    const mockData = getOutTransferRecords();
-    return {
-      data: mockData,
-      success: true,
-      total: mockData.length,
-    };
-  };
+  if (loading) {
+    return (
+      <Spin style={{ display: 'block', padding: 40, textAlign: 'center' }} />
+    );
+  }
 
   return (
-    <div className={styles.tabContent}>
-      <div className={styles.infoSection}>
-        <div className={styles.sectionHeader}>
-          <Title level={5} className={styles.sectionTitle}>
-            院内转诊
-          </Title>
-        </div>
-        <ProTable<TransferRecordType>
-          actionRef={inTransferTableRef}
-          rowKey="id"
-          search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          scroll={{ x: 1000 }}
-          request={fetchInTransferRecords}
-          columns={inTransferColumns}
-          pagination={{
-            pageSize: 5,
-          }}
-        />
-      </div>
+    <div>
+      <Title level={5}>院内转诊</Title>
+      <ProTable<InternalReferralItem>
+        rowKey="id"
+        search={false}
+        options={false}
+        scroll={{ x: 600 }}
+        dataSource={data?.internal ?? []}
+        columns={inTransferColumns}
+        pagination={{ defaultPageSize: 5 }}
+      />
 
-      <div className={styles.infoSection}>
-        <div className={styles.sectionHeader}>
-          <Title level={5} className={styles.sectionTitle}>
-            院外转诊
-          </Title>
-        </div>
-        <ProTable<OutTransferRecord>
-          actionRef={outTransferTableRef}
-          rowKey="id"
-          search={false}
-          options={{
-            reload: false,
-            density: false,
-            fullScreen: false,
-            setting: false,
-          }}
-          scroll={{ x: 1000 }}
-          request={fetchOutTransferRecords}
-          columns={outTransferColumns}
-          pagination={{
-            pageSize: 5,
-          }}
-        />
-      </div>
+      <Title level={5} style={{ marginTop: 24 }}>
+        院外转诊
+      </Title>
+      <ProTable<ExternalReferralItem>
+        rowKey="id"
+        search={false}
+        options={false}
+        scroll={{ x: 800 }}
+        dataSource={data?.external ?? []}
+        columns={outTransferColumns}
+        pagination={{ defaultPageSize: 5 }}
+      />
     </div>
   );
 };

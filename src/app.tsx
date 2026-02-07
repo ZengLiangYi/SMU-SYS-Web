@@ -1,9 +1,18 @@
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
 import { AvatarDropdown, AvatarName } from '@/components';
+
+// dayjs 全局配置（仅在入口执行一次）
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
+
 import NotificationBell from '@/components/NotificationBell';
 import { getDoctorMe } from '@/services/auth';
+import { connectSocket } from '@/services/websocket';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 
@@ -39,6 +48,8 @@ export async function getInitialState(): Promise<{
         // 医生：调用 /me 接口获取最新信息
         const res = await getDoctorMe();
         if (res.status === 'OK') {
+          // 建立 WebSocket 连接（医生角色）
+          connectSocket(token);
           return {
             ...res.data,
             avatar: '/images/avatar.png',
@@ -143,7 +154,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 
     menuHeaderRender: undefined,
     childrenRender: (children) => {
-      return <>{children}</>;
+      return children;
     },
     ...initialState?.settings,
   };

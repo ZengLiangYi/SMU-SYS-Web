@@ -1,4 +1,4 @@
-import { Form, Input, Modal, message, Select } from 'antd';
+import { App, Form, Input, Modal, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
 import {
   CognitiveTraining,
@@ -15,7 +15,7 @@ interface PrescriptionData {
 }
 
 interface PrescriptionEditModalProps {
-  visible: boolean;
+  open: boolean;
   title?: string;
   initialData?: PrescriptionData;
   onCancel: () => void;
@@ -23,12 +23,13 @@ interface PrescriptionEditModalProps {
 }
 
 const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
-  visible,
+  open,
   title = '修改康复处方',
   initialData,
   onCancel,
   onSuccess,
 }) => {
+  const { message, modal } = App.useApp();
   const [form] = Form.useForm();
 
   // 处方状态
@@ -48,13 +49,13 @@ const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
   const [editingExercise, setEditingExercise] = useState<any>(null);
 
   useEffect(() => {
-    if (visible && initialData) {
+    if (open && initialData) {
       setMedications(initialData.medications || []);
       setCognitiveCards(initialData.cognitiveCards || []);
       setDietContent(initialData.dietContent || '');
       setExercises(initialData.exercises || []);
     }
-  }, [visible, initialData]);
+  }, [open, initialData]);
 
   // 药物治疗操作
   const handleAddMedication = () => {
@@ -70,7 +71,7 @@ const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
   };
 
   const handleDeleteMedication = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个药物吗？',
       onOk: () => {
@@ -116,7 +117,7 @@ const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
   };
 
   const handleDeleteCognitive = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个训练卡片吗？',
       onOk: () => {
@@ -180,7 +181,7 @@ const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
   };
 
   const handleDeleteExercise = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: '确认删除',
       content: '确定要删除这个运动计划吗？',
       onOk: () => {
@@ -226,11 +227,11 @@ const PrescriptionEditModal: React.FC<PrescriptionEditModalProps> = ({
     <>
       <Modal
         title={title}
-        open={visible}
+        open={open}
         onOk={handleSubmit}
         onCancel={onCancel}
         width={900}
-        bodyStyle={{ maxHeight: '70vh', overflowY: 'auto' }}
+        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
       >
         <div style={{ padding: '20px 0' }}>
           {/* 药物治疗 */}
