@@ -1,4 +1,3 @@
-import { PlusOutlined } from '@ant-design/icons';
 import {
   ModalForm,
   ProFormText,
@@ -10,7 +9,12 @@ import { App, Form, Upload } from 'antd';
 import React, { cloneElement, useCallback, useState } from 'react';
 import { updateMedicine } from '@/services/medicine';
 import type { Medicine } from '@/services/medicine/typings.d';
-import { getFileUrl, getUploadProps, urlToUploadFile } from '@/utils/upload';
+import {
+  getFileUrl,
+  getUploadProps,
+  uploadCardButton,
+  urlToUploadFile,
+} from '@/utils/upload';
 
 interface EditMedicineFormProps {
   trigger?: React.ReactElement<{ onClick?: () => void }>;
@@ -54,13 +58,6 @@ const EditMedicineForm: React.FC<EditMedicineFormProps> = ({
     setOpen(false);
     setFileList([]);
   }, []);
-
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>上传图片</div>
-    </div>
-  );
 
   return (
     <>
@@ -129,7 +126,7 @@ const EditMedicineForm: React.FC<EditMedicineFormProps> = ({
             onChange={({ fileList: newFileList }) => setFileList(newFileList)}
             maxCount={1}
           >
-            {fileList.length >= 1 ? null : uploadButton}
+            {fileList.length >= 1 ? null : uploadCardButton}
           </Upload>
         </Form.Item>
         <ProFormTextArea

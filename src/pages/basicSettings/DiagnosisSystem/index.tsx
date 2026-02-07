@@ -1,13 +1,14 @@
-import {
-  DeleteOutlined,
-  EditOutlined,
-  PlusCircleOutlined,
-} from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProCard, ProTable } from '@ant-design/pro-components';
-import { useRequest, useSearchParams } from '@umijs/max';
-import { App, Button, Popconfirm, Space, Tag } from 'antd';
+import { history, useRequest, useSearchParams } from '@umijs/max';
+import { App, Button, Image, Popconfirm, Space, Tag } from 'antd';
 import React, { useRef } from 'react';
+import {
+  deleteDiagnosticScale,
+  getDiagnosticScales,
+} from '@/services/diagnostic-scale';
+import type { DiagnosticScale } from '@/services/diagnostic-scale/typings.d';
 import {
   deleteImagingIndicator,
   getImagingIndicators,
@@ -15,118 +16,12 @@ import {
 import type { ImagingIndicator } from '@/services/imaging-indicator/typings.d';
 import { deleteLabIndicator, getLabIndicators } from '@/services/lab-indicator';
 import type { LabIndicator } from '@/services/lab-indicator/typings.d';
-import { getFeatureColor, getScaleTypeColor } from '@/utils/constants';
+import { getStaticUrl } from '@/services/static';
 import { formatDateTime } from '@/utils/date';
 import CreateImagingForm from './components/CreateImagingForm';
 import CreateLabForm from './components/CreateLabForm';
 import EditImagingForm from './components/EditImagingForm';
 import EditLabForm from './components/EditLabForm';
-
-// -------- 量表配置（保留 mock，无 API） --------
-
-interface ScaleConfigItem {
-  id: string;
-  scaleName: string;
-  scaleTargetType: string[];
-  difficulty: string;
-  features: string[];
-  createTime: string;
-}
-
-const scaleColumns: ProColumns<ScaleConfigItem>[] = [
-  {
-    title: '量表名称',
-    dataIndex: 'scaleName',
-    width: 200,
-  },
-  {
-    title: '量表题目类型',
-    dataIndex: 'scaleTargetType',
-    width: 200,
-    render: (_, record) => (
-      <Space size={[8, 8]} wrap>
-        {record.scaleTargetType.map((type) => (
-          <Tag
-            key={type}
-            color={getScaleTypeColor(type)}
-            style={{ borderRadius: 12 }}
-          >
-            {type}
-          </Tag>
-        ))}
-      </Space>
-    ),
-  },
-  {
-    title: '题量',
-    dataIndex: 'difficulty',
-    width: 100,
-  },
-  {
-    title: '功能支持',
-    dataIndex: 'features',
-    width: 200,
-    render: (_, record) => (
-      <Space size={[8, 8]} wrap>
-        {record.features.map((feature) => (
-          <Tag
-            key={feature}
-            color={getFeatureColor(feature)}
-            style={{ borderRadius: 12 }}
-          >
-            {feature}
-          </Tag>
-        ))}
-      </Space>
-    ),
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'createTime',
-    width: 120,
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 150,
-    fixed: 'right',
-    render: () => (
-      <Space>
-        <Button type="link" size="small" icon={<EditOutlined />}>
-          修改
-        </Button>
-        <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-          删除
-        </Button>
-      </Space>
-    ),
-  },
-];
-
-const scaleMockData: ScaleConfigItem[] = [
-  {
-    id: '1',
-    scaleName: 'AD-8 极早期痴呆筛查量表',
-    scaleTargetType: ['单选题', '判断题'],
-    difficulty: '8题',
-    features: ['录音'],
-    createTime: '1971/07/14',
-  },
-  {
-    id: '2',
-    scaleName: 'MMSE 简易精神状态检查',
-    scaleTargetType: ['单选题', '简答题', '画图'],
-    difficulty: '30题',
-    features: ['录音', '图片'],
-    createTime: '1987/02/13',
-  },
-];
-
-const fetchScaleList = async () => ({
-  data: scaleMockData,
-  success: true,
-  total: scaleMockData.length,
-});
 
 // -------- 主组件 --------
 
@@ -154,6 +49,15 @@ const DiagnosisSystem: React.FC = () => {
     onSuccess: () => {
       message.success('删除成功');
       imagingActionRef.current?.reload();
+    },
+  });
+
+  // -------- 量表删除 --------
+  const { run: runDeleteScale } = useRequest(deleteDiagnosticScale, {
+    manual: true,
+    onSuccess: () => {
+      message.success('删除成功');
+      scaleActionRef.current?.reload();
     },
   });
 
@@ -342,6 +246,118 @@ const DiagnosisSystem: React.FC = () => {
     }
   };
 
+  // -------- 量表列定义 --------
+  const scaleColumns: ProColumns<DiagnosticScale>[] = [
+    {
+      title: '量表名称',
+      dataIndex: 'name',
+      width: 180,
+      ellipsis: true,
+    },
+    {
+      title: '量表图片',
+      dataIndex: 'image_url',
+      width: 80,
+      render: (_, record) => (
+        <Image
+          src={getStaticUrl(record.image_url)}
+          alt={record.name}
+          width={60}
+          height={60}
+          style={{ objectFit: 'cover', borderRadius: 4 }}
+        />
+      ),
+    },
+    {
+      title: '适用疾病',
+      dataIndex: 'primary_diseases',
+      width: 200,
+      render: (_, record) => (
+        <Space size={[4, 4]} wrap>
+          {record.primary_diseases.map((d) => (
+            <Tag key={d}>{d}</Tag>
+          ))}
+        </Space>
+      ),
+    },
+    {
+      title: '量表介绍',
+      dataIndex: 'introduction',
+      width: 200,
+      ellipsis: true,
+    },
+    {
+      title: '预估时长',
+      dataIndex: 'estimated_duration',
+      width: 100,
+    },
+    {
+      title: '题目数量',
+      dataIndex: 'question_count',
+      width: 80,
+      render: (_, record) => `${record.question_count}题`,
+    },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      width: 160,
+      render: (_, record) => formatDateTime(record.created_at),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 150,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="link"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() =>
+              history.push(
+                `/basic-settings/diagnosis-system/scale-form?id=${record.id}`,
+              )
+            }
+          >
+            修改
+          </Button>
+          <Popconfirm
+            title="确认删除该量表？"
+            onConfirm={() => runDeleteScale(record.id)}
+          >
+            <Button
+              type="link"
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              aria-label="删除"
+            >
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  // -------- 量表列表请求 --------
+  const fetchScaleList = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 10 } = params;
+    try {
+      const { data } = await getDiagnosticScales({
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
+  };
+
   return (
     <PageContainer>
       <ProCard
@@ -354,7 +370,7 @@ const DiagnosisSystem: React.FC = () => {
               key: 'scale',
               label: '量表配置',
               children: (
-                <ProTable<ScaleConfigItem>
+                <ProTable<DiagnosticScale>
                   actionRef={scaleActionRef}
                   rowKey="id"
                   search={false}
@@ -363,14 +379,19 @@ const DiagnosisSystem: React.FC = () => {
                     <Button
                       key="create"
                       type="primary"
-                      icon={<PlusCircleOutlined />}
+                      icon={<PlusOutlined />}
+                      onClick={() =>
+                        history.push(
+                          '/basic-settings/diagnosis-system/scale-form',
+                        )
+                      }
                     >
-                      添加
+                      添加量表
                     </Button>,
                   ]}
                   request={fetchScaleList}
                   columns={scaleColumns}
-                  scroll={{ x: 1200 }}
+                  scroll={{ x: 1400 }}
                   pagination={{
                     defaultPageSize: 10,
                     showSizeChanger: true,

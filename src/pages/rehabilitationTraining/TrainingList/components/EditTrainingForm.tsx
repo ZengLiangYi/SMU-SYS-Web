@@ -1,4 +1,3 @@
-import { PlusOutlined } from '@ant-design/icons';
 import {
   ModalForm,
   ProFormSelect,
@@ -12,7 +11,12 @@ import React, { cloneElement, useCallback, useState } from 'react';
 import { updateRehabLevel } from '@/services/rehab-level';
 import type { RehabLevel } from '@/services/rehab-level/typings.d';
 import { REHAB_LEVEL_TYPES } from '@/utils/constants';
-import { getFileUrl, getUploadProps, urlToUploadFile } from '@/utils/upload';
+import {
+  getFileUrl,
+  getUploadProps,
+  uploadCardButton,
+  urlToUploadFile,
+} from '@/utils/upload';
 
 interface EditTrainingFormProps {
   trigger?: React.ReactElement<{ onClick?: () => void }>;
@@ -56,13 +60,6 @@ const EditTrainingForm: React.FC<EditTrainingFormProps> = ({
     setOpen(false);
     setFileList([]);
   }, []);
-
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>上传图片</div>
-    </div>
-  );
 
   return (
     <>
@@ -128,7 +125,7 @@ const EditTrainingForm: React.FC<EditTrainingFormProps> = ({
             onChange={({ fileList: newFileList }) => setFileList(newFileList)}
             maxCount={1}
           >
-            {fileList.length >= 1 ? null : uploadButton}
+            {fileList.length >= 1 ? null : uploadCardButton}
           </Upload>
         </Form.Item>
         <ProFormTextArea

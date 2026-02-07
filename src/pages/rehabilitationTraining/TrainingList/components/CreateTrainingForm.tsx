@@ -12,7 +12,7 @@ import type { FC } from 'react';
 import { useState } from 'react';
 import { createRehabLevel } from '@/services/rehab-level';
 import { REHAB_LEVEL_TYPES } from '@/utils/constants';
-import { getFileUrl, getUploadProps } from '@/utils/upload';
+import { getFileUrl, getUploadProps, uploadCardButton } from '@/utils/upload';
 
 interface CreateTrainingFormProps {
   onOk?: () => void;
@@ -32,13 +32,6 @@ const CreateTrainingForm: FC<CreateTrainingFormProps> = ({ onOk }) => {
       message.error('创建失败，请重试');
     },
   });
-
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div style={{ marginTop: 8 }}>上传图片</div>
-    </div>
-  );
 
   return (
     <ModalForm
@@ -103,7 +96,7 @@ const CreateTrainingForm: FC<CreateTrainingFormProps> = ({ onOk }) => {
           onChange={({ fileList: newFileList }) => setFileList(newFileList)}
           maxCount={1}
         >
-          {fileList.length >= 1 ? null : uploadButton}
+          {fileList.length >= 1 ? null : uploadCardButton}
         </Upload>
       </Form.Item>
       <ProFormTextArea

@@ -1,5 +1,24 @@
+import { PlusOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
+import React from 'react';
 import { getStaticUrl } from '@/services/static';
+
+/**
+ * Upload picture-card 的默认占位按钮（模块级常量，避免每次渲染重建）
+ *
+ * @example
+ * ```tsx
+ * <Upload listType="picture-card">
+ *   {fileList.length >= 1 ? null : uploadCardButton}
+ * </Upload>
+ * ```
+ */
+export const uploadCardButton: React.ReactNode = React.createElement(
+  'div',
+  null,
+  React.createElement(PlusOutlined),
+  React.createElement('div', { style: { marginTop: 8 } }, '上传图片'),
+);
 
 /** 上传配置选项 */
 interface UploadOptions {

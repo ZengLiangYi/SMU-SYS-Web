@@ -93,6 +93,12 @@ export default [
         access: 'canDoctor',
       },
       {
+        path: '/basic-settings/diagnosis-system/scale-form',
+        component: './basicSettings/DiagnosisSystem/ScaleForm',
+        hideInMenu: true,
+        access: 'canDoctor',
+      },
+      {
         path: '/basic-settings/referral-hospital',
         name: '转诊医院列表',
         component: './basicSettings/ReferralHospital',
