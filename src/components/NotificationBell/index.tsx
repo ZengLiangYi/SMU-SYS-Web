@@ -10,7 +10,6 @@ import {
   Tabs,
   Typography,
 } from 'antd';
-import dayjs from 'dayjs';
 import React, { useCallback, useState } from 'react';
 import {
   getNotifications,
@@ -19,6 +18,7 @@ import {
 import type { NotificationItem } from '@/services/notification/typings.d';
 import { useSocket } from '@/services/websocket/useSocket';
 import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
+import { formatTimeAgoUTC } from '@/utils/date';
 
 const { Text, Paragraph } = Typography;
 
@@ -169,7 +169,7 @@ const NotificationBell: React.FC = () => {
                     type="secondary"
                     style={{ fontSize: 12, flexShrink: 0, marginLeft: 8 }}
                   >
-                    {dayjs.utc(item.created_at).fromNow()}
+                    {formatTimeAgoUTC(item.created_at)}
                   </Text>
                 </div>
                 <Paragraph

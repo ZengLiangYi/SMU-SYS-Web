@@ -19,5 +19,10 @@ export default {
       changeOrigin: true,
       pathRewrite: { '^': '' },
     },
+    '/socket.io': {
+      target: 'https://alzheimer.dianchuang.club',
+      changeOrigin: true,
+      ws: true,
+    },
   },
 };

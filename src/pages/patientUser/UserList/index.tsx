@@ -2,6 +2,7 @@ import {
   CloseCircleOutlined,
   EyeOutlined,
   HomeOutlined,
+  MessageOutlined,
   PlayCircleOutlined,
   SwapOutlined,
   UserAddOutlined,
@@ -16,6 +17,7 @@ import {
   createBindRequest,
   getBindRequests,
 } from '@/services/bind-request';
+import { createConversation } from '@/services/chat';
 import { getPatients } from '@/services/patient-user';
 import type { PatientListItem } from '@/services/patient-user/typings.d';
 import { CROWD_CATEGORY_ENUM, getCategoryColor } from '@/utils/constants';
@@ -147,11 +149,21 @@ const UserList: React.FC = () => {
     },
   ];
 
+  // -------- 发起聊天 --------
+  const handleChat = async (patientId: string) => {
+    try {
+      const { data } = await createConversation({ patient_id: patientId });
+      history.push(`/patient-user/chat?conversationId=${data.id}`);
+    } catch (err: any) {
+      message.error(err?.data?.msg || '发起聊天失败');
+    }
+  };
+
   // -------- 已绑定患者操作列 --------
   const boundActionColumn: ProColumns<PatientListItem> = {
     title: '操作',
     key: 'action',
-    width: 200,
+    width: 240,
     fixed: 'right',
     search: false,
     render: (_, record) => (
@@ -163,6 +175,14 @@ const UserList: React.FC = () => {
           onClick={() => history.push(`/patient-user/detail/${record.id}`)}
         >
           详情
+        </Button>
+        <Button
+          type="link"
+          size="small"
+          icon={<MessageOutlined />}
+          onClick={() => handleChat(record.id)}
+        >
+          聊天
         </Button>
         <Button
           type="link"
@@ -285,7 +305,7 @@ const UserList: React.FC = () => {
         search={{ labelWidth: 'auto' }}
         request={fetchList}
         columns={columns}
-        scroll={{ x: isBound ? 1200 : 800 }}
+        scroll={{ x: isBound ? 1300 : 800 }}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

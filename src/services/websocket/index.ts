@@ -2,6 +2,11 @@ import { io, Socket } from 'socket.io-client';
 import type { SocketEventMap, SocketEventType } from './typings.d';
 
 const HEARTBEAT_INTERVAL = 30_000; // 30s
+// 开发走 proxy，生产用实际地址
+const WS_URL =
+  process.env.NODE_ENV === 'development'
+    ? undefined
+    : 'https://alzheimer.dianchuang.club';
 
 let socket: Socket | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
@@ -19,7 +24,7 @@ export function getSocket(): Socket | null {
 export function connectSocket(token: string): Socket {
   if (socket?.connected) return socket;
 
-  socket = io({
+  socket = io(WS_URL ?? '', {
     path: '/socket.io',
     auth: { token, role: 'doctor' },
     transports: ['websocket', 'polling'],

@@ -8,17 +8,23 @@
 |------|------|------|
 | React | 19.x | 前端框架 |
 | Ant Design | 6.x | UI 组件库 |
+| Ant Design X | 2.x | AI/聊天 UI 组件（Conversations、Bubble、Sender、Attachments） |
 | Pro Components | 3.x | 高级业务组件 |
 | UmiJS Max | 4.x | 企业级前端框架 |
 | TypeScript | 5.x | 类型安全 |
+| Socket.IO Client | 4.x | WebSocket 实时通信 |
 
 ## 功能模块
 
 ```
 ├── 用户登录          # 支持管理员/医生双角色登录
-├── 用户列表          # 患者用户管理
+├── 用户列表          # 患者用户管理（含聊天入口）
 │   ├── 用户详情      # 个人信息、诊疗记录、随访记录等
 │   └── 诊疗流程      # 5步诊疗流程（初诊→AI推荐→结果录入→AI诊断→处方制定）
+├── 用户聊天          # 医患实时聊天（三栏布局：会话列表 + 聊天区 + 患者详情）
+│   ├── 文本/图片消息  # 支持文字发送、图片上传与粘贴
+│   ├── 消息撤回      # 医生可撤回已发送消息
+│   └── WebSocket     # Socket.IO 实时推送 + 心跳保活
 ├── 诊疗列表          # 诊疗记录管理
 ├── 药物治疗管理
 │   ├── 认知疾病类型  # 疾病分类管理
@@ -43,6 +49,11 @@ src/
 ├── pages/                    # 页面组件
 │   ├── user/login/           # 登录页
 │   ├── patientUser/          # 患者用户模块
+│   │   ├── UserList/         # 用户列表（含聊天入口）
+│   │   ├── UserChat/         # 聊天页面（Splitter 双栏布局：患者列表 + 聊天区）
+│   │   │   └── components/   # ChatPanel
+│   │   ├── UserDetail/       # 用户详情
+│   │   └── Diagnosis/        # 诊疗流程
 │   ├── drugTreatment/        # 药物治疗模块
 │   ├── rehabilitationTraining/   # 康复训练模块
 │   └── basicSettings/        # 基础设置模块
@@ -53,6 +64,8 @@ src/
 └── services/                 # 服务层
     ├── typings.d.ts          # 全局 API 类型（API 命名空间）
     ├── auth/                 # 认证服务
+    ├── chat/                 # 聊天服务（会话、消息、媒体上传）
+    ├── websocket/            # WebSocket 服务（Socket.IO 连接、心跳、事件订阅）
     ├── static/               # 静态资源服务
     ├── rehab-level/          # 康复训练关卡服务
     └── patient-user/         # 患者用户类型定义
@@ -112,8 +125,9 @@ npm run build
 
 ## API 配置
 
-- 开发环境：通过 proxy 代理到 `https://alzheimer.dianchuang.club`
+- 开发环境：通过 proxy 代理到 `https://alzheimer.dianchuang.club`（`/api/` + `/socket.io`）
 - 生产环境：直接请求 `https://alzheimer.dianchuang.club`
+- WebSocket：Socket.IO 连接路径 `/socket.io`，开发环境走代理，生产环境走显式 URL
 
 配置文件：`config/proxy.ts`
 
@@ -437,5 +451,7 @@ const EditXxxForm: FC<{ trigger: ReactElement; record: Item; onOk?: () => void }
 ## 相关文档
 
 - [Ant Design 6.0](https://ant-design.antgroup.com/components/overview-cn/)
+- [Ant Design X 2.0](https://x.ant.design/components/overview-cn)
 - [Pro Components](https://pro-components.antdigital.dev/components)
 - [UmiJS Max](https://umijs.org/docs/max/introduce)
+- [Socket.IO Client](https://socket.io/docs/v4/client-api/)

@@ -190,7 +190,7 @@ const ScaleForm: React.FC = () => {
                 placeholder="请选择或输入适用疾病…"
                 fieldProps={{ mode: 'tags' }}
                 request={async () => {
-                  const { data } = await getDiseaseTypes({ limit: 200 });
+                  const { data } = await getDiseaseTypes({ limit: 100 });
                   return data.items.map((item) => ({
                     label: item.disease_name,
                     value: item.disease_name,

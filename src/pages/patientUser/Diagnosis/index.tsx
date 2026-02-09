@@ -150,8 +150,8 @@ const Diagnosis: React.FC = () => {
       try {
         // 并行加载候选目录 (async-parallel)
         const [labRes, imagingRes] = await Promise.all([
-          getLabIndicators({ limit: 200 }),
-          getImagingIndicators({ limit: 200 }),
+          getLabIndicators({ limit: 100 }),
+          getImagingIndicators({ limit: 100 }),
         ]);
 
         const labCandidates = labRes.data.items.map((l) => ({
@@ -220,7 +220,7 @@ const Diagnosis: React.FC = () => {
       ];
 
       const [diseaseRes, llmRes] = await Promise.all([
-        getDiseaseTypes({ limit: 200 }),
+        getDiseaseTypes({ limit: 100 }),
         getDiseaseJudgement({
           uuid: patientId,
           screening_items: allSelectedNames,
@@ -262,8 +262,8 @@ const Diagnosis: React.FC = () => {
 
       // 并行解析药物和训练名称 (async-parallel)
       const [medRes, rehabRes] = await Promise.all([
-        getMedicines({ limit: 200 }),
-        getRehabLevels({ limit: 200 }),
+        getMedicines({ limit: 100 }),
+        getRehabLevels({ limit: 100 }),
       ]);
 
       // 将 LLM 返回的 ID 匹配为显示数据
