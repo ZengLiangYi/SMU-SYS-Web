@@ -10,7 +10,6 @@ import {
   Tabs,
   Typography,
 } from 'antd';
-import { createStyles } from 'antd-style';
 import dayjs from 'dayjs';
 import React, { useCallback, useState } from 'react';
 import {
@@ -23,61 +22,10 @@ import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
 
 const { Text, Paragraph } = Typography;
 
-const useStyles = createStyles(({ token }) => ({
-  bellWrapper: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 48,
-    padding: '0 12px',
-    cursor: 'pointer',
-    borderRadius: token.borderRadius,
-    transition: 'background-color 0.2s',
-    border: 'none',
-    background: 'none',
-    color: 'inherit',
-    font: 'inherit',
-    outline: 'inherit',
-    '&:hover': {
-      backgroundColor: token.colorBgTextHover,
-    },
-  },
-  popoverContent: {
-    width: 336,
-  },
-  listItem: {
-    cursor: 'pointer',
-    padding: '12px 0',
-    transition: 'background-color 0.2s',
-    '&:hover': {
-      backgroundColor: token.colorBgTextHover,
-    },
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    backgroundColor: token.colorPrimary,
-    flexShrink: 0,
-    marginTop: 6,
-  },
-  footer: {
-    display: 'flex',
-    justifyContent: 'center',
-    padding: '8px 0 4px',
-    borderTop: `1px solid ${token.colorBorderSecondary}`,
-  },
-  tabContent: {
-    maxHeight: 340,
-    overflowY: 'auto' as const,
-  },
-}));
-
 const POLLING_INTERVAL = 60_000; // 60s（WebSocket 作为主推送通道后降低轮询频率）
 const LIST_PAGE_SIZE = 20;
 
 const NotificationBell: React.FC = () => {
-  const { styles } = useStyles();
   const { message } = App.useApp();
   const { initialState } = useModel('@@initialState');
   const [open, setOpen] = useState(false);
@@ -113,7 +61,6 @@ const NotificationBell: React.FC = () => {
 
   // -------- WebSocket 实时推送 --------
   useSocket('notification:new', (_payload) => {
-    // 收到新通知时：刷新未读计数，如果 Popover 打开则刷新列表
     refreshUnreadCount();
     if (open && activeTab === 'unread') {
       fetchList('unread');
@@ -156,12 +103,10 @@ const NotificationBell: React.FC = () => {
   // -------- 单条点击 --------
   const handleItemClick = useCallback(
     (item: NotificationItem) => {
-      // 未读则标记已读
       if (item.status === 'unread') {
         runMarkRead({ ids: [item.id] });
       }
 
-      // 业务跳转
       if (item.biz_type && item.biz_id) {
         const routeFn = NOTIFICATION_BIZ_ROUTE_MAP[item.biz_type];
         if (routeFn) {
@@ -190,7 +135,7 @@ const NotificationBell: React.FC = () => {
 
   // -------- 列表渲染 --------
   const renderList = () => (
-    <div className={styles.tabContent}>
+    <div style={{ maxHeight: 340, overflowY: 'auto' }}>
       <List
         loading={listLoading || markReadLoading}
         dataSource={listItems}
@@ -204,12 +149,11 @@ const NotificationBell: React.FC = () => {
         }}
         renderItem={(item) => (
           <List.Item
-            className={styles.listItem}
             onClick={() => handleItemClick(item)}
-            style={{ padding: '12px 16px' }}
+            style={{ padding: '12px 16px', cursor: 'pointer' }}
           >
             <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-              {item.status === 'unread' && <div className={styles.unreadDot} />}
+              {item.status === 'unread' && <Badge status="processing" />}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div
                   style={{
@@ -225,7 +169,7 @@ const NotificationBell: React.FC = () => {
                     type="secondary"
                     style={{ fontSize: 12, flexShrink: 0, marginLeft: 8 }}
                   >
-                    {dayjs(item.created_at).fromNow()}
+                    {dayjs.utc(item.created_at).fromNow()}
                   </Text>
                 </div>
                 <Paragraph
@@ -245,7 +189,7 @@ const NotificationBell: React.FC = () => {
 
   // -------- Popover 内容 --------
   const popoverContent = (
-    <div className={styles.popoverContent}>
+    <div style={{ width: 336 }}>
       <Tabs
         activeKey={activeTab}
         onChange={handleTabChange}
@@ -264,7 +208,14 @@ const NotificationBell: React.FC = () => {
         ]}
       />
       {activeTab === 'unread' && unreadCount > 0 && (
-        <div className={styles.footer}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '8px 0 4px',
+            borderTop: '1px solid #f0f0f0',
+          }}
+        >
           <Button type="link" size="small" onClick={handleReadAll}>
             全部已读
           </Button>
@@ -282,11 +233,19 @@ const NotificationBell: React.FC = () => {
       placement="bottomRight"
       arrow={false}
     >
-      <button className={styles.bellWrapper} type="button" aria-label="通知">
+      <span
+        style={{
+          display: 'inline-flex',
+          padding: 4,
+          fontSize: 18,
+          color: 'inherit',
+          cursor: 'pointer',
+        }}
+      >
         <Badge count={unreadCount} size="small" offset={[2, -2]}>
-          <BellOutlined style={{ fontSize: 18 }} />
+          <BellOutlined />
         </Badge>
-      </button>
+      </span>
     </Popover>
   );
 };

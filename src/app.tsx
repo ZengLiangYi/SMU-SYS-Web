@@ -3,11 +3,13 @@ import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/zh-cn';
 import { AvatarDropdown, AvatarName } from '@/components';
 
 // dayjs 全局配置（仅在入口执行一次）
 dayjs.extend(relativeTime);
+dayjs.extend(utc);
 dayjs.locale('zh-cn');
 
 import NotificationBell from '@/components/NotificationBell';
