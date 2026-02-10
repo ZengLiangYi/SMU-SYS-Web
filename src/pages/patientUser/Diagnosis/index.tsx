@@ -212,7 +212,7 @@ const Diagnosis: React.FC = () => {
                   physical_signs: values.physical_signs,
                   present_illness: values.present_illness,
                 });
-                loadScreeningData(
+                await loadScreeningData(
                   values.chief_complaint,
                   values.present_illness,
                   values.physical_signs ?? '',
@@ -316,7 +316,7 @@ const Diagnosis: React.FC = () => {
                   lab_result_url: labUrl,
                   imaging_result_url: imgUrl,
                 });
-                loadDiagnosisData();
+                await loadDiagnosisData();
                 return true;
               } catch {
                 message.error('保存失败，请重试');
@@ -380,7 +380,7 @@ const Diagnosis: React.FC = () => {
                   diagnosis_results: values.diagnosis_results,
                   diagnosis_note: values.diagnosis_note,
                 });
-                loadPrescriptionData();
+                await loadPrescriptionData();
                 return true;
               } catch {
                 message.error('保存失败，请重试');

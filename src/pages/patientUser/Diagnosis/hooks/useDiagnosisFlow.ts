@@ -104,7 +104,7 @@ export interface UseDiagnosisFlowReturn {
   diagnosisLoading: boolean;
   primaryDisease: PrimaryDisease | null;
   otherDiseases: OtherPossibleDisease[];
-  preventionAdvice: string | null;
+  preventionAdvice: string;
   diseaseNameMap: Map<string, string>;
   loadDiagnosisData: () => Promise<void>;
 
@@ -161,7 +161,7 @@ export default function useDiagnosisFlow(
   const [otherDiseases, setOtherDiseases] = useState<OtherPossibleDisease[]>(
     [],
   );
-  const [preventionAdvice, setPreventionAdvice] = useState<string | null>(null);
+  const [preventionAdvice, setPreventionAdvice] = useState('');
   const [diseaseNameMap, setDiseaseNameMap] = useState<Map<string, string>>(
     new Map(),
   );
@@ -284,7 +284,7 @@ export default function useDiagnosisFlow(
       const result: LlmDiseaseJudgementResponse = llmRes.data;
       setPrimaryDisease(result.primary_disease);
       setOtherDiseases(result.other_possible_diseases ?? []);
-      setPreventionAdvice(result.prevention_advice ?? null);
+      setPreventionAdvice(result.prevention_advice);
     } catch {
       // 错误由调用方处理
     } finally {

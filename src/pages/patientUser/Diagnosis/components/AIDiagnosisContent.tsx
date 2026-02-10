@@ -26,7 +26,7 @@ interface AIDiagnosisContentProps {
   loading?: boolean;
   primaryDisease: PrimaryDisease | null;
   otherDiseases: OtherPossibleDisease[];
-  preventionAdvice: string | null;
+  preventionAdvice: string;
   /** 疾病 ID -> 名称映射 */
   diseaseNameMap: Map<string, string>;
 }
