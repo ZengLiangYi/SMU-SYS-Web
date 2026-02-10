@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, LockOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
@@ -7,6 +7,7 @@ import React, { useRef } from 'react';
 import { deleteDoctorUser, getDoctorUsers } from '@/services/doctor-admin';
 import CreateDoctorForm from './components/CreateDoctorForm';
 import EditDoctorForm from './components/EditDoctorForm';
+import ResetPasswordModal from './components/ResetPasswordModal';
 
 const DoctorList: React.FC = () => {
   const { message } = App.useApp();
@@ -41,9 +42,15 @@ const DoctorList: React.FC = () => {
       },
     },
     {
+      title: '手机号',
+      dataIndex: 'phone',
+      width: 150,
+      search: false,
+    },
+    {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 240,
       fixed: 'right',
       search: false,
       render: (_, record) => (
@@ -56,6 +63,14 @@ const DoctorList: React.FC = () => {
             }
             record={record}
             onOk={() => actionRef.current?.reload()}
+          />
+          <ResetPasswordModal
+            trigger={
+              <Button type="link" size="small" icon={<LockOutlined />}>
+                修改密码
+              </Button>
+            }
+            record={record}
           />
           <Popconfirm
             title="确认删除"

@@ -19,7 +19,7 @@ const EditDoctorForm: React.FC<EditDoctorFormProps> = ({
   const [open, setOpen] = useState(false);
 
   const { run, loading } = useRequest(
-    (values: { code: string; name: string }) =>
+    (values: { code: string; name: string; phone?: string }) =>
       updateDoctorUser(record.id, values),
     {
       manual: true,
@@ -54,7 +54,11 @@ const EditDoctorForm: React.FC<EditDoctorFormProps> = ({
           destroyOnClose: true,
           okButtonProps: { loading },
         }}
-        onFinish={async (values: { code: string; name: string }) => {
+        onFinish={async (values: {
+          code: string;
+          name: string;
+          phone?: string;
+        }) => {
           await run(values);
           onCancel();
           return true;
@@ -77,6 +81,13 @@ const EditDoctorForm: React.FC<EditDoctorFormProps> = ({
             { required: true, message: '请输入姓名' },
             { max: 128, message: '姓名最多128个字符' },
           ]}
+        />
+        <ProFormText
+          name="phone"
+          label="手机号"
+          placeholder="请输入手机号…"
+          fieldProps={{ inputMode: 'tel' }}
+          rules={[{ max: 20, message: '手机号最多20个字符' }]}
         />
       </ModalForm>
     </>

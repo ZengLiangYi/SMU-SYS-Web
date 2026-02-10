@@ -127,6 +127,17 @@ export default [
   },
 
   {
+    path: '/account',
+    hideInMenu: true,
+    routes: [
+      {
+        path: '/account/center',
+        name: '个人中心',
+        component: './account/Center',
+      },
+    ],
+  },
+  {
     path: '/',
     redirect: '/patient-user/',
   },

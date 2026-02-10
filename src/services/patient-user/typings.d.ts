@@ -186,3 +186,40 @@ export interface ExerciseRecordListResult {
   limit: number;
   items: ExerciseRecordItem[];
 }
+
+// -------- 健康分析 --------
+export interface ScoreTrendPoint {
+  bucket_start: string;
+  score: number;
+}
+
+export interface PatientHealthAnalysis {
+  granularity: 'day' | 'week' | 'month';
+  start_date: string;
+  end_date: string;
+  blood_pressure_score: ScoreTrendPoint[];
+  blood_glucose_score: ScoreTrendPoint[];
+  blood_lipid_score: ScoreTrendPoint[];
+  diet_score: ScoreTrendPoint[];
+  exercise_score: ScoreTrendPoint[];
+  medication_adherence_score: ScoreTrendPoint[];
+  composite_scale_score: ScoreTrendPoint[];
+  overall_user_score: ScoreTrendPoint[];
+}
+
+export interface PatientAnalysisParams {
+  granularity?: 'day' | 'week' | 'month';
+  start_date?: string;
+  end_date?: string;
+}
+
+// -------- 量表分数 --------
+export interface ScaleScoreItem {
+  scale_id: string;
+  scale_name: string;
+  score: number | null;
+}
+
+export interface ScaleScoreResult {
+  items: ScaleScoreItem[];
+}

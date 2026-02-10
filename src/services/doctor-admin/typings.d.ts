@@ -18,10 +18,13 @@ export interface DoctorUserListResult {
 export interface DoctorUserCreateRequest {
   code: string;
   name: string;
+  phone: string;
 }
 
 // 更新医生账号请求
 export interface DoctorUserUpdateRequest {
   code?: string;
   name?: string;
+  phone?: string;
+  password?: string;
 }

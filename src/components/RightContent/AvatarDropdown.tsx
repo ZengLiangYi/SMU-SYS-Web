@@ -1,8 +1,4 @@
-import {
-  LogoutOutlined,
-  SettingOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { LogoutOutlined, UserOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
 import type { MenuProps } from 'antd';
 import { Spin } from 'antd';
@@ -14,7 +10,6 @@ import { disconnectSocket } from '@/services/websocket';
 import HeaderDropdown from '../HeaderDropdown';
 
 export type GlobalHeaderRightProps = {
-  menu?: boolean;
   children?: React.ReactNode;
 };
 
@@ -43,7 +38,6 @@ const useStyles = createStyles(({ token }) => {
 });
 
 export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
-  menu,
   children,
 }) => {
   const { styles } = useStyles();
@@ -92,7 +86,9 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       loginOut();
       return;
     }
-    history.push(`/account/${key}`);
+    if (key === 'center') {
+      history.push('/account/center');
+    }
   };
 
   const loading = (
@@ -117,18 +113,15 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
     return loading;
   }
 
+  const isDoctorRole = currentUser.role === 'doctor';
+
   const menuItems = [
-    ...(menu
+    ...(isDoctorRole
       ? [
           {
             key: 'center',
             icon: <UserOutlined />,
             label: '个人中心',
-          },
-          {
-            key: 'settings',
-            icon: <SettingOutlined />,
-            label: '个人设置',
           },
           {
             type: 'divider' as const,

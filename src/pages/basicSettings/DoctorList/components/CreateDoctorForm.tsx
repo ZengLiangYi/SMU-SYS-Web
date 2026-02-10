@@ -33,7 +33,11 @@ const CreateDoctorForm: FC<CreateDoctorFormProps> = ({ onOk }) => {
       }
       width={400}
       modalProps={{ okButtonProps: { loading } }}
-      onFinish={async (values: { code: string; name: string }) => {
+      onFinish={async (values: {
+        code: string;
+        name: string;
+        phone: string;
+      }) => {
         await run(values);
         return true;
       }}
@@ -54,6 +58,16 @@ const CreateDoctorForm: FC<CreateDoctorFormProps> = ({ onOk }) => {
         rules={[
           { required: true, message: '请输入姓名' },
           { max: 128, message: '姓名最多128个字符' },
+        ]}
+      />
+      <ProFormText
+        name="phone"
+        label="手机号"
+        placeholder="请输入手机号…"
+        fieldProps={{ inputMode: 'tel' }}
+        rules={[
+          { required: true, message: '请输入手机号' },
+          { max: 20, message: '手机号最多20个字符' },
         ]}
       />
     </ModalForm>

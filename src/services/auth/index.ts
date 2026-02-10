@@ -2,6 +2,8 @@ import { request } from '@umijs/max';
 import type {
   AdminLoginResult,
   DoctorLoginResult,
+  DoctorPasswordChangeRequest,
+  DoctorProfileUpdateRequest,
   DoctorRefreshResult,
   RefreshRequest,
 } from './typings.d';
@@ -55,6 +57,26 @@ export async function adminRefreshToken(params: RefreshRequest) {
  */
 export async function getDoctorMe() {
   return request<API.ApiResponse<API.DoctorUser>>('/api/doctor/me');
+}
+
+/**
+ * 更新医生个人资料
+ */
+export async function updateDoctorMe(data: DoctorProfileUpdateRequest) {
+  return request<API.ApiResponse<API.DoctorUser>>(
+    '/api/doctor/me',
+    { method: 'PATCH', data },
+  );
+}
+
+/**
+ * 修改医生密码
+ */
+export async function changeDoctorPassword(data: DoctorPasswordChangeRequest) {
+  return request<API.ApiResponse<null>>(
+    '/api/doctor/me/password',
+    { method: 'PATCH', data },
+  );
 }
 
 /**

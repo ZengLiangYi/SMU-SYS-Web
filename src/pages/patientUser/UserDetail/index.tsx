@@ -126,7 +126,7 @@ const UserDetail: React.FC = () => {
       case 'effectEvaluation':
         return (
           <Suspense fallback={LazyFallback}>
-            <EffectEvaluation />
+            <EffectEvaluation patientId={patientId} />
           </Suspense>
         );
       case 'healthRecoveryPlan':

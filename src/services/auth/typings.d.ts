@@ -23,3 +23,17 @@ export interface AdminLoginResult {
   refresh_token: string;
   refresh_expires_in: number;
 }
+
+// 更新医生个人资料请求
+export interface DoctorProfileUpdateRequest {
+  code?: string;
+  name?: string;
+  phone?: string;
+  avatar_url?: string;
+}
+
+// 修改医生密码请求
+export interface DoctorPasswordChangeRequest {
+  old_password: string;
+  new_password: string;
+}

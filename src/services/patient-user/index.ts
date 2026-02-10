@@ -13,6 +13,9 @@ import type {
   DietRecordListResult,
   ExerciseRecordListParams,
   ExerciseRecordListResult,
+  PatientAnalysisParams,
+  PatientHealthAnalysis,
+  ScaleScoreResult,
 } from './typings.d';
 
 /**
@@ -107,5 +110,28 @@ export async function getExerciseRecords(
   return request<API.ApiResponse<ExerciseRecordListResult>>(
     `/api/doctor/patients/${patientId}/exercise-records`,
     { method: 'GET', params },
+  );
+}
+
+/**
+ * 获取患者健康分析数据
+ */
+export async function getPatientAnalysis(
+  patientId: string,
+  params?: PatientAnalysisParams,
+) {
+  return request<API.ApiResponse<PatientHealthAnalysis>>(
+    `/api/doctor/patients/${patientId}/analysis`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 获取患者量表分数
+ */
+export async function getScaleScores(patientId: string) {
+  return request<API.ApiResponse<ScaleScoreResult>>(
+    `/api/doctor/patients/${patientId}/scale-scores`,
+    { method: 'GET' },
   );
 }

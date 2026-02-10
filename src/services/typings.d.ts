@@ -15,6 +15,7 @@ declare namespace API {
     id: string;
     code: string;
     name: string;
+    phone: string;
   };
 
   // 当前用户（全局用户状态）
@@ -22,6 +23,7 @@ declare namespace API {
     id?: string;
     name?: string;
     code?: string;
+    phone?: string;
     avatar?: string;
     role: 'doctor' | 'admin';
   };
