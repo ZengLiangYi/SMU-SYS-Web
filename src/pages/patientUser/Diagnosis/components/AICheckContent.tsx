@@ -70,15 +70,16 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
     <div>
       <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
         <Text type="secondary">基于患者信息及候选项目生成，医生可调整勾选</Text>
-        {confidence != null && (
+        {/* M2: ternary not && */}
+        {confidence != null ? (
           <Tag color="blue" className={styles.confidenceBadge}>
             置信度 {(confidence * 100).toFixed(0)}%
           </Tag>
-        )}
+        ) : null}
       </Flex>
 
       {/* 量表评估 */}
-      {scaleItems.length > 0 && (
+      {scaleItems.length > 0 ? (
         <div className={styles.categorySection}>
           <div className={styles.categoryTitle}>量表评估</div>
           <CheckCard.Group
@@ -98,10 +99,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
             ))}
           </CheckCard.Group>
         </div>
-      )}
+      ) : null}
 
       {/* 实验室筛查 */}
-      {labItems.length > 0 && (
+      {labItems.length > 0 ? (
         <div className={styles.categorySection}>
           <div className={styles.categoryTitle}>实验室筛查</div>
           <CheckCard.Group
@@ -121,10 +122,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
             ))}
           </CheckCard.Group>
         </div>
-      )}
+      ) : null}
 
       {/* 影像学检测 */}
-      {imagingItems.length > 0 && (
+      {imagingItems.length > 0 ? (
         <div className={styles.categorySection}>
           <div className={styles.categoryTitle}>影像学检测</div>
           <CheckCard.Group
@@ -144,10 +145,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
             ))}
           </CheckCard.Group>
         </div>
-      )}
+      ) : null}
 
       {/* AI 建议 */}
-      {aiSuggestion && (
+      {aiSuggestion ? (
         <Alert
           type="info"
           showIcon
@@ -155,7 +156,7 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
           description={aiSuggestion}
           style={{ marginTop: 16 }}
         />
-      )}
+      ) : null}
     </div>
   );
 };

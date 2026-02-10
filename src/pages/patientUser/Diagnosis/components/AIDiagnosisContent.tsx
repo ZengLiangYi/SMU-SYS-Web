@@ -26,6 +26,7 @@ interface AIDiagnosisContentProps {
   loading?: boolean;
   primaryDisease: PrimaryDisease | null;
   otherDiseases: OtherPossibleDisease[];
+  preventionAdvice: string | null;
   /** 疾病 ID -> 名称映射 */
   diseaseNameMap: Map<string, string>;
 }
@@ -34,6 +35,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   loading,
   primaryDisease,
   otherDiseases,
+  preventionAdvice,
   diseaseNameMap,
 }) => {
   const { styles } = useStyles();
@@ -62,18 +64,18 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   const resolveName = (id: string) => diseaseNameMap.get(id) ?? id;
 
   return (
-    <Flex gap={16} style={{ marginBottom: 16 }}>
+    <Flex gap={16} wrap style={{ marginBottom: 16 }}>
       {/* 左侧：AI 诊断结果 */}
       <ProCard
         title="AI 诊断结果"
-        style={{ flex: 1, border: '1px solid #f0f0f0' }}
+        style={{ flex: 1, minWidth: 300, border: '1px solid #f0f0f0' }}
       >
-        {primaryDisease && (
+        {primaryDisease ? (
           <div style={{ marginBottom: 16 }}>
             <Text strong>首选诊断</Text>
             <Flex align="center" gap={8} style={{ margin: '8px 0' }}>
               <Text style={{ fontSize: 16, fontWeight: 600 }}>
-                {resolveName(primaryDisease.disease_id)}
+                {resolveName(primaryDisease.id)}
               </Text>
               <Tag color="blue" className={styles.confidenceTag}>
                 置信度 {(primaryDisease.confidence * 100).toFixed(0)}%
@@ -83,14 +85,14 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
               {primaryDisease.reason}
             </Paragraph>
           </div>
-        )}
+        ) : null}
 
-        {otherDiseases.length > 0 && (
+        {otherDiseases.length > 0 ? (
           <div>
             <Text strong>其他可能诊断</Text>
             {otherDiseases.map((d) => (
-              <div key={d.disease_id} className={styles.diseaseItem}>
-                <Text>{resolveName(d.disease_id)}</Text>
+              <div key={d.id} className={styles.diseaseItem}>
+                <Text>{resolveName(d.id)}</Text>
                 <Paragraph
                   type="secondary"
                   ellipsis={{ rows: 2 }}
@@ -101,8 +103,20 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </ProCard>
+
+      {/* 预防建议 */}
+      {preventionAdvice ? (
+        <ProCard
+          title="预防建议"
+          style={{ flex: 1, minWidth: 300, border: '1px solid #f0f0f0' }}
+        >
+          <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
+            {preventionAdvice}
+          </Paragraph>
+        </ProCard>
+      ) : null}
     </Flex>
   );
 };

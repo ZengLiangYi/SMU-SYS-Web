@@ -1,9 +1,20 @@
 import { request } from '@umijs/max';
 import type {
+  InitialDiagnosisDetailResponse,
   InitialDiagnosisUpdateRequest,
   DiagnosisRecordListParams,
   DiagnosisRecordListResult,
 } from './typings.d';
+
+/**
+ * 获取初诊全量信息（断点续诊）
+ */
+export async function getInitialDiagnosis(patientId: string) {
+  return request<API.ApiResponse<InitialDiagnosisDetailResponse>>(
+    `/api/doctor/patients/${patientId}/initial-diagnosis`,
+    { method: 'GET' },
+  );
+}
 
 /**
  * 更新初诊信息（分步提交）

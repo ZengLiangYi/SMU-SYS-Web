@@ -1,12 +1,9 @@
-import type { ScreeningItems } from '../diagnosis/typings.d';
-
 // -------- 筛查项目推荐 --------
 export interface LlmScreeningRequest {
   uuid: string;
   chief_complaint: string;
   present_illness: string;
   physical_signs: string;
-  screening_items: ScreeningItems;
 }
 
 export interface LlmScreeningResponse {
@@ -20,23 +17,23 @@ export interface LlmScreeningResponse {
 // -------- 病症判断 --------
 export interface LlmDiseaseJudgementRequest {
   uuid: string;
-  screening_items: string[];
 }
 
 export interface PrimaryDisease {
-  disease_id: string;
+  id: string;
   confidence: number;
   reason: string;
 }
 
 export interface OtherPossibleDisease {
-  disease_id: string;
+  id: string;
   reason: string;
 }
 
 export interface LlmDiseaseJudgementResponse {
   primary_disease: PrimaryDisease | null;
   other_possible_diseases: OtherPossibleDisease[];
+  prevention_advice: string;
 }
 
 // -------- 处方生成 --------
