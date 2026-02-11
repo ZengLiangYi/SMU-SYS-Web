@@ -11,7 +11,7 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { history, useModel } from '@umijs/max';
 import { App, Button, Space, Tag } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { Suspense, useRef, useState } from 'react';
 import {
   cancelBindRequest,
   createBindRequest,
@@ -22,12 +22,22 @@ import { getPatients } from '@/services/patient-user';
 import type { PatientListItem } from '@/services/patient-user/typings.d';
 import { CROWD_CATEGORY_ENUM, getCategoryColor } from '@/utils/constants';
 
+const CreateFollowupForm = React.lazy(
+  () => import('../UserDetail/components/CreateFollowupForm'),
+);
+const CreateReferralForm = React.lazy(
+  () => import('../UserDetail/components/CreateReferralForm'),
+);
+
 const UserList: React.FC = () => {
   const { message, modal } = App.useApp();
   const { initialState } = useModel('@@initialState');
   const currentDoctorId = initialState?.currentUser?.id;
   const actionRef = useRef<ActionType>(null);
   const [isBound, setIsBound] = useState<boolean>(true); // 默认显示已绑定患者
+  const [followupOpen, setFollowupOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
+  const [activePatientId, setActivePatientId] = useState<string>('');
   // Map<patient_id, bind_request_id>: 当前医生对未绑定患者的待处理绑定请求
   const [pendingBindMap, setPendingBindMap] = useState<Map<string, string>>(
     () => new Map(),
@@ -188,9 +198,10 @@ const UserList: React.FC = () => {
           type="link"
           size="small"
           icon={<SwapOutlined />}
-          onClick={() =>
-            history.push(`/patient-user/diagnosis?id=${record.id}`)
-          }
+          onClick={() => {
+            setActivePatientId(record.id);
+            setReferralOpen(true);
+          }}
         >
           转诊
         </Button>
@@ -208,7 +219,10 @@ const UserList: React.FC = () => {
           type="link"
           size="small"
           icon={<HomeOutlined />}
-          onClick={() => message.info(`随访: ${record.name}`)}
+          onClick={() => {
+            setActivePatientId(record.id);
+            setFollowupOpen(true);
+          }}
         >
           随访
         </Button>
@@ -326,6 +340,24 @@ const UserList: React.FC = () => {
           },
         }}
       />
+
+      <Suspense fallback={null}>
+        <CreateFollowupForm
+          patientId={activePatientId}
+          open={followupOpen}
+          onOpenChange={setFollowupOpen}
+          onOk={() => setFollowupOpen(false)}
+        />
+        <CreateReferralForm
+          patientId={activePatientId}
+          open={referralOpen}
+          onOpenChange={setReferralOpen}
+          onOk={() => {
+            setReferralOpen(false);
+            actionRef.current?.reload();
+          }}
+        />
+      </Suspense>
     </PageContainer>
   );
 };

@@ -3,25 +3,37 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { history } from '@umijs/max';
 import { Button, Space, Tag } from 'antd';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getDiagnosisRecords } from '@/services/diagnosis';
 import type { DiagnosisRecordListItem } from '@/services/diagnosis/typings.d';
+import { getDiseaseMetadata } from '@/services/doctor-metadata';
 import { CROWD_CATEGORY_ENUM, getCategoryColor } from '@/utils/constants';
 import { formatDateTime } from '@/utils/date';
 
 const DiagnosisList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
 
+  // disease_id → name 映射 (js-set-map-lookups)
+  const [diseaseMap, setDiseaseMap] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    getDiseaseMetadata()
+      .then(({ data }) => {
+        const map = new Map<string, string>();
+        for (const d of data) map.set(d.id, d.name);
+        setDiseaseMap(map);
+      })
+      .catch(() => {});
+  }, []);
+
   const columns: ProColumns<DiagnosisRecordListItem>[] = [
     {
       title: '诊断日期',
-      dataIndex: 'initial_diagnosis_date',
+      dataIndex: 'diagnosis_date',
       width: 160,
       search: false,
       render: (_, record) =>
-        record.initial_diagnosis_date
-          ? formatDateTime(record.initial_diagnosis_date)
-          : '--',
+        record.diagnosis_date ? formatDateTime(record.diagnosis_date) : '--',
     },
     {
       title: '患者姓名',
@@ -64,7 +76,9 @@ const DiagnosisList: React.FC = () => {
       ellipsis: true,
       render: (_, record) =>
         record.diagnosis_results?.length > 0
-          ? record.diagnosis_results.join('、')
+          ? record.diagnosis_results
+              .map((id) => diseaseMap.get(id) ?? id)
+              .join('、')
           : '--',
     },
     {

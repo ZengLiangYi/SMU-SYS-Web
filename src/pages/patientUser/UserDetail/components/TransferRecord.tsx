@@ -1,13 +1,16 @@
-import type { ProColumns } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
-import { useRequest } from '@umijs/max';
-import { Spin, Tag, Typography } from 'antd';
-import React from 'react';
-import { getReferrals } from '@/services/patient-user';
+import { Tag, Typography } from 'antd';
+import React, { useRef } from 'react';
+import {
+  getExternalReferrals,
+  getInternalReferrals,
+} from '@/services/patient-user';
 import type {
   ExternalReferralItem,
   InternalReferralItem,
 } from '@/services/patient-user/typings.d';
+import { formatDateTime } from '@/utils/date';
 
 const { Title } = Typography;
 
@@ -17,7 +20,12 @@ interface TransferRecordProps {
 
 // -------- 院内转诊列定义 --------
 const inTransferColumns: ProColumns<InternalReferralItem>[] = [
-  { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
+  {
+    title: '转诊日期',
+    dataIndex: 'referral_date',
+    width: 160,
+    render: (_, record) => formatDateTime(record.referral_date),
+  },
   {
     title: '转出医生',
     dataIndex: 'from_doctor_name',
@@ -40,7 +48,12 @@ const inTransferColumns: ProColumns<InternalReferralItem>[] = [
 
 // -------- 院外转诊列定义 --------
 const outTransferColumns: ProColumns<ExternalReferralItem>[] = [
-  { title: '转诊日期', dataIndex: 'referral_date', width: 120 },
+  {
+    title: '转诊日期',
+    dataIndex: 'referral_date',
+    width: 160,
+    render: (_, record) => formatDateTime(record.referral_date),
+  },
   {
     title: '转出医生',
     dataIndex: 'from_doctor_name',
@@ -78,28 +91,32 @@ const outTransferColumns: ProColumns<ExternalReferralItem>[] = [
 ];
 
 const TransferRecord: React.FC<TransferRecordProps> = ({ patientId }) => {
-  // 单次 API 调用获取院内+院外转诊数据
-  const { data, loading } = useRequest(() => getReferrals(patientId), {
-    ready: !!patientId,
-  });
-
-  if (loading) {
-    return (
-      <Spin style={{ display: 'block', padding: 40, textAlign: 'center' }} />
-    );
-  }
+  const internalActionRef = useRef<ActionType>(null);
+  const externalActionRef = useRef<ActionType>(null);
 
   return (
     <div>
       <Title level={5}>院内转诊</Title>
       <ProTable<InternalReferralItem>
         rowKey="id"
+        actionRef={internalActionRef}
         search={false}
         options={false}
         scroll={{ x: 600 }}
-        dataSource={data?.internal ?? []}
         columns={inTransferColumns}
         pagination={{ defaultPageSize: 5 }}
+        request={async (params) => {
+          const { current = 1, pageSize = 5 } = params;
+          const res = await getInternalReferrals(patientId, {
+            offset: (current - 1) * pageSize,
+            limit: pageSize,
+          });
+          return {
+            data: res.data.items,
+            total: res.data.total,
+            success: true,
+          };
+        }}
       />
 
       <Title level={5} style={{ marginTop: 24 }}>
@@ -107,12 +124,24 @@ const TransferRecord: React.FC<TransferRecordProps> = ({ patientId }) => {
       </Title>
       <ProTable<ExternalReferralItem>
         rowKey="id"
+        actionRef={externalActionRef}
         search={false}
         options={false}
         scroll={{ x: 800 }}
-        dataSource={data?.external ?? []}
         columns={outTransferColumns}
         pagination={{ defaultPageSize: 5 }}
+        request={async (params) => {
+          const { current = 1, pageSize = 5 } = params;
+          const res = await getExternalReferrals(patientId, {
+            offset: (current - 1) * pageSize,
+            limit: pageSize,
+          });
+          return {
+            data: res.data.items,
+            total: res.data.total,
+            success: true,
+          };
+        }}
       />
     </div>
   );

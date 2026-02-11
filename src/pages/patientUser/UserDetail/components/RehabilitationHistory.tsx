@@ -1,76 +1,168 @@
 import { EyeOutlined } from '@ant-design/icons';
-import type { ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import { ProDescriptions, ProTable } from '@ant-design/pro-components';
+import { useRequest } from '@umijs/max';
 import {
   Alert,
+  App,
   Button,
   Card,
   Col,
+  Empty,
   Flex,
+  Modal,
   Progress,
+  Result,
   Row,
+  Spin,
   Typography,
 } from 'antd';
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import {
+  getRehabScoreRecordDetail,
+  getRehabScoreRecords,
+} from '@/services/patient-user';
+import type {
+  RehabScoreRecordDetail,
+  RehabScoreRecordListItem,
+} from '@/services/patient-user/typings.d';
+import { formatDateTime } from '@/utils/date';
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
 
-// -------- 本地类型定义（暂无对应 API） --------
-interface ScoreHistoryRecord {
-  id: string;
-  date: string;
-  comprehensiveScore: number;
+// -------- 评分字段映射（静态常量，提升到组件外） --------
+const SCORE_FIELDS = [
+  { key: 'medication_score', name: '用药', color: '#5b8ff9' },
+  { key: 'cognitive_training_score', name: '认知', color: '#b799ff' },
+  { key: 'diet_score', name: '饮食', color: '#a44cff' },
+  { key: 'exercise_score', name: '运动', color: '#b8d4ff' },
+] as const;
+
+interface RehabilitationHistoryProps {
+  patientId: string;
 }
 
-// TODO: 替换为后端 API 接口
-const MOCK_COMPREHENSIVE_SCORE = 88.8;
+const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
+  patientId,
+}) => {
+  const { message } = App.useApp();
+  const actionRef = useRef<ActionType>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [viewingDetail, setViewingDetail] =
+    useState<RehabScoreRecordDetail | null>(null);
 
-const MOCK_CATEGORY_SCORES = [
-  { name: '用药', score: 95, color: '#5b8ff9' },
-  { name: '认知', score: 75, color: '#b799ff' },
-  { name: '饮食', score: 60, color: '#a44cff' },
-  { name: '运动', score: 40, color: '#b8d4ff' },
-];
+  // -------- 概览卡片：获取最新记录详情 --------
+  const {
+    data: latestDetail,
+    loading: overviewLoading,
+    error: overviewError,
+  } = useRequest(
+    async () => {
+      // 先获取最新一条记录的 ID
+      const listRes = await getRehabScoreRecords(patientId, {
+        offset: 0,
+        limit: 1,
+      });
+      const items = listRes.data?.items;
+      if (!items || items.length === 0) return null;
+      // 再获取该记录的完整详情
+      const detailRes = await getRehabScoreRecordDetail(patientId, items[0].id);
+      return detailRes.data;
+    },
+    {
+      refreshDeps: [patientId],
+      onError: () => {
+        message.error('获取最新康复评分失败');
+      },
+    },
+  );
 
-const MOCK_SCORE_HISTORY: ScoreHistoryRecord[] = [
-  { id: '1', date: '1997/04/17', comprehensiveScore: 88.88 },
-  { id: '2', date: '2001/05/26', comprehensiveScore: 88.88 },
-  { id: '3', date: '1995/02/02', comprehensiveScore: 88.88 },
-  { id: '4', date: '1983/09/11', comprehensiveScore: 88.88 },
-  { id: '5', date: '1977/10/25', comprehensiveScore: 88.88 },
-];
+  // -------- 详情 Modal：手动触发 --------
+  const { run: runFetchDetail, loading: detailLoading } = useRequest(
+    (recordId: string) => getRehabScoreRecordDetail(patientId, recordId),
+    {
+      manual: true,
+      onSuccess: (res) => {
+        setViewingDetail(res);
+        setDetailModalVisible(true);
+      },
+      onError: () => {
+        message.error('获取评分详情失败');
+      },
+    },
+  );
 
-const scoreHistoryColumns: ProColumns<ScoreHistoryRecord>[] = [
-  { title: '日期', dataIndex: 'date', width: 200 },
-  { title: '综合评分', dataIndex: 'comprehensiveScore', width: 200 },
-  {
-    title: '操作',
-    key: 'action',
-    width: 150,
-    render: () => (
-      <Button type="link" size="small" icon={<EyeOutlined />}>
-        详情
-      </Button>
-    ),
-  },
-];
+  // -------- ProTable 列定义 --------
+  const columns: ProColumns<RehabScoreRecordListItem>[] = [
+    {
+      title: '日期',
+      dataIndex: 'evaluated_date',
+      width: 200,
+      render: (_, record) => formatDateTime(record.evaluated_date),
+    },
+    {
+      title: '综合评分',
+      dataIndex: 'overall_score',
+      width: 200,
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 150,
+      render: (_, record) => (
+        <Button
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          loading={detailLoading}
+          onClick={() => runFetchDetail(record.id)}
+        >
+          详情
+        </Button>
+      ),
+    },
+  ];
 
-const RehabilitationHistory: React.FC = () => {
-  return (
-    <div>
-      {/* -------- 评分可视化 -------- */}
+  // -------- 概览区域渲染 --------
+  const renderOverview = () => {
+    if (overviewLoading) {
+      return (
+        <Card style={{ marginBottom: 24, textAlign: 'center', padding: 40 }}>
+          <Spin />
+        </Card>
+      );
+    }
+    if (overviewError) {
+      return (
+        <Result
+          status="error"
+          title="加载失败"
+          subTitle="获取最新康复评分时出错"
+          style={{ marginBottom: 24 }}
+        />
+      );
+    }
+    if (!latestDetail) {
+      return (
+        <Card style={{ marginBottom: 24 }}>
+          <Empty description="暂无康复评分记录" />
+        </Card>
+      );
+    }
+
+    return (
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={12}>
           <Card>
             <Flex align="baseline" gap={8} style={{ marginBottom: 16 }}>
               <Text strong>综合评分：</Text>
               <Text strong style={{ fontSize: 36 }}>
-                {MOCK_COMPREHENSIVE_SCORE}
+                {latestDetail.overall_score}
               </Text>
             </Flex>
-            {MOCK_CATEGORY_SCORES.map((item) => (
+            {SCORE_FIELDS.map((field) => (
               <Flex
-                key={item.name}
+                key={field.key}
                 align="center"
                 gap={12}
                 style={{ marginBottom: 12 }}
@@ -79,12 +171,12 @@ const RehabilitationHistory: React.FC = () => {
                   type="secondary"
                   style={{ minWidth: 40, textAlign: 'right' }}
                 >
-                  {item.name}
+                  {field.name}
                 </Text>
                 <Progress
-                  percent={item.score}
+                  percent={latestDetail[field.key]}
                   showInfo={false}
-                  strokeColor={item.color}
+                  strokeColor={field.color}
                   style={{ flex: 1, margin: 0 }}
                 />
               </Flex>
@@ -94,28 +186,126 @@ const RehabilitationHistory: React.FC = () => {
         <Col span={12}>
           <Alert
             type="warning"
-            message="日建议"
-            description="建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容建议内容"
+            message="康复建议"
+            description={latestDetail.advice || '暂无建议'}
             showIcon
             style={{ height: '100%' }}
           />
         </Col>
       </Row>
+    );
+  };
+
+  return (
+    <div>
+      {/* -------- 评分概览 -------- */}
+      {renderOverview()}
 
       {/* -------- 评分历史表格 -------- */}
       <Title level={5}>评分历史</Title>
-      <ProTable<ScoreHistoryRecord>
+      <ProTable<RehabScoreRecordListItem>
         rowKey="id"
+        actionRef={actionRef}
         search={false}
         options={false}
-        request={async () => ({
-          data: MOCK_SCORE_HISTORY,
-          success: true,
-          total: MOCK_SCORE_HISTORY.length,
-        })}
-        columns={scoreHistoryColumns}
+        columns={columns}
+        request={async (params) => {
+          const { current = 1, pageSize = 10 } = params;
+          const offset = (current - 1) * pageSize;
+          const { data } = await getRehabScoreRecords(patientId, {
+            offset,
+            limit: pageSize,
+          });
+          return {
+            data: data.items,
+            total: data.total,
+            success: true,
+          };
+        }}
         pagination={{ pageSize: 5 }}
       />
+
+      {/* -------- 详情 Modal -------- */}
+      <Modal
+        title="康复评分详情"
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+        width={640}
+        destroyOnHidden
+      >
+        {viewingDetail ? (
+          <ProDescriptions<RehabScoreRecordDetail>
+            column={2}
+            dataSource={viewingDetail}
+            columns={[
+              {
+                title: '评估日期',
+                dataIndex: 'evaluated_date',
+                render: (_, record) =>
+                  formatDateTime(record.evaluated_date, { showTime: false }),
+              },
+              {
+                title: '综合评分',
+                dataIndex: 'overall_score',
+              },
+              {
+                title: '用药评分',
+                dataIndex: 'medication_score',
+                render: (_, record) => (
+                  <Progress
+                    percent={record.medication_score}
+                    size="small"
+                    strokeColor="#5b8ff9"
+                  />
+                ),
+              },
+              {
+                title: '认知训练评分',
+                dataIndex: 'cognitive_training_score',
+                render: (_, record) => (
+                  <Progress
+                    percent={record.cognitive_training_score}
+                    size="small"
+                    strokeColor="#b799ff"
+                  />
+                ),
+              },
+              {
+                title: '饮食评分',
+                dataIndex: 'diet_score',
+                render: (_, record) => (
+                  <Progress
+                    percent={record.diet_score}
+                    size="small"
+                    strokeColor="#a44cff"
+                  />
+                ),
+              },
+              {
+                title: '运动评分',
+                dataIndex: 'exercise_score',
+                render: (_, record) => (
+                  <Progress
+                    percent={record.exercise_score}
+                    size="small"
+                    strokeColor="#b8d4ff"
+                  />
+                ),
+              },
+              {
+                title: '建议',
+                dataIndex: 'advice',
+                span: 2,
+              },
+            ]}
+          />
+        ) : (
+          <Spin
+            style={{ display: 'block', textAlign: 'center', padding: 40 }}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

@@ -7,7 +7,7 @@ import {
   useSearchParams,
 } from '@umijs/max';
 import { App, Button, Empty, Flex, Space, Spin, Typography } from 'antd';
-import React, { Suspense } from 'react';
+import React, { Suspense, useState } from 'react';
 import { PatientAvatarInfoContent } from '@/components';
 import { createBindRequest } from '@/services/bind-request';
 import { getPatient } from '@/services/patient-user';
@@ -28,6 +28,12 @@ const HealthRecoveryPlan = React.lazy(
 );
 const RehabilitationHistory = React.lazy(
   () => import('./components/RehabilitationHistory'),
+);
+const CreateFollowupForm = React.lazy(
+  () => import('./components/CreateFollowupForm'),
+);
+const CreateReferralForm = React.lazy(
+  () => import('./components/CreateReferralForm'),
 );
 
 const { Text } = Typography;
@@ -52,6 +58,8 @@ const UserDetail: React.FC = () => {
   const { id: patientId = '' } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') ?? 'personalInfo';
+  const [followupOpen, setFollowupOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
 
   // -------- 获取患者详情 --------
   const {
@@ -120,7 +128,7 @@ const UserDetail: React.FC = () => {
       case 'diagnosisRecord':
         return (
           <Suspense fallback={LazyFallback}>
-            <DiagnosisRecord />
+            <DiagnosisRecord patientId={patientId} />
           </Suspense>
         );
       case 'effectEvaluation':
@@ -138,7 +146,7 @@ const UserDetail: React.FC = () => {
       case 'rehabilitationHistory':
         return (
           <Suspense fallback={LazyFallback}>
-            <RehabilitationHistory />
+            <RehabilitationHistory patientId={patientId} />
           </Suspense>
         );
       case 'todaySituation':
@@ -183,8 +191,12 @@ const UserDetail: React.FC = () => {
             )}
             {isBound && (
               <>
-                <Button type="primary">随访</Button>
-                <Button danger>转诊</Button>
+                <Button type="primary" onClick={() => setFollowupOpen(true)}>
+                  随访
+                </Button>
+                <Button danger onClick={() => setReferralOpen(true)}>
+                  转诊
+                </Button>
                 <Button type="primary" onClick={handleDiagnosis}>
                   诊断
                 </Button>
@@ -198,6 +210,24 @@ const UserDetail: React.FC = () => {
       onTabChange={handleTabChange}
     >
       {renderTabContent()}
+
+      <Suspense fallback={null}>
+        <CreateFollowupForm
+          patientId={patientId}
+          open={followupOpen}
+          onOpenChange={setFollowupOpen}
+          onOk={() => setFollowupOpen(false)}
+        />
+        <CreateReferralForm
+          patientId={patientId}
+          open={referralOpen}
+          onOpenChange={setReferralOpen}
+          onOk={() => {
+            setReferralOpen(false);
+            refresh();
+          }}
+        />
+      </Suspense>
     </PageContainer>
   );
 };

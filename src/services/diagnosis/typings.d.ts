@@ -12,11 +12,13 @@ export interface ExercisePlanItem {
   unit: string;
 }
 
-// -------- 初诊全量信息（GET 响应，支持断点续诊） --------
-export interface InitialDiagnosisDetailResponse {
+// -------- 当前诊疗详情（GET 响应，支持断点续诊） --------
+export interface DiagnosisDetailResponse {
+  diagnosis_id: string | null;
   patient_id: string;
   doctor_id: string | null;
   diagnosis_status: string | null;
+  created_at: string | null;
   completed_at: string | null;
   chief_complaint: string | null;
   physical_signs: string | null;
@@ -24,6 +26,7 @@ export interface InitialDiagnosisDetailResponse {
   screening_items: ScreeningItems | null;
   examination_steps: string | null;
   lab_result_url: string | null;
+  blood_routine_url: string | null;
   imaging_result_url: string | null;
   diagnosis_results: string[];
   diagnosis_note: string | null;
@@ -33,8 +36,8 @@ export interface InitialDiagnosisDetailResponse {
   diet_plan: string | null;
 }
 
-// -------- 初诊更新请求（支持分步提交） --------
-export interface InitialDiagnosisUpdateRequest {
+// -------- 诊疗更新请求（支持分步提交） --------
+export interface DiagnosisUpdateRequest {
   chief_complaint?: string;
   physical_signs?: string;
   present_illness?: string;
@@ -50,11 +53,37 @@ export interface InitialDiagnosisUpdateRequest {
   diet_plan?: string;
 }
 
-// -------- 诊疗列表 --------
+// -------- 创建诊疗记录响应 --------
+export interface DiagnosisCreateResponse {
+  diagnosis_id: string;
+}
+
+// -------- 诊疗历史 --------
+export interface DiagnosisHistoryItem {
+  diagnosis_id: string;
+  doctor_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  diagnosis_results: string[];
+}
+
+export interface DiagnosisHistoryParams {
+  offset?: number;
+  limit?: number;
+}
+
+export interface DiagnosisHistoryResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: DiagnosisHistoryItem[];
+}
+
+// -------- 已完成诊疗列表 --------
 export interface DiagnosisRecordListItem {
   prescription_id: string | null;
   patient_id: string;
-  initial_diagnosis_date: string | null;
+  diagnosis_date: string | null;
   patient_name: string;
   categories: string[];
   doctor_name: string | null;

@@ -131,7 +131,7 @@ const PrescriptionContent = forwardRef<
           <Alert
             type="info"
             showIcon
-            message="AI 处方建议"
+            title="AI 处方建议"
             description={aiSummary}
             style={{ marginBottom: 20 }}
           />

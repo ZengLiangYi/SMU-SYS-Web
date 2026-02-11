@@ -42,7 +42,7 @@ const Center: React.FC = () => {
   const {
     data: userData,
     loading: userLoading,
-    refresh: refreshUser,
+    mutate: mutateUser,
   } = useRequest(getDoctorMe);
 
   // 合并最新 API 数据和全局 currentUser（currentUser 含 avatar/role）
@@ -78,8 +78,21 @@ const Center: React.FC = () => {
             role: s?.currentUser?.role ?? 'doctor',
           } as API.CurrentUser,
         }));
-        // 刷新左侧资料卡数据
-        refreshUser();
+        // 直接更新本地 userData，左侧资料卡立即同步，无 loading 闪烁
+        mutateUser(res);
+        // 同步 localStorage（页面刷新时 fetchUserInfo 读取 avatar）
+        try {
+          localStorage.setItem(
+            'currentUser',
+            JSON.stringify({
+              ...res,
+              avatar: newAvatarUrl ?? currentUser?.avatar,
+              role: currentUser?.role ?? 'doctor',
+            }),
+          );
+        } catch {
+          // ignore
+        }
       },
       onError: () => {
         message.error('更新失败，请重试');
@@ -221,7 +234,6 @@ const Center: React.FC = () => {
           <ProCard title="基本信息" loading={userLoading}>
             <ProForm
               initialValues={{
-                code: userInfo?.code,
                 name: userInfo?.name,
                 phone: userInfo?.phone,
               }}
@@ -241,16 +253,6 @@ const Center: React.FC = () => {
                 return true;
               }}
             >
-              <ProFormText
-                name="code"
-                label="工号"
-                placeholder="请输入工号…"
-                fieldProps={{ spellCheck: false, autoComplete: 'off' }}
-                rules={[
-                  { required: true, message: '请输入工号' },
-                  { max: 32, message: '工号最多32个字符' },
-                ]}
-              />
               <ProFormText
                 name="name"
                 label="姓名"

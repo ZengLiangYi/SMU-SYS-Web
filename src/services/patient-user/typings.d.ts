@@ -83,9 +83,16 @@ export interface FollowupListItem {
   id: string;
   doctor_name: string | null;
   subject: string;
+  plan_time: string;
   duration_minutes: number;
   is_completed: boolean;
   created_at: string;
+}
+
+export interface FollowupCreateRequest {
+  subject: string;
+  plan_time: string;
+  duration_minutes?: number;
 }
 
 export interface FollowupListParams {
@@ -119,9 +126,50 @@ export interface ExternalReferralItem {
   is_accepted: boolean;
 }
 
+/** @deprecated 使用 InternalReferralListResult / ExternalReferralListResult 代替 */
 export interface ReferralListResult {
   internal: InternalReferralItem[];
   external: ExternalReferralItem[];
+}
+
+export interface InternalReferralListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: InternalReferralItem[];
+}
+
+export interface ExternalReferralListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: ExternalReferralItem[];
+}
+
+// -------- 创建转诊 --------
+export interface PatientReferralCreateRequest {
+  referral_type: 'internal' | 'external';
+  referral_date: string;
+  to_doctor_id?: string;
+  hospital_id?: string;
+  to_doctor_name?: string;
+  to_doctor_phone?: string;
+  note?: string;
+  is_accepted?: boolean;
+}
+
+export interface PatientReferralCreateResponse {
+  id: string;
+  referral_type: 'internal' | 'external';
+  patient_id: string;
+  from_doctor_id: string;
+  referral_date: string;
+  to_doctor_id?: string;
+  hospital_id?: string;
+  to_doctor_name?: string;
+  to_doctor_phone?: string;
+  note?: string;
+  is_accepted?: boolean;
 }
 
 // -------- 用药记录 --------
@@ -130,8 +178,8 @@ export interface MedicationRecordItem {
   medicine_name: string;
   medicine_image_url: string;
   taken_at: string;
-  quantity: number;
-  unit: string;
+  quantity: number | null;
+  unit: string | null;
 }
 
 export interface MedicationRecordListParams {
@@ -222,4 +270,60 @@ export interface ScaleScoreItem {
 
 export interface ScaleScoreResult {
   items: ScaleScoreItem[];
+}
+
+// -------- 健康指标记录 --------
+export interface HealthMetricItem {
+  id: string;
+  systolic_pressure: number;
+  diastolic_pressure: number;
+  blood_glucose: number;
+  blood_glucose_status: '空腹' | '餐后';
+  total_cholesterol: number;
+  triglycerides: number;
+  hdl: number;
+  ldl: number;
+  measured_at: string;
+}
+
+export interface HealthMetricListParams {
+  offset?: number;
+  limit?: number;
+}
+
+export interface HealthMetricListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: HealthMetricItem[];
+}
+
+// -------- 康复评分记录 --------
+export interface RehabScoreRecordListItem {
+  id: string;
+  evaluated_date: string;
+  overall_score: number;
+}
+
+export interface RehabScoreRecordListParams {
+  offset?: number;
+  limit?: number;
+}
+
+export interface RehabScoreRecordListResult {
+  total: number;
+  offset: number;
+  limit: number;
+  items: RehabScoreRecordListItem[];
+}
+
+export interface RehabScoreRecordDetail {
+  id: string;
+  evaluated_date: string;
+  medication_score: number;
+  cognitive_training_score: number;
+  diet_score: number;
+  exercise_score: number;
+  overall_score: number;
+  advice: string;
 }

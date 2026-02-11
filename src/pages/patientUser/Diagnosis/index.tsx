@@ -7,9 +7,10 @@ import {
   StepsForm,
 } from '@ant-design/pro-components';
 import { history, useSearchParams } from '@umijs/max';
-import { App, Button, Flex, Result, Spin, Typography } from 'antd';
+import type { FormInstance } from 'antd';
+import { App, Button, Flex, Spin, Typography } from 'antd';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { updateInitialDiagnosis } from '@/services/diagnosis';
+import { updateDiagnosis } from '@/services/diagnosis';
 import type { ScreeningItems } from '@/services/diagnosis/typings.d';
 import { getFileUrl, getUploadProps, urlToUploadFile } from '@/utils/upload';
 import AICheckContent from './components/AICheckContent';
@@ -29,12 +30,16 @@ const Diagnosis: React.FC = () => {
   const patientId = searchParams.get('id') ?? '';
 
   const prescriptionRef = useRef<PrescriptionDataRef>(null);
+  const formMapRef = useRef<React.MutableRefObject<FormInstance | undefined>[]>(
+    [],
+  );
 
   const {
     initialLoading,
     patientDetail,
     diagnosisData,
     initialStep,
+    ensureDiagnosisId,
     // 筛查
     screeningLoading,
     scaleItems,
@@ -87,6 +92,31 @@ const Diagnosis: React.FC = () => {
     [diseaseNameMap],
   );
 
+  // LLM 诊断结果返回后，自动填充 diagnosis_results 和 diagnosis_note
+  useEffect(() => {
+    if (!primaryDisease) return;
+    const diagnosisForm = formMapRef.current?.[3]?.current; // Step 3: diagnosis
+    if (!diagnosisForm) return;
+
+    const currentResults = diagnosisForm.getFieldValue('diagnosis_results');
+    if (!currentResults?.length) {
+      diagnosisForm.setFieldsValue({
+        diagnosis_results: [primaryDisease.id],
+      });
+    }
+
+    const currentNote = diagnosisForm.getFieldValue('diagnosis_note');
+    if (!currentNote) {
+      const name = diseaseNameMap.get(primaryDisease.id) ?? primaryDisease.id;
+      diagnosisForm.setFieldsValue({
+        diagnosis_note: [
+          `首选诊断：${name}（置信度 ${(primaryDisease.confidence * 100).toFixed(0)}%）`,
+          `依据：${primaryDisease.reason}`,
+        ].join('\n'),
+      });
+    }
+  }, [primaryDisease, diseaseNameMap]);
+
   // beforeunload guard
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -117,43 +147,16 @@ const Diagnosis: React.FC = () => {
     );
   }
 
-  // 已完成的诊断
-  if (initialStep === -1) {
-    return (
-      <PageContainer title={false}>
-        <ProCard>
-          <Result
-            status="success"
-            title="诊断已完成"
-            subTitle={`完成时间：${diagnosisData?.completed_at ?? '--'}`}
-            extra={[
-              <Button
-                key="detail"
-                type="primary"
-                onClick={() =>
-                  history.push(`/patient-user/detail/${patientId}`)
-                }
-              >
-                查看患者详情
-              </Button>,
-              <Button key="list" onClick={() => history.push('/patient-user')}>
-                返回患者列表
-              </Button>,
-            ]}
-          />
-        </ProCard>
-      </PageContainer>
-    );
-  }
-
   return (
     <PageContainer title={false}>
       <ProCard className={styles.diagnosisContainer}>
         <PatientInfoHeader patientDetail={patientDetail} />
 
         <StepsForm
+          formMapRef={formMapRef}
           current={currentStep}
           onCurrentChange={setCurrentStep}
+          containerStyle={{ margin: 0, width: '100%' }}
           stepsProps={{ size: 'small', style: { marginBottom: 24 } }}
           formProps={{
             validateMessages: { required: `\${label}不能为空` },
@@ -177,7 +180,8 @@ const Diagnosis: React.FC = () => {
           onFinish={async () => {
             try {
               const data = prescriptionRef.current?.getData();
-              await updateInitialDiagnosis(patientId, {
+              const id = await ensureDiagnosisId();
+              await updateDiagnosis(patientId, id, {
                 medicine_ids: data?.medications.map((m) => m.id) ?? [],
                 rehab_level_ids: data?.cognitiveCards.map((c) => c.id) ?? [],
                 exercise_plan: (data?.exercises ?? []).map((e) => ({
@@ -207,12 +211,13 @@ const Diagnosis: React.FC = () => {
             }}
             onFinish={async (values) => {
               try {
-                await updateInitialDiagnosis(patientId, {
+                const id = await ensureDiagnosisId();
+                await updateDiagnosis(patientId, id, {
                   chief_complaint: values.chief_complaint,
                   physical_signs: values.physical_signs,
                   present_illness: values.present_illness,
                 });
-                await loadScreeningData(
+                loadScreeningData(
                   values.chief_complaint,
                   values.present_illness,
                   values.physical_signs ?? '',
@@ -235,6 +240,7 @@ const Diagnosis: React.FC = () => {
               name="physical_signs"
               label="体征"
               placeholder="请记录患者外在表现…"
+              rules={[{ required: true }]}
               fieldProps={{ rows: 3 }}
             />
             <ProFormTextArea
@@ -265,7 +271,8 @@ const Diagnosis: React.FC = () => {
                   selected_lab_tests: selectedLabIds,
                   selected_imaging_tests: selectedImagingIds,
                 };
-                await updateInitialDiagnosis(patientId, {
+                const id = await ensureDiagnosisId();
+                await updateDiagnosis(patientId, id, {
                   screening_items: screeningItemsData,
                   examination_steps: aiExaminationSteps ?? undefined,
                 });
@@ -312,11 +319,12 @@ const Diagnosis: React.FC = () => {
                 const imgUrl = values.imaging_result_url?.[0]
                   ? getFileUrl(values.imaging_result_url[0])
                   : undefined;
-                await updateInitialDiagnosis(patientId, {
+                const id = await ensureDiagnosisId();
+                await updateDiagnosis(patientId, id, {
                   lab_result_url: labUrl,
                   imaging_result_url: imgUrl,
                 });
-                await loadDiagnosisData();
+                loadDiagnosisData();
                 return true;
               } catch {
                 message.error('保存失败，请重试');
@@ -376,11 +384,12 @@ const Diagnosis: React.FC = () => {
                 return false;
               }
               try {
-                await updateInitialDiagnosis(patientId, {
+                const id = await ensureDiagnosisId();
+                await updateDiagnosis(patientId, id, {
                   diagnosis_results: values.diagnosis_results,
                   diagnosis_note: values.diagnosis_note,
                 });
-                await loadPrescriptionData();
+                loadPrescriptionData();
                 return true;
               } catch {
                 message.error('保存失败，请重试');

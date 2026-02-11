@@ -6,7 +6,13 @@ import type {
   PatientUpdateRequest,
   FollowupListParams,
   FollowupListResult,
+  FollowupCreateRequest,
+  FollowupListItem,
   ReferralListResult,
+  InternalReferralListResult,
+  ExternalReferralListResult,
+  PatientReferralCreateRequest,
+  PatientReferralCreateResponse,
   MedicationRecordListParams,
   MedicationRecordListResult,
   DietRecordListParams,
@@ -16,6 +22,11 @@ import type {
   PatientAnalysisParams,
   PatientHealthAnalysis,
   ScaleScoreResult,
+  HealthMetricListParams,
+  HealthMetricListResult,
+  RehabScoreRecordListParams,
+  RehabScoreRecordListResult,
+  RehabScoreRecordDetail,
 } from './typings.d';
 
 /**
@@ -65,12 +76,64 @@ export async function getFollowups(
 }
 
 /**
- * 查询患者转诊记录（院内 + 院外）
+ * 创建患者随访记录
+ */
+export async function createFollowup(
+  patientId: string,
+  data: FollowupCreateRequest,
+) {
+  return request<API.ApiResponse<FollowupListItem>>(
+    `/api/doctor/patients/${patientId}/followups`,
+    { method: 'POST', data },
+  );
+}
+
+/**
+ * @deprecated 使用 getInternalReferrals / getExternalReferrals 代替
  */
 export async function getReferrals(patientId: string) {
   return request<API.ApiResponse<ReferralListResult>>(
     `/api/doctor/patients/${patientId}/referrals`,
     { method: 'GET' },
+  );
+}
+
+/**
+ * 分页查询患者院内转诊记录
+ */
+export async function getInternalReferrals(
+  patientId: string,
+  params: FollowupListParams,
+) {
+  return request<API.ApiResponse<InternalReferralListResult>>(
+    `/api/doctor/patients/${patientId}/referrals/internal`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 分页查询患者院外转诊记录
+ */
+export async function getExternalReferrals(
+  patientId: string,
+  params: FollowupListParams,
+) {
+  return request<API.ApiResponse<ExternalReferralListResult>>(
+    `/api/doctor/patients/${patientId}/referrals/external`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 创建患者转诊记录（院内/院外）
+ */
+export async function createReferral(
+  patientId: string,
+  data: PatientReferralCreateRequest,
+) {
+  return request<API.ApiResponse<PatientReferralCreateResponse>>(
+    `/api/doctor/patients/${patientId}/referrals`,
+    { method: 'POST', data },
   );
 }
 
@@ -132,6 +195,45 @@ export async function getPatientAnalysis(
 export async function getScaleScores(patientId: string) {
   return request<API.ApiResponse<ScaleScoreResult>>(
     `/api/doctor/patients/${patientId}/scale-scores`,
+    { method: 'GET' },
+  );
+}
+
+/**
+ * 分页查询患者健康指标记录
+ */
+export async function getHealthMetrics(
+  patientId: string,
+  params: HealthMetricListParams,
+) {
+  return request<API.ApiResponse<HealthMetricListResult>>(
+    `/api/doctor/patients/${patientId}/health-metrics`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 分页查询患者康复评分记录
+ */
+export async function getRehabScoreRecords(
+  patientId: string,
+  params: RehabScoreRecordListParams,
+) {
+  return request<API.ApiResponse<RehabScoreRecordListResult>>(
+    `/api/doctor/patients/${patientId}/rehab-score-records`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 获取患者康复评分记录详情
+ */
+export async function getRehabScoreRecordDetail(
+  patientId: string,
+  recordId: string,
+) {
+  return request<API.ApiResponse<RehabScoreRecordDetail>>(
+    `/api/doctor/patients/${patientId}/rehab-score-records/${recordId}`,
     { method: 'GET' },
   );
 }

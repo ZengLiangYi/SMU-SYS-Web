@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getInitialDiagnosis } from '@/services/diagnosis';
-import type { InitialDiagnosisDetailResponse } from '@/services/diagnosis/typings.d';
+import { createDiagnosis, getCurrentDiagnosis } from '@/services/diagnosis';
+import type { DiagnosisDetailResponse } from '@/services/diagnosis/typings.d';
 import { getDiagnosticScales } from '@/services/diagnostic-scale';
 import { getDiseaseTypes } from '@/services/disease-type';
 import { getImagingIndicators } from '@/services/imaging-indicator';
@@ -43,7 +43,7 @@ export interface ExerciseDisplayItem {
 
 // -------- computeCurrentStep (with C2 fix) --------
 export function computeCurrentStep(
-  data: InitialDiagnosisDetailResponse | null,
+  data: DiagnosisDetailResponse | null,
 ): number {
   if (!data) return 0;
   if (data.diagnosis_status === '已完成') return -1;
@@ -81,8 +81,10 @@ interface CandidateCache {
 export interface UseDiagnosisFlowReturn {
   initialLoading: boolean;
   patientDetail: PatientDetail | null;
-  diagnosisData: InitialDiagnosisDetailResponse | null;
+  diagnosisData: DiagnosisDetailResponse | null;
   initialStep: number;
+  diagnosisId: string | null;
+  ensureDiagnosisId: () => Promise<string>;
 
   // 筛查相关
   screeningLoading: boolean;
@@ -136,8 +138,13 @@ export default function useDiagnosisFlow(
     null,
   );
   const [diagnosisData, setDiagnosisData] =
-    useState<InitialDiagnosisDetailResponse | null>(null);
+    useState<DiagnosisDetailResponse | null>(null);
   const [initialStep, setInitialStep] = useState(0);
+
+  // -------- diagnosisId 状态 (rerender-use-ref-transient-values) --------
+  const [diagnosisId, setDiagnosisId] = useState<string | null>(null);
+  const diagnosisIdRef = useRef<string | null>(null);
+  const creatingRef = useRef<Promise<string> | null>(null);
 
   // -------- 筛查状态 --------
   const [screeningLoading, setScreeningLoading] = useState(false);
@@ -184,6 +191,35 @@ export default function useDiagnosisFlow(
 
   // -------- 候选项缓存 (js-cache-function-results) --------
   const candidateCache = useRef<CandidateCache | null>(null);
+
+  // -------- ensureDiagnosisId (并发安全，409 回退) --------
+  const ensureDiagnosisId = useCallback(async (): Promise<string> => {
+    if (diagnosisIdRef.current) return diagnosisIdRef.current;
+    if (creatingRef.current) return creatingRef.current;
+
+    creatingRef.current = createDiagnosis(patientId)
+      .then(({ data }) => {
+        diagnosisIdRef.current = data.diagnosis_id;
+        if (mountedRef.current) setDiagnosisId(data.diagnosis_id);
+        return data.diagnosis_id;
+      })
+      .catch(async (err) => {
+        // 409 = 已有诊断中记录，回退获取
+        if (err?.response?.status === 409) {
+          const { data } = await getCurrentDiagnosis(patientId);
+          const id = data.diagnosis_id!;
+          diagnosisIdRef.current = id;
+          if (mountedRef.current) setDiagnosisId(id);
+          return id;
+        }
+        throw err;
+      })
+      .finally(() => {
+        creatingRef.current = null;
+      });
+
+    return creatingRef.current;
+  }, [patientId]);
 
   // -------- H3: 仅加载候选项（resume 路径，不调用 LLM） --------
   const loadCandidatesOnly = useCallback(async () => {
@@ -362,7 +398,7 @@ export default function useDiagnosisFlow(
 
   // -------- H2: 从已保存 ID 解析处方显示数据 --------
   const resolvePrescriptionData = useCallback(
-    async (data: InitialDiagnosisDetailResponse) => {
+    async (data: DiagnosisDetailResponse) => {
       const hasMeds = data.medicine_ids?.length > 0;
       const hasRehab = data.rehab_level_ids?.length > 0;
       if (
@@ -443,21 +479,57 @@ export default function useDiagnosisFlow(
 
     (async () => {
       try {
-        // async-parallel: 患者信息 + 初诊数据
+        // async-parallel: 患者信息 + 当前诊疗数据
         const [patientRes, diagnosisRes] = await Promise.all([
           getPatient(patientId),
-          getInitialDiagnosis(patientId),
+          getCurrentDiagnosis(patientId),
         ]);
 
         if (!mountedRef.current) return;
 
         setPatientDetail(patientRes.data);
-        setDiagnosisData(diagnosisRes.data);
 
-        const step = computeCurrentStep(diagnosisRes.data);
+        let saved = diagnosisRes.data;
+
+        // 已完成或无记录 → 创建新诊疗记录（复诊）
+        if (saved.diagnosis_status === '已完成' || saved.diagnosis_id == null) {
+          try {
+            const { data: createRes } = await createDiagnosis(patientId);
+            if (!mountedRef.current) return;
+            // 重置为空白诊疗数据
+            saved = {
+              ...saved,
+              diagnosis_id: createRes.diagnosis_id,
+              diagnosis_status: null,
+              completed_at: null,
+              chief_complaint: null,
+              physical_signs: null,
+              present_illness: null,
+              screening_items: null,
+              examination_steps: null,
+              lab_result_url: null,
+              blood_routine_url: null,
+              imaging_result_url: null,
+              diagnosis_results: [],
+              diagnosis_note: null,
+              medicine_ids: [],
+              rehab_level_ids: [],
+              exercise_plan: [],
+              diet_plan: null,
+            };
+          } catch {
+            // 创建失败时仍使用已有数据
+          }
+        }
+
+        setDiagnosisData(saved);
+
+        // 存储 diagnosisId
+        diagnosisIdRef.current = saved.diagnosis_id;
+        setDiagnosisId(saved.diagnosis_id);
+
+        const step = computeCurrentStep(saved);
         setInitialStep(step);
-
-        const saved = diagnosisRes.data;
 
         // 根据计算步骤恢复数据
         if (step >= 1 && saved) {
@@ -507,6 +579,8 @@ export default function useDiagnosisFlow(
     patientDetail,
     diagnosisData,
     initialStep,
+    diagnosisId,
+    ensureDiagnosisId,
 
     screeningLoading,
     scaleItems,

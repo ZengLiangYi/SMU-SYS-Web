@@ -1,8 +1,4 @@
-import {
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  EyeOutlined,
-} from '@ant-design/icons';
+import { EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable } from '@ant-design/pro-components';
 import { Button, Image, Tag, Typography } from 'antd';
@@ -10,25 +6,21 @@ import React, { useRef } from 'react';
 import {
   getDietRecords,
   getExerciseRecords,
+  getHealthMetrics,
   getMedicationRecords,
 } from '@/services/patient-user';
 import type {
   DietRecordItem,
   ExerciseRecordItem,
+  HealthMetricItem,
   MedicationRecordItem,
 } from '@/services/patient-user/typings.d';
 import { getStaticUrl } from '@/services/static';
 import { formatDateTime } from '@/utils/date';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 // -------- 暂无 API 的本地类型（保留 mock） --------
-interface BehaviorRecord {
-  id: string;
-  behaviorDetail: string;
-  status: number;
-}
-
 interface CognitiveTrainingRecord {
   id: string;
   trainingTime: string;
@@ -40,12 +32,6 @@ interface CognitiveTrainingRecord {
   level: number;
   completionStatus: number;
 }
-
-// TODO: 替换为后端 API 接口
-const MOCK_BEHAVIOR_RECORDS: BehaviorRecord[] = [
-  { id: '1', behaviorDetail: '晚上11点前睡觉', status: 1 },
-  { id: '2', behaviorDetail: '不抽烟', status: 1 },
-];
 
 // TODO: 替换为后端 API 接口
 const MOCK_COGNITIVE_TRAINING_RECORDS: CognitiveTrainingRecord[] = [
@@ -74,6 +60,7 @@ interface TodaySituationProps {
 
 const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
   const medicationTableRef = useRef<ActionType>(null);
+  const healthMetricTableRef = useRef<ActionType>(null);
   const dietTableRef = useRef<ActionType>(null);
   const exerciseTableRef = useRef<ActionType>(null);
 
@@ -102,8 +89,18 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
       width: 160,
       render: (_, record) => formatDateTime(record.taken_at),
     },
-    { title: '数量', dataIndex: 'quantity', width: 80 },
-    { title: '单位', dataIndex: 'unit', width: 80 },
+    {
+      title: '数量',
+      dataIndex: 'quantity',
+      width: 80,
+      render: (_, record) => record.quantity ?? '--',
+    },
+    {
+      title: '单位',
+      dataIndex: 'unit',
+      width: 80,
+      render: (_, record) => record.unit ?? '--',
+    },
   ];
 
   const fetchMedicationRecords = async (params: {
@@ -195,25 +192,48 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
     }
   };
 
-  // -------- 行为记录（mock） --------
-  const behaviorColumns: ProColumns<BehaviorRecord>[] = [
-    { title: '行为细则', dataIndex: 'behaviorDetail', width: 300 },
+  // -------- 健康指标记录（真实 API） --------
+  const healthMetricColumns: ProColumns<HealthMetricItem>[] = [
+    { title: '收缩压', dataIndex: 'systolic_pressure', width: 100 },
+    { title: '舒张压', dataIndex: 'diastolic_pressure', width: 100 },
+    { title: '血糖', dataIndex: 'blood_glucose', width: 80 },
     {
-      title: '状态',
-      key: 'status',
+      title: '血糖状态',
+      dataIndex: 'blood_glucose_status',
       width: 100,
-      render: (_, record) =>
-        record.status === 1 ? (
-          <Text type="success">
-            <CheckCircleOutlined /> 完成
-          </Text>
-        ) : (
-          <Text type="danger">
-            <CloseCircleOutlined /> 未完成
-          </Text>
-        ),
+      render: (_, record) => (
+        <Tag color={record.blood_glucose_status === '空腹' ? 'blue' : 'orange'}>
+          {record.blood_glucose_status}
+        </Tag>
+      ),
+    },
+    { title: '总胆固醇', dataIndex: 'total_cholesterol', width: 100 },
+    { title: '甘油三酯', dataIndex: 'triglycerides', width: 100 },
+    { title: 'HDL', dataIndex: 'hdl', width: 80 },
+    { title: 'LDL', dataIndex: 'ldl', width: 80 },
+    {
+      title: '测量时间',
+      dataIndex: 'measured_at',
+      width: 160,
+      render: (_, record) => formatDateTime(record.measured_at),
     },
   ];
+
+  const fetchHealthMetrics = async (params: {
+    current?: number;
+    pageSize?: number;
+  }) => {
+    const { current = 1, pageSize = 10 } = params;
+    try {
+      const { data } = await getHealthMetrics(patientId, {
+        offset: (current - 1) * pageSize,
+        limit: pageSize,
+      });
+      return { data: data.items, total: data.total, success: true };
+    } catch {
+      return { data: [], total: 0, success: false };
+    }
+  };
 
   // -------- 认知训练记录（mock） --------
   const cognitiveTrainingColumns: ProColumns<CognitiveTrainingRecord>[] = [
@@ -260,21 +280,19 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
         pagination={{ defaultPageSize: 5 }}
       />
 
-      {/* 行为记录（mock） */}
+      {/* 健康指标记录（真实 API） */}
       <Title level={5} style={{ marginTop: 24 }}>
-        行为记录
+        健康指标记录
       </Title>
-      <ProTable<BehaviorRecord>
+      <ProTable<HealthMetricItem>
+        actionRef={healthMetricTableRef}
         rowKey="id"
         search={false}
         options={false}
-        request={async () => ({
-          data: MOCK_BEHAVIOR_RECORDS,
-          success: true,
-          total: MOCK_BEHAVIOR_RECORDS.length,
-        })}
-        columns={behaviorColumns}
-        pagination={false}
+        request={fetchHealthMetrics}
+        columns={healthMetricColumns}
+        pagination={{ defaultPageSize: 5 }}
+        scroll={{ x: 900 }}
       />
 
       {/* 饮食记录（真实 API） */}

@@ -52,9 +52,20 @@ export async function getInitialState(): Promise<{
         if (res.status === 'OK') {
           // 建立 WebSocket 连接（医生角色）
           connectSocket(token);
+          // 从 localStorage 读取 avatar（个人中心更新后会同步写入）
+          let storedAvatar = '/images/avatar.png';
+          try {
+            const stored = localStorage.getItem('currentUser');
+            if (stored) {
+              const parsed = JSON.parse(stored) as API.CurrentUser;
+              if (parsed.avatar) storedAvatar = parsed.avatar;
+            }
+          } catch {
+            // ignore
+          }
           return {
             ...res.data,
-            avatar: '/images/avatar.png',
+            avatar: storedAvatar,
             role: 'doctor',
           } as API.CurrentUser;
         }
