@@ -19,12 +19,10 @@ import PatientInfoHeader from './components/PatientInfoHeader';
 import type { PrescriptionDataRef } from './components/PrescriptionContent';
 import PrescriptionContent from './components/PrescriptionContent';
 import useDiagnosisFlow from './hooks/useDiagnosisFlow';
-import useDiagnosisStyles from './index.style';
 
 const { Text } = Typography;
 
 const Diagnosis: React.FC = () => {
-  const { styles } = useDiagnosisStyles();
   const { message } = App.useApp();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('id') ?? '';
@@ -150,7 +148,7 @@ const Diagnosis: React.FC = () => {
 
   return (
     <PageContainer title={false}>
-      <ProCard className={styles.diagnosisContainer}>
+      <ProCard style={{ maxWidth: 1200, margin: '0 auto' }}>
         <PatientInfoHeader patientDetail={patientDetail} />
 
         <StepsForm

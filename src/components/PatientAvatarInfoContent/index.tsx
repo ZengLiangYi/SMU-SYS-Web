@@ -23,11 +23,7 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
   return (
     <div>
       <Flex gap={24}>
-        <Avatar
-          size={80}
-          icon={<UserOutlined />}
-          style={{ background: '#f0f0f0' }}
-        />
+        <Avatar size={80} icon={<UserOutlined />} style={{ flexShrink: 0 }} />
         <Flex vertical justify="center">
           <Space style={{ marginBottom: 8 }}>
             <Text strong style={{ fontSize: 18 }}>

@@ -1,5 +1,9 @@
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
-import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
+import type {
+  RequestConfig,
+  RunTimeLayoutConfig,
+  RuntimeAntdConfig,
+} from '@umijs/max';
 import { history } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -149,10 +153,11 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
         return;
       }
 
-      // Admin 只能访问医师列表
+      // Admin 只能访问医师列表和系统设置
       if (
         role === 'admin' &&
-        !location.pathname.startsWith('/basic-settings/doctor-list')
+        !location.pathname.startsWith('/basic-settings/doctor-list') &&
+        !location.pathname.startsWith('/basic-settings/system-settings')
       ) {
         history.replace(homePath);
         return;
@@ -174,6 +179,21 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
     },
     ...initialState?.settings,
   };
+};
+
+export const antd: RuntimeAntdConfig = (memo) => {
+  memo.theme ??= {};
+  memo.theme.token ??= {};
+  try {
+    const stored = localStorage.getItem('systemFontSize');
+    if (stored) {
+      const size = parseInt(stored, 10);
+      if (size >= 12 && size <= 20) memo.theme.token.fontSize = size;
+    }
+  } catch {
+    /* localStorage 可能不可用 */
+  }
+  return memo;
 };
 
 /**

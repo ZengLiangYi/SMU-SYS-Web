@@ -1,24 +1,8 @@
 import { CheckCard } from '@ant-design/pro-components';
 import { Alert, Flex, Spin, Tag, Typography } from 'antd';
-import { createStyles } from 'antd-style';
 import React from 'react';
 
-const { Text } = Typography;
-
-const useStyles = createStyles(({ token }) => ({
-  categorySection: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 14,
-    fontWeight: 600,
-    marginBottom: 10,
-    color: token.colorTextHeading,
-  },
-  confidenceBadge: {
-    fontVariantNumeric: 'tabular-nums',
-  },
-}));
+const { Text, Title } = Typography;
 
 export interface ScreeningCheckItem {
   id: string;
@@ -55,8 +39,6 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
   aiSuggestion,
   confidence,
 }) => {
-  const { styles } = useStyles();
-
   if (loading) {
     return (
       <Spin
@@ -72,7 +54,7 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
         <Text type="secondary">基于患者信息及候选项目生成，医生可调整勾选</Text>
         {/* M2: ternary not && */}
         {confidence != null ? (
-          <Tag color="blue" className={styles.confidenceBadge}>
+          <Tag color="blue" style={{ fontVariantNumeric: 'tabular-nums' }}>
             置信度 {(confidence * 100).toFixed(0)}%
           </Tag>
         ) : null}
@@ -80,8 +62,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
 
       {/* 量表评估 */}
       {scaleItems.length > 0 ? (
-        <div className={styles.categorySection}>
-          <div className={styles.categoryTitle}>量表评估</div>
+        <div style={{ marginBottom: 20 }}>
+          <Title level={5} style={{ marginBottom: 10 }}>
+            量表评估
+          </Title>
           <CheckCard.Group
             multiple
             value={selectedScaleIds}
@@ -103,8 +87,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
 
       {/* 实验室筛查 */}
       {labItems.length > 0 ? (
-        <div className={styles.categorySection}>
-          <div className={styles.categoryTitle}>实验室筛查</div>
+        <div style={{ marginBottom: 20 }}>
+          <Title level={5} style={{ marginBottom: 10 }}>
+            实验室筛查
+          </Title>
           <CheckCard.Group
             multiple
             value={selectedLabIds}
@@ -126,8 +112,10 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
 
       {/* 影像学检测 */}
       {imagingItems.length > 0 ? (
-        <div className={styles.categorySection}>
-          <div className={styles.categoryTitle}>影像学检测</div>
+        <div style={{ marginBottom: 20 }}>
+          <Title level={5} style={{ marginBottom: 10 }}>
+            影像学检测
+          </Title>
           <CheckCard.Group
             multiple
             value={selectedImagingIds}

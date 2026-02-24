@@ -123,6 +123,11 @@ export default [
         component: './basicSettings/DoctorList',
         access: 'canAdmin',
       },
+      {
+        path: '/basic-settings/system-settings',
+        name: '系统设置',
+        component: './basicSettings/SystemSettings',
+      },
     ],
   },
 

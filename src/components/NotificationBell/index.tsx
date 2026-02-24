@@ -4,6 +4,7 @@ import {
   App,
   Badge,
   Button,
+  Divider,
   Empty,
   List,
   Popover,
@@ -207,20 +208,22 @@ const NotificationBell: React.FC = () => {
           },
         ]}
       />
-      {activeTab === 'unread' && unreadCount > 0 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            padding: '8px 0 4px',
-            borderTop: '1px solid #f0f0f0',
-          }}
-        >
-          <Button type="link" size="small" onClick={handleReadAll}>
-            全部已读
-          </Button>
-        </div>
-      )}
+      {activeTab === 'unread' && unreadCount > 0 ? (
+        <>
+          <Divider style={{ margin: 0 }} />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              padding: '8px 0 4px',
+            }}
+          >
+            <Button type="link" size="small" onClick={handleReadAll}>
+              全部已读
+            </Button>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 

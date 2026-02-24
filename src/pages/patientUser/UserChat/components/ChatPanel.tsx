@@ -253,9 +253,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
       doctor: {
         placement: 'end' as const,
         variant: 'filled' as const,
-        avatar: (
-          <Avatar icon={<UserOutlined />} style={{ background: '#1677ff' }} />
-        ),
+        avatar: <Avatar icon={<UserOutlined />} />,
       },
       patient: {
         placement: 'start' as const,

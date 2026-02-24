@@ -1,6 +1,4 @@
-import { ProCard } from '@ant-design/pro-components';
-import { Alert, Flex, Spin, Tag, Typography } from 'antd';
-import { createStyles } from 'antd-style';
+import { Alert, Card, Divider, Flex, Spin, Tag, Typography } from 'antd';
 import React from 'react';
 import type {
   OtherPossibleDisease,
@@ -8,19 +6,6 @@ import type {
 } from '@/services/llm/typings.d';
 
 const { Text, Paragraph } = Typography;
-
-const useStyles = createStyles(({ token }) => ({
-  confidenceTag: {
-    fontVariantNumeric: 'tabular-nums',
-  },
-  diseaseItem: {
-    padding: '8px 0',
-    borderBottom: `1px solid ${token.colorBorderSecondary}`,
-    '&:last-child': {
-      borderBottom: 'none',
-    },
-  },
-}));
 
 interface AIDiagnosisContentProps {
   loading?: boolean;
@@ -38,8 +23,6 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   preventionAdvice,
   diseaseNameMap,
 }) => {
-  const { styles } = useStyles();
-
   if (loading) {
     return (
       <Spin
@@ -66,10 +49,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   return (
     <Flex gap={16} wrap style={{ marginBottom: 16 }}>
       {/* 左侧：AI 诊断结果 */}
-      <ProCard
-        title="AI 诊断结果"
-        style={{ flex: 1, minWidth: 300, border: '1px solid #f0f0f0' }}
-      >
+      <Card title="AI 诊断结果" bordered style={{ flex: 1, minWidth: 300 }}>
         {primaryDisease ? (
           <div style={{ marginBottom: 16 }}>
             <Text strong>首选诊断</Text>
@@ -77,7 +57,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
               <Text style={{ fontSize: 16, fontWeight: 600 }}>
                 {resolveName(primaryDisease.id)}
               </Text>
-              <Tag color="blue" className={styles.confidenceTag}>
+              <Tag color="blue" style={{ fontVariantNumeric: 'tabular-nums' }}>
                 置信度 {(primaryDisease.confidence * 100).toFixed(0)}%
               </Tag>
             </Flex>
@@ -90,32 +70,34 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
         {otherDiseases.length > 0 ? (
           <div>
             <Text strong>其他可能诊断</Text>
-            {otherDiseases.map((d) => (
-              <div key={d.id} className={styles.diseaseItem}>
-                <Text>{resolveName(d.id)}</Text>
-                <Paragraph
-                  type="secondary"
-                  ellipsis={{ rows: 2 }}
-                  style={{ marginBottom: 0, fontSize: 13 }}
-                >
-                  {d.reason}
-                </Paragraph>
-              </div>
+            {otherDiseases.map((d, idx) => (
+              <React.Fragment key={d.id}>
+                <div style={{ padding: '8px 0' }}>
+                  <Text>{resolveName(d.id)}</Text>
+                  <Paragraph
+                    type="secondary"
+                    ellipsis={{ rows: 2 }}
+                    style={{ marginBottom: 0, fontSize: 13 }}
+                  >
+                    {d.reason}
+                  </Paragraph>
+                </div>
+                {idx < otherDiseases.length - 1 ? (
+                  <Divider style={{ margin: 0 }} />
+                ) : null}
+              </React.Fragment>
             ))}
           </div>
         ) : null}
-      </ProCard>
+      </Card>
 
       {/* 预防建议 */}
       {preventionAdvice ? (
-        <ProCard
-          title="预防建议"
-          style={{ flex: 1, minWidth: 300, border: '1px solid #f0f0f0' }}
-        >
+        <Card title="预防建议" bordered style={{ flex: 1, minWidth: 300 }}>
           <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
             {preventionAdvice}
           </Paragraph>
-        </ProCard>
+        </Card>
       ) : null}
     </Flex>
   );
