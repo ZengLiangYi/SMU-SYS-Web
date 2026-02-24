@@ -5,7 +5,10 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/zh-cn';
-import { AvatarDropdown, AvatarName } from '@/components';
+import {
+  AvatarDropdown,
+  AvatarName,
+} from '@/components/RightContent/AvatarDropdown';
 
 // dayjs 全局配置（仅在入口执行一次）
 dayjs.extend(relativeTime);

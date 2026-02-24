@@ -69,6 +69,7 @@ const Diagnosis: React.FC = () => {
     initialCognitiveCards,
     initialDietContent,
     initialExercises,
+    prescriptionDataVersion,
     loadPrescriptionData,
   } = useDiagnosisFlow(patientId);
 
@@ -423,6 +424,7 @@ const Diagnosis: React.FC = () => {
           {/* ======== Step 4: 综合处方 ======== */}
           <StepsForm.StepForm name="prescription" title="综合康复处方制定">
             <PrescriptionContent
+              key={prescriptionDataVersion}
               ref={prescriptionRef}
               loading={prescriptionLoading}
               aiSummary={aiPrescriptionSummary}

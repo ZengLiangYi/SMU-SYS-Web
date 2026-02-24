@@ -8,7 +8,7 @@ import {
 } from '@umijs/max';
 import { App, Button, Empty, Flex, Space, Spin, Typography } from 'antd';
 import React, { Suspense, useState } from 'react';
-import { PatientAvatarInfoContent } from '@/components';
+import PatientAvatarInfoContent from '@/components/PatientAvatarInfoContent';
 import { createBindRequest } from '@/services/bind-request';
 import { getPatient } from '@/services/patient-user';
 import { formatDateTime } from '@/utils/date';

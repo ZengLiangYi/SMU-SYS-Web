@@ -98,7 +98,7 @@ const CreateReferralForm: FC<CreateReferralFormProps> = ({
       width={520}
       initialValues={{ referral_type: 'internal', is_accepted: true }}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onFinish={async (values) => {

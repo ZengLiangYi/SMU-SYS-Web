@@ -298,6 +298,33 @@ export interface HealthMetricListResult {
   items: HealthMetricItem[];
 }
 
+// -------- 处方数据 --------
+export interface PrescriptionMedicationItem {
+  id: string;
+  medicineName: string;
+  usage: string;
+  dosage: string;
+}
+
+export interface PrescriptionCognitiveItem {
+  id: string;
+  cardName: string;
+  difficulty: string;
+}
+
+export interface PrescriptionExerciseItem {
+  id: string;
+  exerciseName: string;
+  duration: string;
+}
+
+export interface PrescriptionData {
+  medications: PrescriptionMedicationItem[];
+  cognitiveCards: PrescriptionCognitiveItem[];
+  dietContent: string;
+  exercises: PrescriptionExerciseItem[];
+}
+
 // -------- 康复评分记录 --------
 export interface RehabScoreRecordListItem {
   id: string;

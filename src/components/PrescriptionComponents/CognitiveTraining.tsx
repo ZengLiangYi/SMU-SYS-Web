@@ -1,70 +1,74 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Typography } from 'antd';
-import React from 'react';
-import usePrescriptionStyles from './index.style';
+import { Button, Card, Col, Flex, Row, Typography } from 'antd';
+import type { FC } from 'react';
+import type { PrescriptionCognitiveItem } from '@/services/patient-user/typings.d';
 
-const { Title } = Typography;
-
-interface CognitiveCard {
-  id: string;
-  cardName: string;
-  difficulty: string;
-}
+const { Title, Text } = Typography;
 
 interface CognitiveTrainingProps {
-  cards: CognitiveCard[];
+  cards: PrescriptionCognitiveItem[];
   onAdd: () => void;
-  onEdit: (item: CognitiveCard) => void;
+  onEdit: (item: PrescriptionCognitiveItem) => void;
   onDelete: (id: string) => void;
 }
 
-const CognitiveTraining: React.FC<CognitiveTrainingProps> = ({
+const CognitiveTraining: FC<CognitiveTrainingProps> = ({
   cards,
   onAdd,
   onEdit,
   onDelete,
-}) => {
-  const { styles, cx } = usePrescriptionStyles();
-
-  return (
-    <div className={styles.prescriptionSection}>
-      <div className={styles.sectionHeader}>
-        <Title level={5} className={styles.sectionTitle}>
-          认知训练
-        </Title>
-        <span className={styles.sectionSubtitle}>每日30分钟</span>
-      </div>
-      <div className={styles.cognitiveCardsContainer}>
-        {cards.map((item) => (
-          <div key={item.id} className={styles.cognitiveCard}>
-            <div className={styles.cognitiveCardContent}>
-              <div className={styles.cognitiveCardName}>{item.cardName}</div>
-              <div className={styles.cognitiveCardDifficulty}>
-                {item.difficulty}
+}) => (
+  <div>
+    <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
+      <Title level={5} style={{ margin: 0 }}>
+        认知训练
+      </Title>
+      <Text type="secondary">每日30分钟</Text>
+    </Flex>
+    <Row gutter={[16, 16]}>
+      {cards.map((item) => (
+        <Col span={12} key={item.id}>
+          <Card size="small">
+            <Flex justify="space-between" align="center">
+              <div>
+                <Text strong>{item.cardName}</Text>
+                <br />
+                <Text type="secondary">{item.difficulty}</Text>
               </div>
-            </div>
-            <div className={styles.cognitiveCardActions}>
-              <Button type="link" onClick={() => onEdit(item)}>
-                <EditOutlined />
-              </Button>
-              <Button type="link" onClick={() => onDelete(item.id)}>
-                <DeleteOutlined />
-              </Button>
-            </div>
-          </div>
-        ))}
-        <div
-          className={cx(styles.cognitiveCard, styles.addCard)}
+              <Flex gap={4}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<EditOutlined />}
+                  aria-label={`编辑${item.cardName}`}
+                  onClick={() => onEdit(item)}
+                />
+                <Button
+                  type="link"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  aria-label={`删除${item.cardName}`}
+                  onClick={() => onDelete(item.id)}
+                />
+              </Flex>
+            </Flex>
+          </Card>
+        </Col>
+      ))}
+      <Col span={12}>
+        <Button
+          type="dashed"
+          block
+          icon={<PlusOutlined />}
+          style={{ height: '100%', minHeight: 60 }}
           onClick={onAdd}
         >
-          <PlusOutlined
-            style={{ fontSize: 24, color: '#999', marginBottom: 8 }}
-          />
-          <span style={{ fontSize: 13, color: '#666' }}>更多卡片</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+          更多卡片
+        </Button>
+      </Col>
+    </Row>
+  </div>
+);
 
 export default CognitiveTraining;

@@ -17,29 +17,14 @@ import type {
 } from '@/services/llm/typings.d';
 import { getMedicines } from '@/services/medicine';
 import { getPatient } from '@/services/patient-user';
-import type { PatientDetail } from '@/services/patient-user/typings.d';
+import type {
+  PatientDetail,
+  PrescriptionCognitiveItem,
+  PrescriptionExerciseItem,
+  PrescriptionMedicationItem,
+} from '@/services/patient-user/typings.d';
 import { getRehabLevels } from '@/services/rehab-level';
 import type { ScreeningCheckItem } from '../components/AICheckContent';
-
-// -------- 处方显示数据类型 --------
-export interface MedicationDisplayItem {
-  id: string;
-  medicineName: string;
-  usage: string;
-  dosage: string;
-}
-
-export interface CognitiveDisplayItem {
-  id: string;
-  cardName: string;
-  difficulty: string;
-}
-
-export interface ExerciseDisplayItem {
-  id: string;
-  exerciseName: string;
-  duration: string;
-}
 
 // -------- computeCurrentStep (with C2 fix) --------
 export function computeCurrentStep(
@@ -113,10 +98,12 @@ export interface UseDiagnosisFlowReturn {
   // 处方相关
   prescriptionLoading: boolean;
   aiPrescriptionSummary: string | null;
-  initialMedications: MedicationDisplayItem[];
-  initialCognitiveCards: CognitiveDisplayItem[];
+  initialMedications: PrescriptionMedicationItem[];
+  initialCognitiveCards: PrescriptionCognitiveItem[];
   initialDietContent: string;
-  initialExercises: ExerciseDisplayItem[];
+  initialExercises: PrescriptionExerciseItem[];
+  /** 数据加载完成后递增，用作 key 强制子组件重新挂载 */
+  prescriptionDataVersion: number;
   loadPrescriptionData: () => Promise<void>;
 }
 
@@ -174,19 +161,20 @@ export default function useDiagnosisFlow(
   );
 
   // -------- 处方状态 --------
+  const [prescriptionDataVersion, setPrescriptionDataVersion] = useState(0);
   const [prescriptionLoading, setPrescriptionLoading] = useState(false);
   const [aiPrescriptionSummary, setAiPrescriptionSummary] = useState<
     string | null
   >(null);
   const [initialMedications, setInitialMedications] = useState<
-    MedicationDisplayItem[]
+    PrescriptionMedicationItem[]
   >([]);
   const [initialCognitiveCards, setInitialCognitiveCards] = useState<
-    CognitiveDisplayItem[]
+    PrescriptionCognitiveItem[]
   >([]);
   const [initialDietContent, setInitialDietContent] = useState('');
   const [initialExercises, setInitialExercises] = useState<
-    ExerciseDisplayItem[]
+    PrescriptionExerciseItem[]
   >([]);
 
   // -------- 候选项缓存 (js-cache-function-results) --------
@@ -360,7 +348,7 @@ export default function useDiagnosisFlow(
                 }
               : null;
           })
-          .filter((item): item is MedicationDisplayItem => item !== null),
+          .filter((item): item is PrescriptionMedicationItem => item !== null),
       );
 
       setInitialCognitiveCards(
@@ -375,7 +363,7 @@ export default function useDiagnosisFlow(
                 }
               : null;
           })
-          .filter((item): item is CognitiveDisplayItem => item !== null),
+          .filter((item): item is PrescriptionCognitiveItem => item !== null),
       );
 
       setInitialDietContent(llmRes.diet_prescription ?? '');
@@ -392,7 +380,10 @@ export default function useDiagnosisFlow(
     } catch {
       // 错误由调用方处理
     } finally {
-      if (mountedRef.current) setPrescriptionLoading(false);
+      if (mountedRef.current) {
+        setPrescriptionLoading(false);
+        setPrescriptionDataVersion((v) => v + 1);
+      }
     }
   }, [patientId]);
 
@@ -431,7 +422,9 @@ export default function useDiagnosisFlow(
                   }
                 : null;
             })
-            .filter((item): item is MedicationDisplayItem => item !== null),
+            .filter(
+              (item): item is PrescriptionMedicationItem => item !== null,
+            ),
         );
       }
 
@@ -449,7 +442,7 @@ export default function useDiagnosisFlow(
                   }
                 : null;
             })
-            .filter((item): item is CognitiveDisplayItem => item !== null),
+            .filter((item): item is PrescriptionCognitiveItem => item !== null),
         );
       }
 
@@ -610,6 +603,7 @@ export default function useDiagnosisFlow(
     initialCognitiveCards,
     initialDietContent,
     initialExercises,
+    prescriptionDataVersion,
     loadPrescriptionData,
   };
 }

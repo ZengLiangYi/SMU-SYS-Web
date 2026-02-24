@@ -49,7 +49,7 @@ const CreateFollowupForm: FC<CreateFollowupFormProps> = ({
       onOpenChange={onOpenChange}
       width={480}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onFinish={async (values) => {
