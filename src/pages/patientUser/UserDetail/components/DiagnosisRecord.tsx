@@ -1,8 +1,17 @@
 import { EyeOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProDescriptions, ProTable } from '@ant-design/pro-components';
-import { Modal, Tag } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
+import { ProDescriptions } from '@ant-design/pro-components';
+import { useRequest } from '@umijs/max';
+import {
+  Empty,
+  Flex,
+  List,
+  Modal,
+  Pagination,
+  Spin,
+  Tag,
+  Typography,
+} from 'antd';
+import React, { useEffect, useState } from 'react';
 import { getDiagnosisHistory } from '@/services/diagnosis';
 import type { DiagnosisHistoryItem } from '@/services/diagnosis/typings.d';
 import {
@@ -11,17 +20,20 @@ import {
 } from '@/services/doctor-metadata';
 import { formatDateTime } from '@/utils/date';
 
+const { Text } = Typography;
+
+const PAGE_SIZE = 8;
+
 interface DiagnosisRecordProps {
   patientId: string;
 }
 
 const DiagnosisRecord: React.FC<DiagnosisRecordProps> = ({ patientId }) => {
-  const diagnosisTableRef = useRef<ActionType>(null);
   const [viewingRecord, setViewingRecord] =
     useState<DiagnosisHistoryItem | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [page, setPage] = useState(1);
 
-  // doctor_id → name / disease_id → name 映射 (js-set-map-lookups + async-parallel)
   const [doctorMap, setDoctorMap] = useState<Map<string, string>>(new Map());
   const [diseaseMap, setDiseaseMap] = useState<Map<string, string>>(new Map());
 
@@ -39,6 +51,17 @@ const DiagnosisRecord: React.FC<DiagnosisRecordProps> = ({ patientId }) => {
       .catch(() => {});
   }, []);
 
+  const { data: listData, loading } = useRequest(
+    () =>
+      getDiagnosisHistory(patientId, {
+        offset: (page - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      }),
+    { refreshDeps: [patientId, page] },
+  );
+
+  const items = listData?.items ?? [];
+
   const renderDoctorName = (doctorId: string | null) =>
     doctorId ? (doctorMap.get(doctorId) ?? doctorId) : '--';
 
@@ -47,87 +70,67 @@ const DiagnosisRecord: React.FC<DiagnosisRecordProps> = ({ patientId }) => {
       ? ids.map((id) => diseaseMap.get(id) ?? id).join('、')
       : '--';
 
-  const diagnosisColumns: ProColumns<DiagnosisHistoryItem>[] = [
-    {
-      title: '日期',
-      dataIndex: 'created_at',
-      width: 160,
-      render: (_, record) =>
-        record.created_at ? formatDateTime(record.created_at) : '--',
-    },
-    {
-      title: '接诊医生',
-      dataIndex: 'doctor_id',
-      width: 120,
-      render: (_, record) => renderDoctorName(record.doctor_id),
-    },
-    {
-      title: '诊断结果',
-      dataIndex: 'diagnosis_results',
-      width: 200,
-      ellipsis: true,
-      render: (_, record) => renderDiagnosisResults(record.diagnosis_results),
-    },
-    {
-      title: '状态',
-      dataIndex: 'completed_at',
-      width: 100,
-      render: (_, record) =>
-        record.completed_at ? (
-          <Tag color="blue">已完成</Tag>
-        ) : (
-          <Tag color="orange">诊断中</Tag>
-        ),
-    },
-    {
-      title: '完成时间',
-      dataIndex: 'completed_at',
-      width: 160,
-      render: (_, record) =>
-        record.completed_at ? formatDateTime(record.completed_at) : '--',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 80,
-      render: (_, record) => (
-        <a
-          onClick={() => {
-            setViewingRecord(record);
-            setDetailModalVisible(true);
-          }}
-        >
-          <EyeOutlined /> 详情
-        </a>
-      ),
-    },
-  ];
-
   return (
     <div>
-      <ProTable<DiagnosisHistoryItem>
-        actionRef={diagnosisTableRef}
-        rowKey="diagnosis_id"
-        search={false}
-        options={false}
-        scroll={{ x: 900 }}
-        request={async (params) => {
-          const { current = 1, pageSize = 8 } = params;
-          try {
-            const { data } = await getDiagnosisHistory(patientId, {
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-            });
-            return { data: data.items, total: data.total, success: true };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
-        columns={diagnosisColumns}
-        pagination={{ pageSize: 8 }}
-      />
+      <Spin spinning={loading}>
+        {items.length > 0 ? (
+          <>
+            <List<DiagnosisHistoryItem>
+              dataSource={items}
+              renderItem={(item) => (
+                <List.Item
+                  key={item.diagnosis_id}
+                  extra={
+                    <a
+                      onClick={() => {
+                        setViewingRecord(item);
+                        setDetailModalVisible(true);
+                      }}
+                    >
+                      <EyeOutlined /> 详情
+                    </a>
+                  }
+                >
+                  <List.Item.Meta
+                    title={renderDiagnosisResults(item.diagnosis_results)}
+                    description={
+                      <Flex gap={8} align="center" wrap>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {item.created_at
+                            ? formatDateTime(item.created_at)
+                            : '--'}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          接诊：{renderDoctorName(item.doctor_id)}
+                        </Text>
+                        {item.completed_at ? (
+                          <Tag color="blue">已完成</Tag>
+                        ) : (
+                          <Tag color="orange">诊断中</Tag>
+                        )}
+                      </Flex>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+            {(listData?.total ?? 0) > PAGE_SIZE ? (
+              <Flex justify="end" style={{ marginTop: 8 }}>
+                <Pagination
+                  size="small"
+                  current={page}
+                  pageSize={PAGE_SIZE}
+                  total={listData?.total ?? 0}
+                  onChange={setPage}
+                />
+              </Flex>
+            ) : null}
+          </>
+        ) : (
+          <Empty description="暂无诊疗记录" />
+        )}
+      </Spin>
 
-      {/* -------- 详情弹窗 -------- */}
       <Modal
         title="诊疗记录详情"
         open={detailModalVisible}
@@ -179,7 +182,6 @@ const DiagnosisRecord: React.FC<DiagnosisRecordProps> = ({ patientId }) => {
             ]}
           />
         )}
-        {/* TODO: 处方详情需要独立的诊疗详情 API 支持 */}
       </Modal>
     </div>
   );

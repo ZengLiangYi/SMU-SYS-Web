@@ -1,7 +1,15 @@
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable } from '@ant-design/pro-components';
-import { Tag, Typography } from 'antd';
-import React, { useRef } from 'react';
+import { useRequest } from '@umijs/max';
+import {
+  Empty,
+  Flex,
+  List,
+  Pagination,
+  Spin,
+  Tag,
+  Timeline,
+  Typography,
+} from 'antd';
+import React, { useState } from 'react';
 import {
   getExternalReferrals,
   getInternalReferrals,
@@ -12,137 +20,129 @@ import type {
 } from '@/services/patient-user/typings.d';
 import { formatDateTime } from '@/utils/date';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 interface TransferRecordProps {
   patientId: string;
 }
 
-// -------- 院内转诊列定义 --------
-const inTransferColumns: ProColumns<InternalReferralItem>[] = [
-  {
-    title: '转诊日期',
-    dataIndex: 'referral_date',
-    width: 160,
-    render: (_, record) => formatDateTime(record.referral_date),
-  },
-  {
-    title: '转出医生',
-    dataIndex: 'from_doctor_name',
-    width: 100,
-    render: (_, record) => record.from_doctor_name ?? '--',
-  },
-  {
-    title: '接诊医生',
-    dataIndex: 'to_doctor_name',
-    width: 100,
-    render: (_, record) => record.to_doctor_name ?? '--',
-  },
-  {
-    title: '备注',
-    dataIndex: 'note',
-    width: 200,
-    render: (_, record) => record.note ?? '--',
-  },
-];
-
-// -------- 院外转诊列定义 --------
-const outTransferColumns: ProColumns<ExternalReferralItem>[] = [
-  {
-    title: '转诊日期',
-    dataIndex: 'referral_date',
-    width: 160,
-    render: (_, record) => formatDateTime(record.referral_date),
-  },
-  {
-    title: '转出医生',
-    dataIndex: 'from_doctor_name',
-    width: 100,
-    render: (_, record) => record.from_doctor_name ?? '--',
-  },
-  {
-    title: '转诊医院',
-    dataIndex: 'hospital_name',
-    width: 120,
-    render: (_, record) => record.hospital_name ?? '--',
-  },
-  {
-    title: '接诊医生',
-    dataIndex: 'to_doctor_name',
-    width: 100,
-    render: (_, record) => record.to_doctor_name ?? '--',
-  },
-  {
-    title: '联系方式',
-    dataIndex: 'to_doctor_phone',
-    width: 140,
-    render: (_, record) => record.to_doctor_phone ?? '--',
-  },
-  {
-    title: '是否同意',
-    dataIndex: 'is_accepted',
-    width: 100,
-    render: (_, record) => (
-      <Tag color={record.is_accepted ? 'blue' : 'red'}>
-        {record.is_accepted ? '已同意' : '未同意'}
-      </Tag>
-    ),
-  },
-];
+const PAGE_SIZE = 5;
 
 const TransferRecord: React.FC<TransferRecordProps> = ({ patientId }) => {
-  const internalActionRef = useRef<ActionType>(null);
-  const externalActionRef = useRef<ActionType>(null);
+  const [internalPage, setInternalPage] = useState(1);
+  const [externalPage, setExternalPage] = useState(1);
+
+  const { data: internalData, loading: internalLoading } = useRequest(
+    () =>
+      getInternalReferrals(patientId, {
+        offset: (internalPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      }),
+    { refreshDeps: [patientId, internalPage] },
+  );
+
+  const { data: externalData, loading: externalLoading } = useRequest(
+    () =>
+      getExternalReferrals(patientId, {
+        offset: (externalPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      }),
+    { refreshDeps: [patientId, externalPage] },
+  );
+
+  const internalItems = internalData?.items ?? [];
+  const externalItems = externalData?.items ?? [];
 
   return (
     <div>
       <Title level={5}>院内转诊</Title>
-      <ProTable<InternalReferralItem>
-        rowKey="id"
-        actionRef={internalActionRef}
-        search={false}
-        options={false}
-        scroll={{ x: 600 }}
-        columns={inTransferColumns}
-        pagination={{ defaultPageSize: 5 }}
-        request={async (params) => {
-          const { current = 1, pageSize = 5 } = params;
-          const res = await getInternalReferrals(patientId, {
-            offset: (current - 1) * pageSize,
-            limit: pageSize,
-          });
-          return {
-            data: res.data.items,
-            total: res.data.total,
-            success: true,
-          };
-        }}
-      />
+      <Spin spinning={internalLoading}>
+        {internalItems.length > 0 ? (
+          <>
+            <Timeline
+              items={internalItems.map((item: InternalReferralItem) => ({
+                children: (
+                  <div key={item.id}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {formatDateTime(item.referral_date)}
+                    </Text>
+                    <div>
+                      {item.from_doctor_name ?? '--'} →{' '}
+                      {item.to_doctor_name ?? '--'}
+                    </div>
+                    {item.note ? (
+                      <Text type="secondary">{item.note}</Text>
+                    ) : null}
+                  </div>
+                ),
+              }))}
+            />
+            {(internalData?.total ?? 0) > PAGE_SIZE ? (
+              <Flex justify="end">
+                <Pagination
+                  size="small"
+                  current={internalPage}
+                  pageSize={PAGE_SIZE}
+                  total={internalData?.total ?? 0}
+                  onChange={setInternalPage}
+                />
+              </Flex>
+            ) : null}
+          </>
+        ) : (
+          <Empty description="暂无院内转诊记录" />
+        )}
+      </Spin>
 
       <Title level={5} style={{ marginTop: 24 }}>
         院外转诊
       </Title>
-      <ProTable<ExternalReferralItem>
-        rowKey="id"
-        actionRef={externalActionRef}
-        search={false}
-        options={false}
-        scroll={{ x: 800 }}
-        columns={outTransferColumns}
-        pagination={{ defaultPageSize: 5 }}
-        request={async (params) => {
-          const { current = 1, pageSize = 5 } = params;
-          const res = await getExternalReferrals(patientId, {
-            offset: (current - 1) * pageSize,
-            limit: pageSize,
-          });
-          return {
-            data: res.data.items,
-            total: res.data.total,
-            success: true,
-          };
-        }}
-      />
+      <Spin spinning={externalLoading}>
+        {externalItems.length > 0 ? (
+          <>
+            <List<ExternalReferralItem>
+              dataSource={externalItems}
+              renderItem={(item) => (
+                <List.Item key={item.id}>
+                  <List.Item.Meta
+                    title={item.hospital_name ?? '--'}
+                    description={
+                      <Flex vertical gap={4}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {formatDateTime(item.referral_date)}
+                        </Text>
+                        <Text type="secondary">
+                          转出：{item.from_doctor_name ?? '--'} → 接诊：
+                          {item.to_doctor_name ?? '--'}
+                          {item.to_doctor_phone
+                            ? ` · ${item.to_doctor_phone}`
+                            : ''}
+                        </Text>
+                      </Flex>
+                    }
+                  />
+                  <Tag color={item.is_accepted ? 'blue' : 'red'}>
+                    {item.is_accepted ? '已同意' : '未同意'}
+                  </Tag>
+                </List.Item>
+              )}
+            />
+            {(externalData?.total ?? 0) > PAGE_SIZE ? (
+              <Flex justify="end">
+                <Pagination
+                  size="small"
+                  current={externalPage}
+                  pageSize={PAGE_SIZE}
+                  total={externalData?.total ?? 0}
+                  onChange={setExternalPage}
+                />
+              </Flex>
+            ) : null}
+          </>
+        ) : (
+          <Empty description="暂无院外转诊记录" />
+        )}
+      </Spin>
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import { EyeOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProDescriptions, ProTable } from '@ant-design/pro-components';
+import { ProDescriptions } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
 import {
   Alert,
@@ -10,14 +9,16 @@ import {
   Col,
   Empty,
   Flex,
+  List,
   Modal,
+  Pagination,
   Progress,
   Result,
   Row,
   Spin,
   Typography,
 } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   getRehabScoreRecordDetail,
   getRehabScoreRecords,
@@ -42,16 +43,17 @@ interface RehabilitationHistoryProps {
   patientId: string;
 }
 
+const PAGE_SIZE = 5;
+
 const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
   patientId,
 }) => {
   const { message } = App.useApp();
-  const actionRef = useRef<ActionType>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [viewingDetail, setViewingDetail] =
     useState<RehabScoreRecordDetail | null>(null);
+  const [historyPage, setHistoryPage] = useState(1);
 
-  // -------- 概览卡片：获取最新记录详情 --------
   const {
     data: latestDetail,
     loading: overviewLoading,
@@ -92,36 +94,16 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
     },
   );
 
-  // -------- ProTable 列定义 --------
-  const columns: ProColumns<RehabScoreRecordListItem>[] = [
-    {
-      title: '日期',
-      dataIndex: 'evaluated_date',
-      width: 200,
-      render: (_, record) => formatDateTime(record.evaluated_date),
-    },
-    {
-      title: '综合评分',
-      dataIndex: 'overall_score',
-      width: 200,
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 150,
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          loading={detailLoading}
-          onClick={() => runFetchDetail(record.id)}
-        >
-          详情
-        </Button>
-      ),
-    },
-  ];
+  const { data: historyData, loading: historyLoading } = useRequest(
+    () =>
+      getRehabScoreRecords(patientId, {
+        offset: (historyPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      }),
+    { refreshDeps: [patientId, historyPage] },
+  );
+
+  const historyItems = historyData?.items ?? [];
 
   // -------- 概览区域渲染 --------
   const renderOverview = () => {
@@ -201,29 +183,62 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
       {/* -------- 评分概览 -------- */}
       {renderOverview()}
 
-      {/* -------- 评分历史表格 -------- */}
+      {/* -------- 评分历史列表 -------- */}
       <Title level={5}>评分历史</Title>
-      <ProTable<RehabScoreRecordListItem>
-        rowKey="id"
-        actionRef={actionRef}
-        search={false}
-        options={false}
-        columns={columns}
-        request={async (params) => {
-          const { current = 1, pageSize = 10 } = params;
-          const offset = (current - 1) * pageSize;
-          const { data } = await getRehabScoreRecords(patientId, {
-            offset,
-            limit: pageSize,
-          });
-          return {
-            data: data.items,
-            total: data.total,
-            success: true,
-          };
-        }}
-        pagination={{ pageSize: 5 }}
-      />
+      <Spin spinning={historyLoading}>
+        {historyItems.length > 0 ? (
+          <>
+            <List<RehabScoreRecordListItem>
+              dataSource={historyItems}
+              renderItem={(item) => (
+                <List.Item
+                  key={item.id}
+                  extra={
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<EyeOutlined />}
+                      loading={detailLoading}
+                      onClick={() => runFetchDetail(item.id)}
+                    >
+                      详情
+                    </Button>
+                  }
+                >
+                  <List.Item.Meta
+                    title={
+                      <Flex align="baseline" gap={8}>
+                        <Text strong style={{ fontSize: 20 }}>
+                          {item.overall_score}
+                        </Text>
+                        <Text type="secondary">分</Text>
+                      </Flex>
+                    }
+                    description={
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {formatDateTime(item.evaluated_date)}
+                      </Text>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+            {(historyData?.total ?? 0) > PAGE_SIZE ? (
+              <Flex justify="end" style={{ marginTop: 8 }}>
+                <Pagination
+                  size="small"
+                  current={historyPage}
+                  pageSize={PAGE_SIZE}
+                  total={historyData?.total ?? 0}
+                  onChange={setHistoryPage}
+                />
+              </Flex>
+            ) : null}
+          </>
+        ) : (
+          <Empty description="暂无评分记录" />
+        )}
+      </Spin>
 
       {/* -------- 详情 Modal -------- */}
       <Modal

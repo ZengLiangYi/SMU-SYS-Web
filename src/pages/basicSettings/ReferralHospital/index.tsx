@@ -11,76 +11,62 @@ import EditReferralForm from './components/EditReferralForm';
 
 const ReferralHospital: React.FC = () => {
   const { message } = App.useApp();
-  const actionRef = useRef<ActionType>(null);
+  const actionRef = useRef<ActionType>();
 
-  // 删除请求
   const { run: runDelete } = useRequest(deleteReferral, {
     manual: true,
     onSuccess: () => {
       message.success('删除成功');
       actionRef.current?.reload();
     },
-    onError: () => {
-      message.error('删除失败，请重试');
-    },
+    onError: () => message.error('删除失败，请重试'),
   });
 
-  // 表格列定义
   const columns: ProColumns<Referral>[] = [
     {
       title: '医院名称',
       dataIndex: 'hospital_name',
-      width: 150,
-      fieldProps: {
-        placeholder: '请输入医院名称…',
-      },
+      ellipsis: true,
     },
     {
       title: '医院地址',
       dataIndex: 'hospital_address',
-      width: 200,
       search: false,
       ellipsis: true,
     },
     {
       title: '医院电话',
       dataIndex: 'hospital_phone',
+      search: false,
       width: 140,
-      search: false,
     },
     {
-      title: '对接医师姓名',
+      title: '对接医师',
       dataIndex: 'doctor_name',
-      width: 120,
-      fieldProps: {
-        placeholder: '请输入医师姓名…',
-      },
     },
     {
-      title: '职位',
+      title: '职称',
       dataIndex: 'title',
-      width: 100,
       search: false,
+      width: 100,
     },
     {
       title: '联系方式',
       dataIndex: 'contact',
-      width: 140,
       search: false,
+      width: 140,
     },
     {
       title: '操作',
-      key: 'action',
-      width: 150,
-      fixed: 'right',
-      search: false,
+      valueType: 'option',
+      width: 160,
       render: (_, record) => (
         <Space>
           <EditReferralForm
             trigger={
-              <Button type="link" size="small" icon={<EditOutlined />}>
-                编辑
-              </Button>
+              <a>
+                <EditOutlined /> 编辑
+              </a>
             }
             record={record}
             onOk={() => actionRef.current?.reload()}
@@ -92,14 +78,8 @@ const ReferralHospital: React.FC = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              aria-label="删除"
-            >
-              删除
+            <Button type="link" danger size="small" style={{ padding: 0 }}>
+              <DeleteOutlined /> 删除
             </Button>
           </Popconfirm>
         </Space>
@@ -134,21 +114,13 @@ const ReferralHospital: React.FC = () => {
               hospital_name: hospital_name || undefined,
               doctor_name: doctor_name || undefined,
             });
-            return {
-              data: data.items,
-              total: data.total,
-              success: true,
-            };
+            return { data: data.items, total: data.total, success: true };
           } catch {
             return { data: [], total: 0, success: false };
           }
         }}
         columns={columns}
-        scroll={{ x: 1100 }}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-        }}
+        pagination={{ pageSize: 10 }}
       />
     </PageContainer>
   );

@@ -1,9 +1,5 @@
 import { EditOutlined, EyeOutlined } from '@ant-design/icons';
-import type {
-  ActionType,
-  ProColumns,
-  ProDescriptionsItemProps,
-} from '@ant-design/pro-components';
+import type { ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {
   ModalForm,
   ProDescriptions,
@@ -11,12 +7,22 @@ import {
   ProFormSelect,
   ProFormText,
   ProFormTextArea,
-  ProTable,
 } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
-import { App, Button, Modal, Space, Tag, Typography } from 'antd';
+import {
+  App,
+  Button,
+  Empty,
+  Flex,
+  List,
+  Modal,
+  Pagination,
+  Spin,
+  Tag,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { getFollowups, updatePatient } from '@/services/patient-user';
 import type {
   FollowupListItem,
@@ -25,7 +31,8 @@ import type {
 } from '@/services/patient-user/typings.d';
 import { formatDateTime } from '@/utils/date';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+const PAGE_SIZE = 5;
 
 interface PersonalInfoProps {
   patientId: string;
@@ -77,15 +84,14 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
   onSaved,
 }) => {
   const { message } = App.useApp();
-  const visitTableRef = useRef<ActionType>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<FollowupListItem | null>(
     null,
   );
+  const [followupPage, setFollowupPage] = useState(1);
 
   const firstContact: PatientContact | undefined = patientDetail.contacts?.[0];
 
-  // -------- 更新 API --------
   const { run: runUpdate, loading: saving } = useRequest(
     (data: Record<string, any>) => updatePatient(patientId, data),
     {
@@ -97,67 +103,16 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
     },
   );
 
-  // -------- 随访记录列 --------
-  const visitColumns: ProColumns<FollowupListItem>[] = [
-    {
-      title: '日期',
-      dataIndex: 'created_at',
-      width: 160,
-      render: (_, record) => formatDateTime(record.created_at),
-    },
-    {
-      title: '随访医生',
-      dataIndex: 'doctor_name',
-      width: 100,
-      render: (_, record) => record.doctor_name ?? '--',
-    },
-    { title: '主题', dataIndex: 'subject', width: 120 },
-    { title: '时长(分钟)', dataIndex: 'duration_minutes', width: 100 },
-    {
-      title: '状态',
-      dataIndex: 'is_completed',
-      width: 100,
-      render: (_, record) => (
-        <Tag color={record.is_completed ? 'blue' : 'red'}>
-          {record.is_completed ? '已完成' : '未完成'}
-        </Tag>
-      ),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 100,
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          onClick={() => {
-            setViewingRecord(record);
-            setDetailModalVisible(true);
-          }}
-        >
-          详情
-        </Button>
-      ),
-    },
-  ];
+  const { data: followupData, loading: followupLoading } = useRequest(
+    () =>
+      getFollowups(patientId, {
+        offset: (followupPage - 1) * PAGE_SIZE,
+        limit: PAGE_SIZE,
+      }),
+    { refreshDeps: [patientId, followupPage] },
+  );
 
-  const fetchVisitRecords = async (params: {
-    current?: number;
-    pageSize?: number;
-  }) => {
-    const { current = 1, pageSize = 5 } = params;
-    try {
-      const { data } = await getFollowups(patientId, {
-        offset: (current - 1) * pageSize,
-        limit: pageSize,
-      });
-      return { data: data.items, total: data.total, success: true };
-    } catch {
-      return { data: [], total: 0, success: false };
-    }
-  };
+  const followupItems = followupData?.items ?? [];
 
   return (
     <div>
@@ -315,15 +270,65 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
       <Title level={5} style={{ marginTop: 24 }}>
         随访记录
       </Title>
-      <ProTable<FollowupListItem>
-        actionRef={visitTableRef}
-        rowKey="id"
-        search={false}
-        options={false}
-        request={fetchVisitRecords}
-        columns={visitColumns}
-        pagination={{ defaultPageSize: 5, showSizeChanger: true }}
-      />
+      <Spin spinning={followupLoading}>
+        {followupItems.length > 0 ? (
+          <>
+            <List<FollowupListItem>
+              dataSource={followupItems}
+              renderItem={(item) => (
+                <List.Item
+                  key={item.id}
+                  extra={
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<EyeOutlined />}
+                      onClick={() => {
+                        setViewingRecord(item);
+                        setDetailModalVisible(true);
+                      }}
+                    >
+                      详情
+                    </Button>
+                  }
+                >
+                  <List.Item.Meta
+                    title={item.subject}
+                    description={
+                      <Flex gap={8} align="center" wrap>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {formatDateTime(item.created_at)}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {item.doctor_name ?? '--'} · {item.duration_minutes}
+                          分钟
+                        </Text>
+                        <Tag color={item.is_completed ? 'blue' : 'red'}>
+                          {item.is_completed ? '已完成' : '未完成'}
+                        </Tag>
+                      </Flex>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+            {(followupData?.total ?? 0) > PAGE_SIZE ? (
+              <Flex justify="end" style={{ marginTop: 8 }}>
+                <Pagination
+                  size="small"
+                  current={followupPage}
+                  pageSize={PAGE_SIZE}
+                  total={followupData?.total ?? 0}
+                  onChange={setFollowupPage}
+                  showSizeChanger={false}
+                />
+              </Flex>
+            ) : null}
+          </>
+        ) : (
+          <Empty description="暂无随访记录" />
+        )}
+      </Spin>
 
       {/* -------- 随访详情弹窗 -------- */}
       <Modal

@@ -1,8 +1,8 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { PageContainer, ProTable } from '@ant-design/pro-components';
+import type { ActionType } from '@ant-design/pro-components';
+import { PageContainer, ProList } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
-import { App, Button, Image, Popconfirm, Space } from 'antd';
+import { App, Card, List, Popconfirm, Space, Tag, Typography } from 'antd';
 import React, { useRef, useState } from 'react';
 import { deleteRehabLevel, getRehabLevels } from '@/services/rehab-level';
 import type { RehabLevel } from '@/services/rehab-level/typings.d';
@@ -13,173 +13,135 @@ import CreateTrainingForm from './components/CreateTrainingForm';
 import DetailModal from './components/DetailModal';
 import EditTrainingForm from './components/EditTrainingForm';
 
+const { Paragraph, Text } = Typography;
+
 const TrainingList: React.FC = () => {
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
-
-  // 详情弹窗状态
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<RehabLevel | null>(null);
 
-  // 删除请求
   const { run: runDelete } = useRequest(deleteRehabLevel, {
     manual: true,
     onSuccess: () => {
       message.success('删除成功');
       actionRef.current?.reload();
     },
-    onError: () => {
-      message.error('删除失败，请重试');
-    },
+    onError: () => message.error('删除失败，请重试'),
   });
-
-  // 表格列定义
-  const columns: ProColumns<RehabLevel>[] = [
-    {
-      title: '关卡类型',
-      dataIndex: 'level_type',
-      valueType: 'select',
-      valueEnum: REHAB_LEVEL_TYPE_ENUM,
-      width: 100,
-      fieldProps: {
-        placeholder: '请选择关卡类型…',
-      },
-    },
-    {
-      title: '关卡名称',
-      dataIndex: 'name',
-      width: 100,
-      fieldProps: {
-        placeholder: '请输入关卡名称…',
-      },
-    },
-    {
-      title: '关卡图片',
-      dataIndex: 'image_url',
-      width: 100,
-      search: false,
-      render: (_, record) => (
-        <Image
-          src={getStaticUrl(record.image_url)}
-          alt={record.name}
-          width={80}
-          height={44}
-          style={{ objectFit: 'cover', borderRadius: 4 }}
-        />
-      ),
-    },
-    {
-      title: '关卡简介',
-      dataIndex: 'description',
-      ellipsis: true,
-      search: false,
-    },
-    {
-      title: '等级范围',
-      dataIndex: 'level_range',
-      width: 90,
-      search: false,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      width: 160,
-      search: false,
-      render: (_, record) => formatDateTime(record.created_at),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 180,
-      fixed: 'right',
-      search: false,
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetail(record)}
-          >
-            详情
-          </Button>
-          <EditTrainingForm
-            trigger={
-              <Button type="link" size="small" icon={<EditOutlined />}>
-                编辑
-              </Button>
-            }
-            record={record}
-            onOk={() => actionRef.current?.reload()}
-          />
-          <Popconfirm
-            title="确认删除"
-            description={`确定要删除关卡「${record.name}」吗？`}
-            onConfirm={() => runDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              aria-label="删除"
-            >
-              删除
-            </Button>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
-  // 查看详情
-  const handleViewDetail = (record: RehabLevel) => {
-    setViewingRecord(record);
-    setDetailModalVisible(true);
-  };
 
   return (
     <PageContainer>
-      <ProTable<RehabLevel>
+      <ProList<RehabLevel>
         headerTitle="康复训练关卡列表"
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
+        pagination={{ pageSize: 9 }}
+        grid={{ gutter: [16, 16], column: 3 }}
+        request={async (params) => {
+          const { current = 1, pageSize = 9, name, level_type } = params;
+          try {
+            const { data } = await getRehabLevels({
+              offset: (current - 1) * pageSize,
+              limit: pageSize,
+              name: name || undefined,
+              level_type: level_type || undefined,
+            });
+            return { data: data.items, total: data.total, success: true };
+          } catch {
+            return { data: [], total: 0, success: false };
+          }
+        }}
+        metas={{
+          name: { dataIndex: 'name', title: '关卡名称' },
+          level_type: {
+            dataIndex: 'level_type',
+            title: '关卡类型',
+            valueType: 'select',
+            valueEnum: REHAB_LEVEL_TYPE_ENUM,
+          },
+        }}
         toolBarRender={() => [
           <CreateTrainingForm
             key="create"
             onOk={() => actionRef.current?.reload()}
           />,
         ]}
-        request={async (params) => {
-          const { current = 1, pageSize = 10, level_type, name } = params;
-          try {
-            const { data } = await getRehabLevels({
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-              level_type: level_type || undefined,
-              name: name || undefined,
-            });
-            return {
-              data: data.items,
-              total: data.total,
-              success: true,
-            };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
-        columns={columns}
-        scroll={{ x: 1200 }}
-        pagination={{
-          defaultPageSize: 10,
-          showSizeChanger: true,
-        }}
+        renderItem={(item) => (
+          <List.Item>
+            <Card
+              hoverable
+              cover={
+                <img
+                  src={getStaticUrl(item.image_url)}
+                  alt={item.name}
+                  style={{ height: 180, objectFit: 'cover' }}
+                />
+              }
+              actions={[
+                <a
+                  key="detail"
+                  onClick={() => {
+                    setViewingRecord(item);
+                    setDetailModalVisible(true);
+                  }}
+                >
+                  <EyeOutlined /> 详情
+                </a>,
+                <EditTrainingForm
+                  key="edit"
+                  trigger={
+                    <a>
+                      <EditOutlined /> 编辑
+                    </a>
+                  }
+                  record={item}
+                  onOk={() => actionRef.current?.reload()}
+                />,
+                <Popconfirm
+                  key="delete"
+                  title="确认删除"
+                  description={`确定要删除关卡「${item.name}」吗？`}
+                  onConfirm={() => runDelete(item.id)}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <a style={{ color: 'var(--ant-color-error)' }}>
+                    <DeleteOutlined /> 删除
+                  </a>
+                </Popconfirm>,
+              ]}
+            >
+              <Card.Meta
+                title={item.name}
+                description={
+                  <>
+                    <Space size={4} style={{ marginBlockEnd: 8 }}>
+                      <Tag>
+                        {REHAB_LEVEL_TYPE_ENUM[item.level_type]?.text ??
+                          item.level_type}
+                      </Tag>
+                      <Tag color="blue">Lv {item.level_range}</Tag>
+                    </Space>
+                    <Paragraph
+                      type="secondary"
+                      ellipsis={{ rows: 2 }}
+                      style={{ marginBottom: 8, minHeight: 44 }}
+                    >
+                      {item.description || '-'}
+                    </Paragraph>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {formatDateTime(item.created_at)}
+                    </Text>
+                  </>
+                }
+              />
+            </Card>
+          </List.Item>
+        )}
       />
 
-      {/* 详情弹窗 */}
       <DetailModal
         open={detailModalVisible}
         record={viewingRecord}
