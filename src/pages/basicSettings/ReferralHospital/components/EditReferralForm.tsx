@@ -61,7 +61,7 @@ const EditReferralForm: React.FC<EditReferralFormProps> = ({
         }}
         width={500}
         modalProps={{
-          destroyOnClose: true,
+          destroyOnHidden: true,
           okButtonProps: { loading },
         }}
         onFinish={async (values) => {

@@ -59,7 +59,7 @@ const EditImagingForm: React.FC<EditImagingFormProps> = ({
         }}
         width={600}
         modalProps={{
-          destroyOnClose: true,
+          destroyOnHidden: true,
           okButtonProps: { loading },
         }}
         onFinish={async (values) => {

@@ -37,7 +37,7 @@ const CreateLabForm: FC<CreateLabFormProps> = ({ onOk }) => {
       }
       width={600}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onFinish={async (values) => {

@@ -56,18 +56,43 @@ export const getTimeFormat = (time: string): string => {
 };
 
 /**
+ * 量表题目类型 → 中文标签映射
+ */
+export const QUESTION_TYPE_LABELS: Record<string, string> = {
+  single_choice: '选择',
+  fill_blank: '填空',
+  true_false: '判断',
+};
+
+/**
+ * 量表题目类型选项列表（ProFormSelect 使用）
+ */
+export const QUESTION_TYPE_OPTIONS = [
+  { label: '选择题', value: 'single_choice' },
+  { label: '填空题', value: 'fill_blank' },
+  { label: '判断题', value: 'true_false' },
+];
+
+/**
+ * 需要显示选项编辑器的题目类型集合
+ */
+export const TYPES_WITH_OPTIONS = new Set(['single_choice', 'true_false']);
+
+/**
+ * 选项自动编号字母序列（A-Z）
+ */
+export const OPTION_KEY_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/**
  * 获取量表题目类型对应的颜色
- * @param type 题目类型
+ * @param type 题目类型（支持英文枚举值或中文标签）
  * @returns 颜色值
  */
 export const getScaleTypeColor = (type: string): string => {
   const colorMap: Record<string, string> = {
-    单选题: '#336fff',
-    判断题: '#68cf50',
-    简答题: '#ffa500',
-    画图: '#906aca',
-    多选题: '#5cbebf',
-    填空题: '#de7bb4',
+    single_choice: '#336fff',
+    true_false: '#68cf50',
+    fill_blank: '#de7bb4',
   };
   return colorMap[type] || 'default';
 };

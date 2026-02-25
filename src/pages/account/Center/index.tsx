@@ -173,7 +173,7 @@ const Center: React.FC = () => {
                 trigger={<Button type="link">修改密码</Button>}
                 width={400}
                 modalProps={{
-                  destroyOnClose: true,
+                  destroyOnHidden: true,
                   okButtonProps: { loading: passwordLoading },
                 }}
                 onFinish={async (values: {

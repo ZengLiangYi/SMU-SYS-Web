@@ -1,5 +1,5 @@
 import { useRequest, useSearchParams } from '@umijs/max';
-import { Card, Col, Empty, Result, Row, Segmented, Spin } from 'antd';
+import { Card, Col, Empty, Flex, Result, Row, Segmented, Spin } from 'antd';
 import type { EChartsOption } from 'echarts';
 import ReactECharts from 'echarts-for-react';
 import React, { useCallback, useMemo } from 'react';
@@ -234,15 +234,9 @@ const EffectEvaluation: React.FC<EffectEvaluationProps> = ({ patientId }) => {
             {scoreBarOption ? (
               <ReactECharts option={scoreBarOption} style={{ height: 260 }} />
             ) : (
-              <Empty
-                description="暂无量表得分数据"
-                style={{
-                  height: 260,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                }}
-              />
+              <Flex vertical justify="center" style={{ height: 260 }}>
+                <Empty description="暂无量表得分数据" />
+              </Flex>
             )}
           </Card>
         </Col>
@@ -252,15 +246,9 @@ const EffectEvaluation: React.FC<EffectEvaluationProps> = ({ patientId }) => {
               {hasData && option ? (
                 <ReactECharts option={option} style={{ height: 260 }} />
               ) : (
-                <Empty
-                  description={`暂无${title}数据`}
-                  style={{
-                    height: 260,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                  }}
-                />
+                <Flex vertical justify="center" style={{ height: 260 }}>
+                  <Empty description={`暂无${title}数据`} />
+                </Flex>
               )}
             </Card>
           </Col>

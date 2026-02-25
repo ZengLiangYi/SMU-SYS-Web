@@ -51,7 +51,7 @@ const EditDoctorForm: React.FC<EditDoctorFormProps> = ({
         initialValues={record}
         width={400}
         modalProps={{
-          destroyOnClose: true,
+          destroyOnHidden: true,
           okButtonProps: { loading },
         }}
         onFinish={async (values: {

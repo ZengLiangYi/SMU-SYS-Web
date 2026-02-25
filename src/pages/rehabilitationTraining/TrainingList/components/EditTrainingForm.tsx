@@ -78,7 +78,7 @@ const EditTrainingForm: React.FC<EditTrainingFormProps> = ({
         }}
         width={500}
         modalProps={{
-          destroyOnClose: true,
+          destroyOnHidden: true,
           okButtonProps: { loading },
         }}
         onFinish={async (values) => {

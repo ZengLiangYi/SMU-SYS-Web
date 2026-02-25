@@ -43,7 +43,7 @@ const CreateTrainingForm: FC<CreateTrainingFormProps> = ({ onOk }) => {
       }
       width={500}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onOpenChange={(open) => {

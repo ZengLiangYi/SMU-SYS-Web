@@ -6,6 +6,7 @@ import {
   App,
   Button,
   Card,
+  Image,
   List,
   Popconfirm,
   Space,
@@ -32,7 +33,7 @@ import CreateLabForm from './components/CreateLabForm';
 import EditImagingForm from './components/EditImagingForm';
 import EditLabForm from './components/EditLabForm';
 
-const { Text } = Typography;
+const { Link, Text } = Typography;
 
 const TAB_LIST = [
   { key: 'scale', tab: '量表配置' },
@@ -241,10 +242,10 @@ const DiagnosisSystem: React.FC = () => {
             actionRef={scaleActionRef}
             rowKey="id"
             search={false}
-            grid={{ gutter: [16, 16], column: 3 }}
-            pagination={{ pageSize: 9 }}
+            grid={{ gutter: [16, 16], column: 4 }}
+            pagination={{ pageSize: 12 }}
             request={async (params) => {
-              const { current = 1, pageSize = 9 } = params;
+              const { current = 1, pageSize = 12 } = params;
               const { data } = await getDiagnosticScales({
                 offset: (current - 1) * pageSize,
                 limit: pageSize,
@@ -268,14 +269,15 @@ const DiagnosisSystem: React.FC = () => {
                 <Card
                   hoverable
                   cover={
-                    <img
+                    <Image
                       src={getStaticUrl(item.image_url)}
                       alt={item.name}
-                      style={{ height: 160, objectFit: 'cover' }}
+                      preview={false}
+                      style={{ height: 160, objectFit: 'cover', width: '100%' }}
                     />
                   }
                   actions={[
-                    <a
+                    <Link
                       key="edit"
                       onClick={() =>
                         history.push(
@@ -284,15 +286,15 @@ const DiagnosisSystem: React.FC = () => {
                       }
                     >
                       <EditOutlined /> 修改
-                    </a>,
+                    </Link>,
                     <Popconfirm
                       key="delete"
                       title="确认删除该量表？"
                       onConfirm={() => runDeleteScale(item.id)}
                     >
-                      <a style={{ color: 'var(--ant-color-error)' }}>
+                      <Link type="danger">
                         <DeleteOutlined /> 删除
-                      </a>
+                      </Link>
                     </Popconfirm>,
                   ]}
                 >
@@ -324,6 +326,7 @@ const DiagnosisSystem: React.FC = () => {
       case 'lab':
         return (
           <ProTable<LabIndicator>
+            key="lab"
             actionRef={labActionRef}
             rowKey="id"
             search={false}
@@ -343,6 +346,7 @@ const DiagnosisSystem: React.FC = () => {
       case 'imaging':
         return (
           <ProTable<ImagingIndicator>
+            key="imaging"
             actionRef={imagingActionRef}
             rowKey="id"
             search={false}

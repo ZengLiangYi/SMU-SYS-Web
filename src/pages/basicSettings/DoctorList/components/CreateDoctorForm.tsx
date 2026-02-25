@@ -32,7 +32,7 @@ const CreateDoctorForm: FC<CreateDoctorFormProps> = ({ onOk }) => {
         </Button>
       }
       width={400}
-      modalProps={{ okButtonProps: { loading } }}
+      modalProps={{ destroyOnHidden: true, okButtonProps: { loading } }}
       onFinish={async (values: {
         code: string;
         name: string;

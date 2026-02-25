@@ -133,6 +133,23 @@ npm run build
 
 ## 开发规范
 
+### antd 组件使用规范
+
+项目基于 antd 6.x，应优先使用 antd 组件替代原生 HTML 标签，以保持主题 token 一致性、自动适配暗色模式和获得内置的可访问性支持。
+
+| 原生 HTML | antd 替代 | 说明 |
+|-----------|-----------|------|
+| `<div style={{display:'flex'}}>` | `Flex` | 使用 `align`、`justify`、`gap`、`vertical` 等 props 代替 CSS |
+| `<img>` | `Image` | Card 封面、列表图片等场景使用 `Image`，可获得 fallback、preview 能力；纯装饰性小图标（如 logo）可保留 `<img>` |
+| `<a>` | `Typography.Link` | 操作链接统一使用 `Typography.Link`；删除按钮使用 `type="danger"` 代替硬编码 `color: var(--ant-color-error)` |
+| `<span>` (文本) | `Typography.Text` | 需要省略、样式或语义标记时使用 `Text`，纯内联文本可保留 `<span>` |
+
+**补充说明：**
+
+- 纯结构性 `<div>`（无 flex 布局、无语义映射）可保留，不强制替换
+- 颜色、圆角、间距等样式值应通过 `theme.useToken()` 获取 design token，避免硬编码
+- `Empty` 等组件需要居中时，使用 `<Flex justify="center">` 包裹，而非在组件上添加 `display: flex` 样式
+
 ### 类型定义
 
 - 全局 API 类型：`src/services/typings.d.ts`

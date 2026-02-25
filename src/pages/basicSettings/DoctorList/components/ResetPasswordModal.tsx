@@ -50,7 +50,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
         onOpenChange={setOpen}
         width={400}
         modalProps={{
-          destroyOnClose: true,
+          destroyOnHidden: true,
           okButtonProps: { loading },
         }}
         onFinish={async (values: { password: string }) => {

@@ -41,7 +41,7 @@ const CreateMedicineForm: FC<CreateMedicineFormProps> = ({ onOk }) => {
       }
       width={600}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onOpenChange={(open) => {

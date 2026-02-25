@@ -2,7 +2,16 @@ import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType } from '@ant-design/pro-components';
 import { PageContainer, ProList } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
-import { App, Card, List, Popconfirm, Space, Tag, Typography } from 'antd';
+import {
+  App,
+  Card,
+  Image,
+  List,
+  Popconfirm,
+  Space,
+  Tag,
+  Typography,
+} from 'antd';
 import React, { useRef, useState } from 'react';
 import { deleteRehabLevel, getRehabLevels } from '@/services/rehab-level';
 import type { RehabLevel } from '@/services/rehab-level/typings.d';
@@ -13,7 +22,7 @@ import CreateTrainingForm from './components/CreateTrainingForm';
 import DetailModal from './components/DetailModal';
 import EditTrainingForm from './components/EditTrainingForm';
 
-const { Paragraph, Text } = Typography;
+const { Link, Paragraph, Text } = Typography;
 
 const TrainingList: React.FC = () => {
   const { message } = App.useApp();
@@ -37,10 +46,10 @@ const TrainingList: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
-        pagination={{ pageSize: 9 }}
-        grid={{ gutter: [16, 16], column: 3 }}
+        pagination={{ pageSize: 12 }}
+        grid={{ gutter: [16, 16], column: 4 }}
         request={async (params) => {
-          const { current = 1, pageSize = 9, name, level_type } = params;
+          const { current = 1, pageSize = 12, name, level_type } = params;
           try {
             const { data } = await getRehabLevels({
               offset: (current - 1) * pageSize,
@@ -73,14 +82,15 @@ const TrainingList: React.FC = () => {
             <Card
               hoverable
               cover={
-                <img
+                <Image
                   src={getStaticUrl(item.image_url)}
                   alt={item.name}
-                  style={{ height: 180, objectFit: 'cover' }}
+                  preview={false}
+                  style={{ height: 180, objectFit: 'cover', width: '100%' }}
                 />
               }
               actions={[
-                <a
+                <Link
                   key="detail"
                   onClick={() => {
                     setViewingRecord(item);
@@ -88,13 +98,13 @@ const TrainingList: React.FC = () => {
                   }}
                 >
                   <EyeOutlined /> 详情
-                </a>,
+                </Link>,
                 <EditTrainingForm
                   key="edit"
                   trigger={
-                    <a>
+                    <Link>
                       <EditOutlined /> 编辑
-                    </a>
+                    </Link>
                   }
                   record={item}
                   onOk={() => actionRef.current?.reload()}
@@ -107,9 +117,9 @@ const TrainingList: React.FC = () => {
                   okText="确定"
                   cancelText="取消"
                 >
-                  <a style={{ color: 'var(--ant-color-error)' }}>
+                  <Link type="danger">
                     <DeleteOutlined /> 删除
-                  </a>
+                  </Link>
                 </Popconfirm>,
               ]}
             >

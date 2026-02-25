@@ -33,7 +33,7 @@ const CreateReferralForm: FC<CreateReferralFormProps> = ({ onOk }) => {
       }
       width={500}
       modalProps={{
-        destroyOnClose: true,
+        destroyOnHidden: true,
         okButtonProps: { loading },
       }}
       onFinish={async (values) => {

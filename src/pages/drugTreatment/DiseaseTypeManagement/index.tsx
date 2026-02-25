@@ -11,11 +11,11 @@ import CreateDiseaseTypeForm from './components/CreateDiseaseTypeForm';
 import DetailModal from './components/DetailModal';
 import EditDiseaseTypeForm from './components/EditDiseaseTypeForm';
 
-const { Paragraph } = Typography;
+const { Link, Paragraph } = Typography;
 
 const DiseaseTypeList: React.FC = () => {
   const { message } = App.useApp();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [viewingRecord, setViewingRecord] = useState<DiseaseType | null>(null);
 
@@ -75,19 +75,19 @@ const DiseaseTypeList: React.FC = () => {
       width: 200,
       render: (_, record) => (
         <Space>
-          <a
+          <Link
             onClick={() => {
               setViewingRecord(record);
               setDetailModalOpen(true);
             }}
           >
             <EyeOutlined /> 详情
-          </a>
+          </Link>
           <EditDiseaseTypeForm
             trigger={
-              <a>
+              <Link>
                 <EditOutlined /> 编辑
-              </a>
+              </Link>
             }
             record={record}
             onOk={() => actionRef.current?.reload()}

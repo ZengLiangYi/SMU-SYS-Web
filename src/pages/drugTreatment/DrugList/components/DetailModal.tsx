@@ -22,6 +22,7 @@ const DetailModal: React.FC<DetailModalProps> = ({
       onCancel={onCancel}
       footer={null}
       width={700}
+      destroyOnHidden
     >
       {record && (
         <>

@@ -1,3 +1,20 @@
+// 题目类型枚举
+export type QuestionType = 'single_choice' | 'fill_blank' | 'true_false';
+
+// 题目选项
+export interface DiagnosticScaleQuestionOption {
+  key: string;
+  label: string;
+}
+
+// 题目内容统一结构
+export interface DiagnosticScaleQuestionContent {
+  options: DiagnosticScaleQuestionOption[];
+  score_map: Record<string, number>;
+  allow_multiple: boolean;
+  default_score: number;
+}
+
 // 诊断量表 - 列表项
 export interface DiagnosticScale {
   id: string;
@@ -20,9 +37,8 @@ export interface DiagnosticScaleDetail extends DiagnosticScale {
 export interface DiagnosticScaleQuestion {
   id: string;
   question_stem: string;
-  question_content: string;
-  score: number;
-  question_type: string;
+  question_content: DiagnosticScaleQuestionContent;
+  question_type: QuestionType;
   scoring_rule: string;
   sort_order: number;
 }
@@ -30,10 +46,11 @@ export interface DiagnosticScaleQuestion {
 // 诊断量表题目 - 请求体（无 id / sort_order）
 export interface DiagnosticScaleQuestionPayload {
   question_stem: string;
-  question_content: string;
-  score: number;
-  question_type: string;
+  question_content: DiagnosticScaleQuestionContent;
+  question_type: QuestionType;
   scoring_rule: string;
+  /** Client-side only; stripped before API calls */
+  _uid?: string;
 }
 
 // 列表查询参数

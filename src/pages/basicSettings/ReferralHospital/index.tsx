@@ -2,7 +2,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { PageContainer, ProTable } from '@ant-design/pro-components';
 import { useRequest } from '@umijs/max';
-import { App, Button, Popconfirm, Space } from 'antd';
+import { App, Button, Popconfirm, Space, Typography } from 'antd';
 import React, { useRef } from 'react';
 import { deleteReferral, getReferrals } from '@/services/referral';
 import type { Referral } from '@/services/referral/typings.d';
@@ -11,7 +11,7 @@ import EditReferralForm from './components/EditReferralForm';
 
 const ReferralHospital: React.FC = () => {
   const { message } = App.useApp();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
 
   const { run: runDelete } = useRequest(deleteReferral, {
     manual: true,
@@ -64,9 +64,9 @@ const ReferralHospital: React.FC = () => {
         <Space>
           <EditReferralForm
             trigger={
-              <a>
+              <Typography.Link>
                 <EditOutlined /> 编辑
-              </a>
+              </Typography.Link>
             }
             record={record}
             onOk={() => actionRef.current?.reload()}
