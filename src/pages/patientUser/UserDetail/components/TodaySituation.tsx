@@ -29,7 +29,7 @@ import type {
   MedicationRecordItem,
 } from '@/services/patient-user/typings.d';
 import { getStaticUrl } from '@/services/static';
-import { formatDateTime } from '@/utils/date';
+import { formatDate, formatDateTime } from '@/utils/date';
 
 const { Title, Text } = Typography;
 
@@ -291,7 +291,7 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
                       }
                       styles={{ body: { padding: '8px 12px' } }}
                     >
-                      <Text>{item.meal_date}</Text>
+                      <Text>{formatDate(item.meal_date)}</Text>
                       <br />
                       <Tag>
                         {MEAL_TYPE_MAP[item.meal_type] ?? item.meal_type}

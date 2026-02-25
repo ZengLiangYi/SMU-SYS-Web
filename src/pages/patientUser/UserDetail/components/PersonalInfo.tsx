@@ -1,6 +1,12 @@
-import { EditOutlined, EyeOutlined } from '@ant-design/icons';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  EyeOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import type { ProDescriptionsItemProps } from '@ant-design/pro-components';
 import {
+  DrawerForm,
   ModalForm,
   ProDescriptions,
   ProFormDatePicker,
@@ -12,11 +18,15 @@ import { useRequest } from '@umijs/max';
 import {
   App,
   Button,
+  Col,
+  Divider,
   Empty,
   Flex,
   List,
   Modal,
   Pagination,
+  Popconfirm,
+  Row,
   Spin,
   Tag,
   Typography,
@@ -40,13 +50,9 @@ interface PersonalInfoProps {
   onSaved?: () => void;
 }
 
-// -------- 个人信息字段描述 --------
 const personalColumns: ProDescriptionsItemProps<PatientDetail>[] = [
   { title: '姓名', dataIndex: 'name' },
-  {
-    title: '性别',
-    dataIndex: 'gender',
-  },
+  { title: '性别', dataIndex: 'gender' },
   { title: '出生日期', dataIndex: 'birth_date', valueType: 'date' },
   { title: '联系方式', dataIndex: 'phone' },
   { title: '饮食习惯', dataIndex: 'diet_habits' },
@@ -71,13 +77,6 @@ const personalColumns: ProDescriptionsItemProps<PatientDetail>[] = [
   { title: '不良嗜好', dataIndex: 'bad_habits', span: 2 },
 ];
 
-// -------- 联系人字段描述 --------
-const contactColumns: ProDescriptionsItemProps<PatientContact>[] = [
-  { title: '姓名', dataIndex: 'name' },
-  { title: '关系', dataIndex: 'relation' },
-  { title: '联系方式', dataIndex: 'phone' },
-];
-
 const PersonalInfo: React.FC<PersonalInfoProps> = ({
   patientId,
   patientDetail,
@@ -89,8 +88,15 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
     null,
   );
   const [followupPage, setFollowupPage] = useState(1);
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [editingContactIndex, setEditingContactIndex] = useState<number | null>(
+    null,
+  );
+  const [editingContact, setEditingContact] = useState<
+    PatientContact | undefined
+  >(undefined);
 
-  const firstContact: PatientContact | undefined = patientDetail.contacts?.[0];
+  const contacts = patientDetail.contacts ?? [];
 
   const { run: runUpdate, loading: saving } = useRequest(
     (data: Record<string, any>) => updatePatient(patientId, data),
@@ -114,22 +120,52 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
 
   const followupItems = followupData?.items ?? [];
 
+  // -------- Contact CRUD --------
+  const openContactModal = (index: number | null) => {
+    setEditingContactIndex(index);
+    setEditingContact(index !== null ? { ...contacts[index] } : undefined);
+    setContactModalOpen(true);
+  };
+
+  const closeContactModal = () => {
+    setContactModalOpen(false);
+    setEditingContactIndex(null);
+    setEditingContact(undefined);
+  };
+
+  const handleContactSave = async (values: PatientContact) => {
+    const latest = patientDetail.contacts ?? [];
+    const next = [...latest];
+    if (editingContactIndex !== null) {
+      next[editingContactIndex] = values;
+    } else {
+      next.push(values);
+    }
+    await runUpdate({ contacts: next });
+    return true;
+  };
+
+  const handleContactDelete = (index: number) => {
+    runUpdate({ contacts: contacts.filter((_, i) => i !== index) });
+  };
+
   return (
     <div>
-      {/* -------- 个人信息（只读 + ModalForm 编辑） -------- */}
+      {/* -------- 个人信息（只读 + DrawerForm 分组编辑） -------- */}
       <ProDescriptions<PatientDetail>
         title="住院个人信息"
         dataSource={patientDetail}
         columns={personalColumns}
         column={2}
         extra={
-          <ModalForm
+          <DrawerForm
             title="编辑个人信息"
             trigger={
               <Button type="link" icon={<EditOutlined />}>
                 编辑
               </Button>
             }
+            width={560}
             initialValues={{
               ...patientDetail,
               diet_habits: patientDetail.diet_habits ?? '',
@@ -147,124 +183,193 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
                   ? String(patientDetail.followup_willing)
                   : undefined,
             }}
-            modalProps={{ destroyOnHidden: true }}
+            drawerProps={{ destroyOnHidden: true }}
             loading={saving}
             onFinish={async (values) => {
               await runUpdate(values);
               return true;
             }}
           >
-            <ProFormText
-              name="name"
-              label="姓名"
-              rules={[{ required: true }]}
-            />
-            <ProFormSelect
-              name="gender"
-              label="性别"
-              options={[
-                { label: '男', value: '男' },
-                { label: '女', value: '女' },
-              ]}
-              rules={[{ required: true }]}
-            />
-            <ProFormDatePicker
-              name="birth_date"
-              label="出生日期"
-              rules={[{ required: true }]}
-              transform={(value: string) => ({
-                birth_date: value ? dayjs(value).format('YYYY-MM-DD') : '',
-              })}
-            />
-            <ProFormText
-              name="phone"
-              label="联系方式"
-              rules={[{ required: true }]}
-            />
-            <ProFormText name="diet_habits" label="饮食习惯" />
-            <ProFormText name="lifestyle_habits" label="生活习惯" />
+            <Divider titlePlacement="start" style={{ marginTop: 0 }}>
+              基本信息
+            </Divider>
+            <Row gutter={16}>
+              <Col span={12}>
+                <ProFormText
+                  name="name"
+                  label="姓名"
+                  rules={[{ required: true }]}
+                />
+              </Col>
+              <Col span={12}>
+                <ProFormSelect
+                  name="gender"
+                  label="性别"
+                  options={[
+                    { label: '男', value: '男' },
+                    { label: '女', value: '女' },
+                  ]}
+                  rules={[{ required: true }]}
+                />
+              </Col>
+              <Col span={12}>
+                <ProFormDatePicker
+                  name="birth_date"
+                  label="出生日期"
+                  rules={[{ required: true }]}
+                  transform={(value: string) => ({
+                    birth_date: value ? dayjs(value).format('YYYY-MM-DD') : '',
+                  })}
+                />
+              </Col>
+              <Col span={12}>
+                <ProFormText
+                  name="phone"
+                  label="联系方式"
+                  rules={[{ required: true }]}
+                />
+              </Col>
+            </Row>
+
+            <Divider titlePlacement="start">健康与习惯</Divider>
+            <Row gutter={16}>
+              <Col span={12}>
+                <ProFormText name="diet_habits" label="饮食习惯" />
+              </Col>
+              <Col span={12}>
+                <ProFormText name="lifestyle_habits" label="生活习惯" />
+              </Col>
+            </Row>
+            <ProFormTextArea name="bad_habits" label="不良嗜好" />
+
+            <Divider titlePlacement="start">病史与用药</Divider>
             <ProFormText name="family_history" label="家族史" />
-            <ProFormText name="education_level" label="受教育程度" />
             <ProFormTextArea name="medical_history" label="既往病史" />
             <ProFormTextArea name="medication_history" label="既往用药" />
-            <ProFormText name="occupation" label="职业" />
-            <ProFormSelect
-              name="followup_willing"
-              label="随访意愿"
-              options={[
-                { label: '愿意', value: 'true' },
-                { label: '不愿意', value: 'false' },
-              ]}
-              allowClear
-              transform={(value) => ({
-                followup_willing:
-                  value === 'true'
-                    ? true
-                    : value === 'false'
-                      ? false
-                      : undefined,
-              })}
-            />
-            <ProFormText name="native_place" label="籍贯" />
-            <ProFormText name="address" label="地址" />
-            <ProFormTextArea name="bad_habits" label="不良嗜好" />
-          </ModalForm>
+
+            <Divider titlePlacement="start">社会信息</Divider>
+            <Row gutter={16}>
+              <Col span={12}>
+                <ProFormText name="education_level" label="受教育程度" />
+              </Col>
+              <Col span={12}>
+                <ProFormText name="occupation" label="职业" />
+              </Col>
+              <Col span={12}>
+                <ProFormSelect
+                  name="followup_willing"
+                  label="随访意愿"
+                  options={[
+                    { label: '愿意', value: 'true' },
+                    { label: '不愿意', value: 'false' },
+                  ]}
+                  allowClear
+                  transform={(value) => ({
+                    followup_willing:
+                      value === 'true'
+                        ? true
+                        : value === 'false'
+                          ? false
+                          : undefined,
+                  })}
+                />
+              </Col>
+            </Row>
+
+            <Divider titlePlacement="start">地址信息</Divider>
+            <Row gutter={16}>
+              <Col span={12}>
+                <ProFormText name="native_place" label="籍贯" />
+              </Col>
+              <Col span={12}>
+                <ProFormText name="address" label="地址" />
+              </Col>
+            </Row>
+          </DrawerForm>
         }
       />
 
-      {/* -------- 联系人（只读 + ModalForm 编辑） -------- */}
-      <ProDescriptions<PatientContact>
-        title="联系人"
-        dataSource={firstContact ?? { name: '', relation: '', phone: '' }}
-        columns={contactColumns}
-        column={3}
-        style={{ marginTop: 24 }}
-        extra={
-          <ModalForm
-            title="编辑联系人"
-            trigger={
-              <Button type="link" icon={<EditOutlined />}>
-                编辑
-              </Button>
-            }
-            initialValues={{
-              contact_name: firstContact?.name ?? '',
-              contact_relation: firstContact?.relation ?? '',
-              contact_phone: firstContact?.phone ?? '',
-            }}
-            modalProps={{ destroyOnHidden: true }}
-            loading={saving}
-            onFinish={async (values) => {
-              await runUpdate({
-                contacts: [
-                  {
-                    name: values.contact_name,
-                    relation: values.contact_relation,
-                    phone: values.contact_phone,
-                  },
-                ],
-              });
-              return true;
-            }}
-          >
-            <ProFormText
-              name="contact_name"
-              label="姓名"
-              rules={[{ required: true }]}
-            />
-            <ProFormText
-              name="contact_relation"
-              label="关系"
-              rules={[{ required: true }]}
-            />
-            <ProFormText
-              name="contact_phone"
-              label="联系方式"
-              rules={[{ required: true }]}
-            />
-          </ModalForm>
-        }
-      />
+      {/* -------- 联系人（List CRUD） -------- */}
+      <Flex
+        justify="space-between"
+        align="center"
+        style={{ marginTop: 24, marginBottom: 12 }}
+      >
+        <Title level={5} style={{ margin: 0 }}>
+          联系人
+        </Title>
+        <Button
+          type="link"
+          icon={<PlusOutlined />}
+          onClick={() => openContactModal(null)}
+        >
+          添加联系人
+        </Button>
+      </Flex>
+      {contacts.length > 0 ? (
+        <List
+          dataSource={contacts}
+          renderItem={(item, index) => (
+            <List.Item
+              key={index}
+              actions={[
+                <Button
+                  key="edit"
+                  type="link"
+                  size="small"
+                  icon={<EditOutlined />}
+                  aria-label={`编辑${item.name}`}
+                  onClick={() => openContactModal(index)}
+                />,
+                <Popconfirm
+                  key="delete"
+                  title="确认删除该联系人？"
+                  onConfirm={() => handleContactDelete(index)}
+                >
+                  <Button
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    aria-label={`删除${item.name}`}
+                  />
+                </Popconfirm>,
+              ]}
+            >
+              <List.Item.Meta
+                title={item.name}
+                description={`关系：${item.relation}`}
+              />
+              <Text type="secondary">{item.phone}</Text>
+            </List.Item>
+          )}
+        />
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无联系人" />
+      )}
+      <ModalForm<PatientContact>
+        title={editingContactIndex !== null ? '编辑联系人' : '添加联系人'}
+        open={contactModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeContactModal();
+        }}
+        initialValues={editingContact ?? { name: '', relation: '', phone: '' }}
+        modalProps={{ destroyOnHidden: true }}
+        loading={saving}
+        onFinish={handleContactSave}
+      >
+        <ProFormText name="name" label="姓名" rules={[{ required: true }]} />
+        <ProFormText
+          name="relation"
+          label="关系"
+          rules={[{ required: true }]}
+        />
+        <ProFormText
+          name="phone"
+          label="联系方式"
+          rules={[{ required: true }]}
+        />
+      </ModalForm>
 
       {/* -------- 随访记录 -------- */}
       <Title level={5} style={{ marginTop: 24 }}>
