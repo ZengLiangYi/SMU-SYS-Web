@@ -1,5 +1,5 @@
-// 题目类型枚举
-export type QuestionType = 'single_choice' | 'fill_blank' | 'true_false';
+// 题目类型枚举（short_answer 暂未在 UI 开放，保留类型以兼容已有数据）
+export type QuestionType = 'single_choice' | 'fill_blank' | 'short_answer' | 'true_false';
 
 // 题目选项
 export interface DiagnosticScaleQuestionOption {

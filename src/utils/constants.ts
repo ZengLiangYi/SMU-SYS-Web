@@ -84,6 +84,22 @@ export const TYPES_WITH_OPTIONS = new Set(['single_choice', 'true_false']);
 export const OPTION_KEY_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 /**
+ * 判断题固定选项（API 规范: key 为 'True'/'False'）
+ */
+export const TRUE_FALSE_DEFAULT_OPTIONS = [
+  { key: 'True', label: '是', score: 0 },
+  { key: 'False', label: '否', score: 0 },
+];
+
+/**
+ * 单选题默认选项
+ */
+export const SINGLE_CHOICE_DEFAULT_OPTIONS = [
+  { key: 'A', label: '', score: 0 },
+  { key: 'B', label: '', score: 0 },
+];
+
+/**
  * 获取量表题目类型对应的颜色
  * @param type 题目类型（支持英文枚举值或中文标签）
  * @returns 颜色值
