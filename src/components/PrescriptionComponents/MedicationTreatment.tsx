@@ -2,7 +2,7 @@ import { DeleteOutlined } from '@ant-design/icons';
 import { useDebounceFn } from 'ahooks';
 import { Button, Empty, Flex, List, Select, Spin, Typography } from 'antd';
 import type { FC } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { getMedicines } from '@/services/medicine';
 import type { Medicine } from '@/services/medicine/typings.d';
 import type { PrescriptionMedicationItem } from '@/services/patient-user/typings.d';
@@ -21,19 +21,35 @@ const MedicationTreatment: FC<MedicationTreatmentProps> = ({
   onDelete,
 }) => {
   const [options, setOptions] = useState<Medicine[]>([]);
+  const [initialOptions, setInitialOptions] = useState<Medicine[]>([]);
+  const initialLoadedRef = useRef(false);
   const [fetching, setFetching] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
 
   const selectedIds = useMemo(
     () => new Set(medications.map((m) => m.id)),
     [medications],
   );
 
+  const handleDropdownOpen = useCallback(async (open: boolean) => {
+    if (!open || initialLoadedRef.current) return;
+    initialLoadedRef.current = true;
+    try {
+      const { data } = await getMedicines({ limit: 20 });
+      setInitialOptions(data.items);
+    } catch {
+      // ignore — user can still search manually
+    }
+  }, []);
+
   const { run: handleSearch } = useDebounceFn(
     async (keyword: string) => {
       if (!keyword.trim()) {
+        setSearchActive(false);
         setOptions([]);
         return;
       }
+      setSearchActive(true);
       setFetching(true);
       try {
         const { data } = await getMedicines({ name: keyword, limit: 20 });
@@ -49,21 +65,23 @@ const MedicationTreatment: FC<MedicationTreatmentProps> = ({
 
   const handleSelect = useCallback(
     (value: string) => {
-      const med = options.find((m) => m.id === value);
+      const source = searchActive ? options : initialOptions;
+      const med = source.find((m) => m.id === value);
       if (med) {
         onAdd({ id: med.id, name: med.name, usage: med.usage ?? '' });
       }
+      setSearchActive(false);
       setOptions([]);
     },
-    [options, onAdd],
+    [options, initialOptions, searchActive, onAdd],
   );
 
   const selectOptions = useMemo(
     () =>
-      options
+      (searchActive ? options : initialOptions)
         .filter((m) => !selectedIds.has(m.id))
         .map((m) => ({ label: m.name, value: m.id })),
-    [options, selectedIds],
+    [options, initialOptions, searchActive, selectedIds],
   );
 
   return (
@@ -81,6 +99,7 @@ const MedicationTreatment: FC<MedicationTreatmentProps> = ({
         options={selectOptions}
         onSearch={handleSearch}
         onSelect={handleSelect}
+        onDropdownVisibleChange={handleDropdownOpen}
         notFoundContent={fetching ? <Spin size="small" /> : undefined}
         style={{ width: '100%', marginBottom: 12 }}
         aria-label="搜索药物名称添加"

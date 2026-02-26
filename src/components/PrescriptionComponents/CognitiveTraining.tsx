@@ -12,7 +12,7 @@ import {
   Typography,
 } from 'antd';
 import type { FC } from 'react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { PrescriptionCognitiveItem } from '@/services/patient-user/typings.d';
 import { getRehabLevels } from '@/services/rehab-level';
 import type { RehabLevel } from '@/services/rehab-level/typings.d';
@@ -31,16 +31,32 @@ const CognitiveTraining: FC<CognitiveTrainingProps> = ({
   onDelete,
 }) => {
   const [options, setOptions] = useState<RehabLevel[]>([]);
+  const [initialOptions, setInitialOptions] = useState<RehabLevel[]>([]);
+  const initialLoadedRef = useRef(false);
   const [fetching, setFetching] = useState(false);
+  const [searchActive, setSearchActive] = useState(false);
 
   const selectedIds = useMemo(() => new Set(cards.map((c) => c.id)), [cards]);
+
+  const handleDropdownOpen = useCallback(async (open: boolean) => {
+    if (!open || initialLoadedRef.current) return;
+    initialLoadedRef.current = true;
+    try {
+      const { data } = await getRehabLevels({ limit: 20 });
+      setInitialOptions(data.items);
+    } catch {
+      // ignore — user can still search manually
+    }
+  }, []);
 
   const { run: handleSearch } = useDebounceFn(
     async (keyword: string) => {
       if (!keyword.trim()) {
+        setSearchActive(false);
         setOptions([]);
         return;
       }
+      setSearchActive(true);
       setFetching(true);
       try {
         const { data } = await getRehabLevels({ name: keyword, limit: 20 });
@@ -56,7 +72,8 @@ const CognitiveTraining: FC<CognitiveTrainingProps> = ({
 
   const handleSelect = useCallback(
     (value: string) => {
-      const rehab = options.find((r) => r.id === value);
+      const source = searchActive ? options : initialOptions;
+      const rehab = source.find((r) => r.id === value);
       if (rehab) {
         onAdd({
           id: rehab.id,
@@ -64,17 +81,18 @@ const CognitiveTraining: FC<CognitiveTrainingProps> = ({
           levelType: rehab.level_type ?? '',
         });
       }
+      setSearchActive(false);
       setOptions([]);
     },
-    [options, onAdd],
+    [options, initialOptions, searchActive, onAdd],
   );
 
   const selectOptions = useMemo(
     () =>
-      options
+      (searchActive ? options : initialOptions)
         .filter((r) => !selectedIds.has(r.id))
         .map((r) => ({ label: r.name, value: r.id })),
-    [options, selectedIds],
+    [options, initialOptions, searchActive, selectedIds],
   );
 
   return (
@@ -93,6 +111,7 @@ const CognitiveTraining: FC<CognitiveTrainingProps> = ({
         options={selectOptions}
         onSearch={handleSearch}
         onSelect={handleSelect}
+        onDropdownVisibleChange={handleDropdownOpen}
         notFoundContent={fetching ? <Spin size="small" /> : undefined}
         style={{ width: '100%', marginBottom: 12 }}
         aria-label="搜索训练项目添加"

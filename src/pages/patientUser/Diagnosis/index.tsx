@@ -9,7 +9,13 @@ import {
 import { history, useSearchParams } from '@umijs/max';
 import type { FormInstance } from 'antd';
 import { App, Button, Flex, Spin, Typography } from 'antd';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { updateDiagnosis } from '@/services/diagnosis';
 import type { ScreeningItems } from '@/services/diagnosis/typings.d';
 import { getFileUrl, getUploadProps, urlToUploadFile } from '@/utils/upload';
@@ -35,6 +41,7 @@ const Diagnosis: React.FC = () => {
   const {
     initialLoading,
     patientDetail,
+    refreshPatientDetail,
     diagnosisData,
     initialStep,
     ensureDiagnosisId,
@@ -79,6 +86,74 @@ const Diagnosis: React.FC = () => {
     () => imagingItems.filter((item) => selectedImagingIds.includes(item.id)),
     [imagingItems, selectedImagingIds],
   );
+
+  // -------- Step 2 上传自动保存 --------
+  const uploadFieldProps = useMemo(
+    () => ({
+      ...getUploadProps({ dir: 'diagnosis', accept: 'image/*' }),
+      listType: 'picture-card' as const,
+    }),
+    [],
+  );
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const extractStep2ImageUrls = useCallback(() => {
+    const values = formMapRef.current?.[2]?.current?.getFieldsValue() ?? {};
+    const labResultImages: Record<string, string> = {};
+    const imagingResultImages: Record<string, string> = {};
+    for (const [key, fileList] of Object.entries(values)) {
+      const arr = fileList as unknown[];
+      if (!arr?.length) continue;
+      const url = getFileUrl((arr as any[])[0]);
+      if (!url) continue;
+      if (key.startsWith('lab__')) {
+        labResultImages[key.slice(5)] = url;
+      } else if (key.startsWith('img__')) {
+        imagingResultImages[key.slice(5)] = url;
+      }
+    }
+    return { labResultImages, imagingResultImages };
+  }, []);
+
+  const handleUploadChange = useCallback(
+    (info: { file: { status?: string } }) => {
+      const { status } = info.file;
+      if (status !== 'done' && status !== 'removed') return;
+
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      autoSaveTimerRef.current = setTimeout(async () => {
+        try {
+          const { labResultImages, imagingResultImages } =
+            extractStep2ImageUrls();
+          const id = await ensureDiagnosisId();
+          await updateDiagnosis(patientId, id, {
+            lab_result_images:
+              Object.keys(labResultImages).length > 0
+                ? labResultImages
+                : undefined,
+            imaging_result_images:
+              Object.keys(imagingResultImages).length > 0
+                ? imagingResultImages
+                : undefined,
+          });
+        } catch (error) {
+          console.error('Auto-save upload failed:', error);
+        }
+      }, 300);
+    },
+    [patientId, ensureDiagnosisId, extractStep2ImageUrls],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   // C1 FIX: controlled StepsForm
   const [currentStep, setCurrentStep] = useState(0);
@@ -158,7 +233,10 @@ const Diagnosis: React.FC = () => {
   return (
     <PageContainer title={false}>
       <ProCard style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <PatientInfoHeader patientDetail={patientDetail} />
+        <PatientInfoHeader
+          patientDetail={patientDetail}
+          onSaved={refreshPatientDetail}
+        />
 
         <StepsForm
           formMapRef={formMapRef}
@@ -198,6 +276,7 @@ const Diagnosis: React.FC = () => {
                   unit: e.unit,
                 })),
                 diet_plan: data?.dietContent ?? '',
+                prescription_summary: aiPrescriptionSummary ?? undefined,
               });
               message.success('诊断流程完成');
               history.push(`/patient-user/detail/${patientId}`);
@@ -327,21 +406,10 @@ const Diagnosis: React.FC = () => {
               }
               return vals;
             })()}
-            onFinish={async (values) => {
+            onFinish={async () => {
               try {
-                const labResultImages: Record<string, string> = {};
-                const imagingResultImages: Record<string, string> = {};
-                for (const [key, fileList] of Object.entries(values)) {
-                  const arr = fileList as unknown[];
-                  if (!arr?.length) continue;
-                  const url = getFileUrl((arr as any[])[0]);
-                  if (!url) continue;
-                  if (key.startsWith('lab__')) {
-                    labResultImages[key.slice(5)] = url;
-                  } else if (key.startsWith('img__')) {
-                    imagingResultImages[key.slice(5)] = url;
-                  }
-                }
+                const { labResultImages, imagingResultImages } =
+                  extractStep2ImageUrls();
                 const id = await ensureDiagnosisId();
                 await updateDiagnosis(patientId, id, {
                   lab_result_images:
@@ -374,11 +442,8 @@ const Diagnosis: React.FC = () => {
                     title="上传"
                     max={1}
                     fieldProps={{
-                      ...getUploadProps({
-                        dir: 'diagnosis',
-                        accept: 'image/*',
-                      }),
-                      listType: 'picture-card',
+                      ...uploadFieldProps,
+                      onChange: handleUploadChange,
                     }}
                   />
                 ))}
@@ -397,11 +462,8 @@ const Diagnosis: React.FC = () => {
                     title="上传"
                     max={1}
                     fieldProps={{
-                      ...getUploadProps({
-                        dir: 'diagnosis',
-                        accept: 'image/*',
-                      }),
-                      listType: 'picture-card',
+                      ...uploadFieldProps,
+                      onChange: handleUploadChange,
                     }}
                   />
                 ))}

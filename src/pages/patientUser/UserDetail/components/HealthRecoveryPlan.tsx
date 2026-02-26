@@ -112,6 +112,7 @@ const HealthRecoveryPlan: FC<HealthRecoveryPlanProps> = ({ patientId }) => {
       key={version}
       patientId={patientId}
       diagnosisId={diagnosisData.diagnosis_id}
+      prescriptionSummary={diagnosisData.prescription_summary ?? undefined}
       initialMedications={initMeds}
       initialCognitiveCards={initCog}
       initialDietContent={initDiet}
@@ -123,6 +124,7 @@ const HealthRecoveryPlan: FC<HealthRecoveryPlanProps> = ({ patientId }) => {
 interface InnerProps {
   patientId: string;
   diagnosisId: string;
+  prescriptionSummary?: string;
   initialMedications: PrescriptionMedicationItem[];
   initialCognitiveCards: PrescriptionCognitiveItem[];
   initialDietContent: string;
@@ -132,6 +134,7 @@ interface InnerProps {
 const HealthRecoveryPlanInner: FC<InnerProps> = ({
   patientId,
   diagnosisId,
+  prescriptionSummary,
   initialMedications,
   initialCognitiveCards,
   initialDietContent,
@@ -160,6 +163,7 @@ const HealthRecoveryPlanInner: FC<InnerProps> = ({
           unit: e.unit,
         })),
         diet_plan: data.dietContent,
+        prescription_summary: prescriptionSummary,
       });
       message.success('处方已更新');
     } catch {
@@ -167,7 +171,7 @@ const HealthRecoveryPlanInner: FC<InnerProps> = ({
     } finally {
       setSaving(false);
     }
-  }, [patientId, diagnosisId, data, message]);
+  }, [patientId, diagnosisId, prescriptionSummary, data, message]);
 
   return (
     <div>

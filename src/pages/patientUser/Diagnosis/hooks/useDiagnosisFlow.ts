@@ -76,6 +76,7 @@ interface CandidateCache {
 export interface UseDiagnosisFlowReturn {
   initialLoading: boolean;
   patientDetail: PatientDetail | null;
+  refreshPatientDetail: () => Promise<void>;
   diagnosisData: DiagnosisDetailResponse | null;
   initialStep: number;
   diagnosisId: string | null;
@@ -458,6 +459,7 @@ export default function useDiagnosisFlow(
               rehab_level_ids: [],
               exercise_plan: [],
               diet_plan: null,
+              prescription_summary: null,
             };
           } catch (error) {
             console.error('Failed to create diagnosis:', error);
@@ -516,9 +518,21 @@ export default function useDiagnosisFlow(
     resolvePrescriptionData,
   ]);
 
+  const refreshPatientDetail = useCallback(async () => {
+    try {
+      const res = await getPatient(patientId);
+      if (mountedRef.current) {
+        setPatientDetail(res.data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh patient detail:', error);
+    }
+  }, [patientId]);
+
   return {
     initialLoading,
     patientDetail,
+    refreshPatientDetail,
     diagnosisData,
     initialStep,
     diagnosisId,
