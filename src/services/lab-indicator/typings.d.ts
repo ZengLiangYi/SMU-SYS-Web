@@ -32,6 +32,12 @@ export interface LabIndicatorCreateRequest {
   action_guidance: string;
 }
 
+// 元数据条目（轻量，仅 id + name）
+export interface LabIndicatorMetaItem {
+  id: string;
+  name: string;
+}
+
 // 更新请求
 export interface LabIndicatorUpdateRequest {
   name?: string;

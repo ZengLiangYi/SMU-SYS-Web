@@ -38,7 +38,7 @@ const ExercisePrescription: FC<ExercisePrescriptionProps> = ({
                 type="link"
                 size="small"
                 icon={<EditOutlined />}
-                aria-label={`编辑${item.exerciseName}`}
+                aria-label={`编辑${item.name}`}
                 onClick={() => onEdit(item)}
               />,
               <Button
@@ -47,14 +47,14 @@ const ExercisePrescription: FC<ExercisePrescriptionProps> = ({
                 size="small"
                 danger
                 icon={<DeleteOutlined />}
-                aria-label={`删除${item.exerciseName}`}
+                aria-label={`删除${item.name}`}
                 onClick={() => onDelete(item.id)}
               />,
             ]}
           >
             <List.Item.Meta
-              title={item.exerciseName}
-              description={item.duration}
+              title={item.name}
+              description={`${item.quantity}${item.unit}`}
             />
           </List.Item>
         )}

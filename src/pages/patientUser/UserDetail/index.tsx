@@ -140,7 +140,7 @@ const UserDetail: React.FC = () => {
       case 'healthRecoveryPlan':
         return (
           <Suspense fallback={LazyFallback}>
-            <HealthRecoveryPlan />
+            <HealthRecoveryPlan patientId={patientId} />
           </Suspense>
         );
       case 'rehabilitationHistory':

@@ -4,6 +4,7 @@ import type {
   LabIndicatorCreateRequest,
   LabIndicatorListParams,
   LabIndicatorListResult,
+  LabIndicatorMetaItem,
   LabIndicatorUpdateRequest,
 } from './typings.d';
 
@@ -41,6 +42,19 @@ export async function updateLabIndicator(
   return request<API.ApiResponse<LabIndicator>>(
     `/api/doctor/lab-indicators/${indicatorId}`,
     { method: 'PATCH', data },
+  );
+}
+
+/**
+ * 获取实验室筛查元数据（轻量列表，仅 id + name）
+ * @param params 可选过滤：id 精确匹配，keyword 模糊搜索
+ */
+export async function getLabIndicatorMeta(
+  params?: { id?: string; keyword?: string },
+) {
+  return request<API.ApiResponse<LabIndicatorMetaItem[]>>(
+    '/api/doctor/metadata/lab-indicators',
+    { method: 'GET', params },
   );
 }
 

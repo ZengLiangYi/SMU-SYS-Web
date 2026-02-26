@@ -71,6 +71,15 @@ const Diagnosis: React.FC = () => {
     loadPrescriptionData,
   } = useDiagnosisFlow(patientId);
 
+  const selectedLabItems = useMemo(
+    () => labItems.filter((item) => selectedLabIds.includes(item.id)),
+    [labItems, selectedLabIds],
+  );
+  const selectedImagingItems = useMemo(
+    () => imagingItems.filter((item) => selectedImagingIds.includes(item.id)),
+    [imagingItems, selectedImagingIds],
+  );
+
   // C1 FIX: controlled StepsForm
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -184,9 +193,9 @@ const Diagnosis: React.FC = () => {
                 medicine_ids: data?.medications.map((m) => m.id) ?? [],
                 rehab_level_ids: data?.cognitiveCards.map((c) => c.id) ?? [],
                 exercise_plan: (data?.exercises ?? []).map((e) => ({
-                  name: e.exerciseName,
-                  quantity: 1,
-                  unit: e.duration,
+                  name: e.name,
+                  quantity: e.quantity,
+                  unit: e.unit,
                 })),
                 diet_plan: data?.dietContent ?? '',
               });
@@ -298,30 +307,51 @@ const Diagnosis: React.FC = () => {
             />
           </StepsForm.StepForm>
 
-          {/* ======== Step 2: 检测结果录入 -- H1 FIX ======== */}
+          {/* ======== Step 2: 检测结果录入 (per-indicator upload) ======== */}
           <StepsForm.StepForm
             name="results"
             title="检测结果录入"
-            initialValues={{
-              lab_result_url: diagnosisData?.lab_result_url
-                ? [urlToUploadFile(diagnosisData.lab_result_url)]
-                : [],
-              imaging_result_url: diagnosisData?.imaging_result_url
-                ? [urlToUploadFile(diagnosisData.imaging_result_url)]
-                : [],
-            }}
+            initialValues={(() => {
+              const vals: Record<string, unknown[]> = {};
+              const labMap = diagnosisData?.lab_result_images;
+              if (labMap) {
+                for (const [indicatorId, url] of Object.entries(labMap)) {
+                  vals[`lab__${indicatorId}`] = [urlToUploadFile(url)];
+                }
+              }
+              const imgMap = diagnosisData?.imaging_result_images;
+              if (imgMap) {
+                for (const [indicatorId, url] of Object.entries(imgMap)) {
+                  vals[`img__${indicatorId}`] = [urlToUploadFile(url)];
+                }
+              }
+              return vals;
+            })()}
             onFinish={async (values) => {
               try {
-                const labUrl = values.lab_result_url?.[0]
-                  ? getFileUrl(values.lab_result_url[0])
-                  : undefined;
-                const imgUrl = values.imaging_result_url?.[0]
-                  ? getFileUrl(values.imaging_result_url[0])
-                  : undefined;
+                const labResultImages: Record<string, string> = {};
+                const imagingResultImages: Record<string, string> = {};
+                for (const [key, fileList] of Object.entries(values)) {
+                  const arr = fileList as unknown[];
+                  if (!arr?.length) continue;
+                  const url = getFileUrl((arr as any[])[0]);
+                  if (!url) continue;
+                  if (key.startsWith('lab__')) {
+                    labResultImages[key.slice(5)] = url;
+                  } else if (key.startsWith('img__')) {
+                    imagingResultImages[key.slice(5)] = url;
+                  }
+                }
                 const id = await ensureDiagnosisId();
                 await updateDiagnosis(patientId, id, {
-                  lab_result_url: labUrl,
-                  imaging_result_url: imgUrl,
+                  lab_result_images:
+                    Object.keys(labResultImages).length > 0
+                      ? labResultImages
+                      : undefined,
+                  imaging_result_images:
+                    Object.keys(imagingResultImages).length > 0
+                      ? imagingResultImages
+                      : undefined,
                 });
                 loadDiagnosisData();
                 return true;
@@ -331,31 +361,54 @@ const Diagnosis: React.FC = () => {
               }
             }}
           >
-            {selectedLabIds.length > 0 ? (
-              <ProFormUploadButton
-                name="lab_result_url"
-                label="实验室筛查结果（选填）"
-                title="上传"
-                max={5}
-                fieldProps={{
-                  ...getUploadProps({ dir: 'diagnosis', accept: 'image/*' }),
-                  listType: 'picture-card',
-                }}
-              />
+            {selectedLabItems.length > 0 ? (
+              <>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                  实验室筛查结果
+                </Text>
+                {selectedLabItems.map((item) => (
+                  <ProFormUploadButton
+                    key={item.id}
+                    name={`lab__${item.id}`}
+                    label={item.name}
+                    title="上传"
+                    max={1}
+                    fieldProps={{
+                      ...getUploadProps({
+                        dir: 'diagnosis',
+                        accept: 'image/*',
+                      }),
+                      listType: 'picture-card',
+                    }}
+                  />
+                ))}
+              </>
             ) : null}
-            {selectedImagingIds.length > 0 ? (
-              <ProFormUploadButton
-                name="imaging_result_url"
-                label="影像学资料（选填）"
-                title="上传"
-                max={5}
-                fieldProps={{
-                  ...getUploadProps({ dir: 'diagnosis', accept: 'image/*' }),
-                  listType: 'picture-card',
-                }}
-              />
+            {selectedImagingItems.length > 0 ? (
+              <>
+                <Text strong style={{ display: 'block', margin: '16px 0 8px' }}>
+                  影像学资料
+                </Text>
+                {selectedImagingItems.map((item) => (
+                  <ProFormUploadButton
+                    key={item.id}
+                    name={`img__${item.id}`}
+                    label={item.name}
+                    title="上传"
+                    max={1}
+                    fieldProps={{
+                      ...getUploadProps({
+                        dir: 'diagnosis',
+                        accept: 'image/*',
+                      }),
+                      listType: 'picture-card',
+                    }}
+                  />
+                ))}
+              </>
             ) : null}
-            {selectedLabIds.length === 0 && selectedImagingIds.length === 0 ? (
+            {selectedLabItems.length === 0 &&
+            selectedImagingItems.length === 0 ? (
               <Text type="secondary">
                 未选择需要录入结果的检查项目，可直接进入下一步。
               </Text>

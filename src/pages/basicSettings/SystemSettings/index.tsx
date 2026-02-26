@@ -11,7 +11,7 @@ const FONT_SIZE_DEFAULT = 14;
 const SLIDER_MARKS: Record<number, string> = { [FONT_SIZE_DEFAULT]: '默认' };
 
 const SystemSettings: React.FC = () => {
-  const { message, modal } = App.useApp();
+  const { modal } = App.useApp();
 
   const [fontSize, setFontSize] = useState<number>(() => {
     try {
@@ -25,33 +25,36 @@ const SystemSettings: React.FC = () => {
   const isDefault = fontSize === FONT_SIZE_DEFAULT;
 
   const handleSave = () => {
-    try {
-      localStorage.setItem('systemFontSize', String(fontSize));
-    } catch {
-      /* localStorage 可能不可用 */
-    }
     modal.confirm({
-      title: '设置已保存',
-      content: '需要刷新页面以应用新的字体大小',
-      okText: '立即刷新',
-      cancelText: '稍后刷新',
-      onOk: () => window.location.reload(),
+      title: '确认保存',
+      content: `字体大小将调整为 ${fontSize}px，需要刷新页面以生效`,
+      okText: '保存并刷新',
+      cancelText: '取消',
+      onOk: () => {
+        try {
+          localStorage.setItem('systemFontSize', String(fontSize));
+        } catch {
+          /* localStorage 可能不可用 */
+        }
+        window.location.reload();
+      },
     });
   };
 
   const handleReset = () => {
-    try {
-      localStorage.setItem('systemFontSize', String(FONT_SIZE_DEFAULT));
-    } catch {
-      /* localStorage 可能不可用 */
-    }
     modal.confirm({
-      title: '已恢复默认设置',
-      content: '需要刷新页面以应用默认字体大小',
-      okText: '立即刷新',
-      cancelText: '稍后刷新',
-      onOk: () => window.location.reload(),
-      onCancel: () => setFontSize(FONT_SIZE_DEFAULT),
+      title: '确认恢复默认',
+      content: '字体大小将恢复为默认值，需要刷新页面以生效',
+      okText: '恢复并刷新',
+      cancelText: '取消',
+      onOk: () => {
+        try {
+          localStorage.setItem('systemFontSize', String(FONT_SIZE_DEFAULT));
+        } catch {
+          /* localStorage 可能不可用 */
+        }
+        window.location.reload();
+      },
     });
   };
 

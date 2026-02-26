@@ -1,69 +1,119 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Empty, Flex, List, Typography } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import { useDebounceFn } from 'ahooks';
+import { Button, Empty, Flex, List, Select, Spin, Typography } from 'antd';
 import type { FC } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { getMedicines } from '@/services/medicine';
+import type { Medicine } from '@/services/medicine/typings.d';
 import type { PrescriptionMedicationItem } from '@/services/patient-user/typings.d';
 
 const { Title, Text } = Typography;
 
 interface MedicationTreatmentProps {
   medications: PrescriptionMedicationItem[];
-  onAdd: () => void;
-  onEdit: (item: PrescriptionMedicationItem) => void;
+  onAdd: (item: PrescriptionMedicationItem) => void;
   onDelete: (id: string) => void;
 }
 
 const MedicationTreatment: FC<MedicationTreatmentProps> = ({
   medications,
   onAdd,
-  onEdit,
   onDelete,
-}) => (
-  <div>
-    <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
-      <Title level={5} style={{ margin: 0 }}>
-        药物治疗
-      </Title>
-      <Button type="link" icon={<PlusOutlined />} onClick={onAdd}>
-        添加药物
-      </Button>
-    </Flex>
-    {medications.length > 0 ? (
-      <List
-        dataSource={medications}
-        renderItem={(item) => (
-          <List.Item
-            actions={[
-              <Button
-                key="edit"
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                aria-label={`编辑${item.medicineName}`}
-                onClick={() => onEdit(item)}
-              />,
-              <Button
-                key="delete"
-                type="link"
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                aria-label={`删除${item.medicineName}`}
-                onClick={() => onDelete(item.id)}
-              />,
-            ]}
-          >
-            <List.Item.Meta
-              title={item.medicineName}
-              description={`用法：${item.usage}`}
-            />
-            <Text type="secondary">{item.dosage}</Text>
-          </List.Item>
-        )}
+}) => {
+  const [options, setOptions] = useState<Medicine[]>([]);
+  const [fetching, setFetching] = useState(false);
+
+  const selectedIds = useMemo(
+    () => new Set(medications.map((m) => m.id)),
+    [medications],
+  );
+
+  const { run: handleSearch } = useDebounceFn(
+    async (keyword: string) => {
+      if (!keyword.trim()) {
+        setOptions([]);
+        return;
+      }
+      setFetching(true);
+      try {
+        const { data } = await getMedicines({ name: keyword, limit: 20 });
+        setOptions(data.items);
+      } catch {
+        setOptions([]);
+      } finally {
+        setFetching(false);
+      }
+    },
+    { wait: 400 },
+  );
+
+  const handleSelect = useCallback(
+    (value: string) => {
+      const med = options.find((m) => m.id === value);
+      if (med) {
+        onAdd({ id: med.id, name: med.name, usage: med.usage ?? '' });
+      }
+      setOptions([]);
+    },
+    [options, onAdd],
+  );
+
+  const selectOptions = useMemo(
+    () =>
+      options
+        .filter((m) => !selectedIds.has(m.id))
+        .map((m) => ({ label: m.name, value: m.id })),
+    [options, selectedIds],
+  );
+
+  return (
+    <div>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
+        <Title level={5} style={{ margin: 0 }}>
+          药物治疗
+        </Title>
+      </Flex>
+      <Select<string>
+        showSearch
+        filterOption={false}
+        placeholder="搜索药物名称添加…"
+        value={undefined}
+        options={selectOptions}
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        notFoundContent={fetching ? <Spin size="small" /> : undefined}
+        style={{ width: '100%', marginBottom: 12 }}
+        aria-label="搜索药物名称添加"
       />
-    ) : (
-      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无药物" />
-    )}
-  </div>
-);
+      {medications.length > 0 ? (
+        <List
+          dataSource={medications}
+          renderItem={(item) => (
+            <List.Item
+              actions={[
+                <Button
+                  key="delete"
+                  type="link"
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  aria-label={`删除${item.name}`}
+                  onClick={() => onDelete(item.id)}
+                />,
+              ]}
+            >
+              <List.Item.Meta
+                title={item.name}
+                description={`用法：${item.usage}`}
+              />
+            </List.Item>
+          )}
+        />
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无药物" />
+      )}
+    </div>
+  );
+};
 
 export default MedicationTreatment;

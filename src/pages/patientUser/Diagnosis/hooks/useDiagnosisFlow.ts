@@ -16,7 +16,6 @@ import type {
   PrimaryDisease,
 } from '@/services/llm/typings.d';
 import { getMedicines } from '@/services/medicine';
-import type { Medicine } from '@/services/medicine/typings.d';
 import { getPatient } from '@/services/patient-user';
 import type {
   PatientDetail,
@@ -25,59 +24,14 @@ import type {
   PrescriptionMedicationItem,
 } from '@/services/patient-user/typings.d';
 import { getRehabLevels } from '@/services/rehab-level';
-import type { RehabLevel } from '@/services/rehab-level/typings.d';
+import {
+  mapCognitiveFromIds,
+  mapExercisesFromPlan,
+  mapMedicationsFromIds,
+} from '@/utils/prescriptionMapping';
 import type { ScreeningCheckItem } from '../components/AICheckContent';
 
 const CANDIDATE_FETCH_LIMIT = 100;
-
-const mapMedicationsFromIds = (
-  ids: string[],
-  medMap: Map<string, Medicine>,
-): PrescriptionMedicationItem[] =>
-  ids
-    .map((id) => {
-      const med = medMap.get(id);
-      return med
-        ? {
-            id: med.id,
-            medicineName: med.name,
-            usage: med.usage ?? '',
-            dosage: '',
-          }
-        : null;
-    })
-    .filter((item): item is PrescriptionMedicationItem => item !== null);
-
-const mapCognitiveFromIds = (
-  ids: string[],
-  rehabMap: Map<string, RehabLevel>,
-): PrescriptionCognitiveItem[] =>
-  ids
-    .map((id) => {
-      const rehab = rehabMap.get(id);
-      return rehab
-        ? {
-            id: rehab.id,
-            cardName: rehab.name,
-            difficulty: rehab.level_type ?? '',
-          }
-        : null;
-    })
-    .filter((item): item is PrescriptionCognitiveItem => item !== null);
-
-const mapExercisesFromPlan = (
-  exercises: Array<{
-    item?: string;
-    name?: string;
-    quantity: number;
-    unit: string;
-  }>,
-): PrescriptionExerciseItem[] =>
-  exercises.map((e, i) => ({
-    id: `ex-${i}`,
-    exerciseName: e.item ?? e.name ?? '',
-    duration: `${e.quantity}${e.unit}`,
-  }));
 
 // -------- computeCurrentStep (with C2 fix) --------
 export function computeCurrentStep(
@@ -98,9 +52,12 @@ export function computeCurrentStep(
 
   // Step 2 or 3: C2 FIX
   if (!data.diagnosis_results?.length) {
-    // 已上传结果 → 进入 Step 3（AI 诊断）
-    if (data.lab_result_url || data.imaging_result_url) return 3;
-    // 否则进入 Step 2（上传结果 — 自然中断点）
+    const hasLabImages =
+      data.lab_result_images && Object.keys(data.lab_result_images).length > 0;
+    const hasImagingImages =
+      data.imaging_result_images &&
+      Object.keys(data.imaging_result_images).length > 0;
+    if (hasLabImages || hasImagingImages) return 3;
     return 2;
   }
 
@@ -447,6 +404,10 @@ export default function useDiagnosisFlow(
       if (data.exercise_plan?.length) {
         setInitialExercises(mapExercisesFromPlan(data.exercise_plan));
       }
+
+      if (data.prescription_summary) {
+        setAiPrescriptionSummary(data.prescription_summary);
+      }
     },
     [],
   );
@@ -488,9 +449,9 @@ export default function useDiagnosisFlow(
               present_illness: null,
               screening_items: null,
               examination_steps: null,
-              lab_result_url: null,
+              lab_result_images: null,
               blood_routine_url: null,
-              imaging_result_url: null,
+              imaging_result_images: null,
               diagnosis_results: [],
               diagnosis_note: null,
               medicine_ids: [],

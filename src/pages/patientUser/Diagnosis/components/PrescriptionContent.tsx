@@ -1,14 +1,12 @@
 import { Alert, Flex, Spin } from 'antd';
-import React, { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useImperativeHandle } from 'react';
 import CognitiveTraining from '@/components/PrescriptionComponents/CognitiveTraining';
 import DietPrescription from '@/components/PrescriptionComponents/DietPrescription';
 import ExercisePrescription from '@/components/PrescriptionComponents/ExercisePrescription';
 import MedicationTreatment from '@/components/PrescriptionComponents/MedicationTreatment';
 import usePrescriptionState from '@/components/PrescriptionComponents/usePrescriptionState';
-import CognitiveModal from '@/components/PrescriptionModals/CognitiveModal';
 import DietModal from '@/components/PrescriptionModals/DietModal';
 import ExerciseModal from '@/components/PrescriptionModals/ExerciseModal';
-import MedicationModal from '@/components/PrescriptionModals/MedicationModal';
 import type {
   PrescriptionCognitiveItem,
   PrescriptionData,
@@ -29,10 +27,6 @@ interface PrescriptionContentProps {
   initialExercises?: PrescriptionExerciseItem[];
 }
 
-/**
- * 使用 key prop 在外层触发重新挂载来重置 initialData，
- * 避免 useEffect 同步 props 到 state 的反模式 (rerender-derived-state-no-effect)。
- */
 const PrescriptionContent = forwardRef<
   PrescriptionDataRef,
   PrescriptionContentProps
@@ -82,16 +76,14 @@ const PrescriptionContent = forwardRef<
 
         <MedicationTreatment
           medications={data.medications}
-          onAdd={() => actions.openMedModal()}
-          onEdit={(item) => actions.openMedModal(item)}
+          onAdd={actions.addMedication}
           onDelete={actions.deleteMedication}
         />
 
         <Flex vertical gap={20} style={{ marginTop: 20 }}>
           <CognitiveTraining
             cards={data.cognitiveCards}
-            onAdd={() => actions.openCogModal()}
-            onEdit={(item) => actions.openCogModal(item)}
+            onAdd={actions.addCognitive}
             onDelete={actions.deleteCognitive}
           />
 
@@ -108,18 +100,6 @@ const PrescriptionContent = forwardRef<
           />
         </Flex>
 
-        <MedicationModal
-          open={modalState.med.open}
-          onOpenChange={modalState.setMedOpen}
-          editing={modalState.med.editing}
-          onFinish={actions.saveMedication}
-        />
-        <CognitiveModal
-          open={modalState.cog.open}
-          onOpenChange={modalState.setCogOpen}
-          editing={modalState.cog.editing}
-          onFinish={actions.saveCognitive}
-        />
         <DietModal
           open={modalState.diet.open}
           onOpenChange={modalState.setDietOpen}

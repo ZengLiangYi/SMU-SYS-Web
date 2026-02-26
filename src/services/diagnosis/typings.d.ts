@@ -25,15 +25,16 @@ export interface DiagnosisDetailResponse {
   present_illness: string | null;
   screening_items: ScreeningItems | null;
   examination_steps: string | null;
-  lab_result_url: string | null;
+  lab_result_images: Record<string, string> | null;
   blood_routine_url: string | null;
-  imaging_result_url: string | null;
+  imaging_result_images: Record<string, string> | null;
   diagnosis_results: string[];
   diagnosis_note: string | null;
   medicine_ids: string[];
   rehab_level_ids: string[];
   exercise_plan: ExercisePlanItem[];
   diet_plan: string | null;
+  prescription_summary: string | null;
 }
 
 // -------- 诊疗更新请求（支持分步提交） --------
@@ -43,14 +44,15 @@ export interface DiagnosisUpdateRequest {
   present_illness?: string;
   screening_items?: ScreeningItems;
   examination_steps?: string;
-  lab_result_url?: string;
-  imaging_result_url?: string;
+  lab_result_images?: Record<string, string>;
+  imaging_result_images?: Record<string, string>;
   diagnosis_results?: string[];
   diagnosis_note?: string;
   medicine_ids?: string[];
   rehab_level_ids?: string[];
   exercise_plan?: ExercisePlanItem[];
   diet_plan?: string;
+  prescription_summary?: string;
 }
 
 // -------- 创建诊疗记录响应 --------

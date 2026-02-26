@@ -301,21 +301,21 @@ export interface HealthMetricListResult {
 // -------- 处方数据 --------
 export interface PrescriptionMedicationItem {
   id: string;
-  medicineName: string;
+  name: string;
   usage: string;
-  dosage: string;
 }
 
 export interface PrescriptionCognitiveItem {
   id: string;
-  cardName: string;
-  difficulty: string;
+  name: string;
+  levelType: string;
 }
 
 export interface PrescriptionExerciseItem {
   id: string;
-  exerciseName: string;
-  duration: string;
+  name: string;
+  quantity: number;
+  unit: string;
 }
 
 export interface PrescriptionData {

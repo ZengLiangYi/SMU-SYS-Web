@@ -13,12 +13,10 @@ interface ModalState<T> {
 }
 
 interface PrescriptionActions {
-  openMedModal: (item?: PrescriptionMedicationItem) => void;
-  saveMedication: (values: Omit<PrescriptionMedicationItem, 'id'>) => void;
+  addMedication: (item: PrescriptionMedicationItem) => void;
   deleteMedication: (id: string) => void;
 
-  openCogModal: (item?: PrescriptionCognitiveItem) => void;
-  saveCognitive: (values: Omit<PrescriptionCognitiveItem, 'id'>) => void;
+  addCognitive: (item: PrescriptionCognitiveItem) => void;
   deleteCognitive: (id: string) => void;
 
   openDietModal: () => void;
@@ -30,10 +28,6 @@ interface PrescriptionActions {
 }
 
 interface PrescriptionModalState {
-  med: ModalState<PrescriptionMedicationItem>;
-  setMedOpen: (open: boolean) => void;
-  cog: ModalState<PrescriptionCognitiveItem>;
-  setCogOpen: (open: boolean) => void;
   diet: { open: boolean };
   setDietOpen: (open: boolean) => void;
   ex: ModalState<PrescriptionExerciseItem>;
@@ -62,36 +56,18 @@ export default function usePrescriptionState(
     initial?.exercises ?? [],
   );
 
-  const [medModal, setMedModal] = useState<
-    ModalState<PrescriptionMedicationItem>
-  >({ open: false, editing: null });
-  const [cogModal, setCogModal] = useState<
-    ModalState<PrescriptionCognitiveItem>
-  >({ open: false, editing: null });
   const [dietModalOpen, setDietModalOpen] = useState(false);
   const [exModal, setExModal] = useState<ModalState<PrescriptionExerciseItem>>({
     open: false,
     editing: null,
   });
 
-  const openMedModal = useCallback(
-    (item?: PrescriptionMedicationItem) =>
-      setMedModal({ open: true, editing: item ?? null }),
-    [],
-  );
-  const saveMedication = useCallback(
-    (values: Omit<PrescriptionMedicationItem, 'id'>) => {
-      setMedications((prev) => {
-        if (medModal.editing) {
-          return prev.map((m) =>
-            m.id === medModal.editing!.id ? { ...m, ...values } : m,
-          );
-        }
-        return [...prev, { ...values, id: Date.now().toString() }];
-      });
-    },
-    [medModal.editing],
-  );
+  const addMedication = useCallback((item: PrescriptionMedicationItem) => {
+    setMedications((prev) => {
+      if (prev.some((m) => m.id === item.id)) return prev;
+      return [...prev, item];
+    });
+  }, []);
   const deleteMedication = useCallback(
     (id: string) => {
       modal.confirm({
@@ -103,24 +79,12 @@ export default function usePrescriptionState(
     [modal],
   );
 
-  const openCogModal = useCallback(
-    (item?: PrescriptionCognitiveItem) =>
-      setCogModal({ open: true, editing: item ?? null }),
-    [],
-  );
-  const saveCognitive = useCallback(
-    (values: Omit<PrescriptionCognitiveItem, 'id'>) => {
-      setCognitiveCards((prev) => {
-        if (cogModal.editing) {
-          return prev.map((c) =>
-            c.id === cogModal.editing!.id ? { ...c, ...values } : c,
-          );
-        }
-        return [...prev, { ...values, id: Date.now().toString() }];
-      });
-    },
-    [cogModal.editing],
-  );
+  const addCognitive = useCallback((item: PrescriptionCognitiveItem) => {
+    setCognitiveCards((prev) => {
+      if (prev.some((c) => c.id === item.id)) return prev;
+      return [...prev, item];
+    });
+  }, []);
   const deleteCognitive = useCallback(
     (id: string) => {
       modal.confirm({
@@ -171,11 +135,9 @@ export default function usePrescriptionState(
   return {
     data: { medications, cognitiveCards, dietContent, exercises },
     actions: {
-      openMedModal,
-      saveMedication,
+      addMedication,
       deleteMedication,
-      openCogModal,
-      saveCognitive,
+      addCognitive,
       deleteCognitive,
       openDietModal,
       saveDiet,
@@ -184,10 +146,6 @@ export default function usePrescriptionState(
       deleteExercise,
     },
     modalState: {
-      med: medModal,
-      setMedOpen: (open: boolean) => setMedModal((prev) => ({ ...prev, open })),
-      cog: cogModal,
-      setCogOpen: (open: boolean) => setCogModal((prev) => ({ ...prev, open })),
       diet: { open: dietModalOpen },
       setDietOpen: setDietModalOpen,
       ex: exModal,

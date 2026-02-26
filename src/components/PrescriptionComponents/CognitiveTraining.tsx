@@ -1,74 +1,131 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Col, Flex, Row, Typography } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
+import { useDebounceFn } from 'ahooks';
+import {
+  Button,
+  Card,
+  Col,
+  Empty,
+  Flex,
+  Row,
+  Select,
+  Spin,
+  Typography,
+} from 'antd';
 import type { FC } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { PrescriptionCognitiveItem } from '@/services/patient-user/typings.d';
+import { getRehabLevels } from '@/services/rehab-level';
+import type { RehabLevel } from '@/services/rehab-level/typings.d';
 
 const { Title, Text } = Typography;
 
 interface CognitiveTrainingProps {
   cards: PrescriptionCognitiveItem[];
-  onAdd: () => void;
-  onEdit: (item: PrescriptionCognitiveItem) => void;
+  onAdd: (item: PrescriptionCognitiveItem) => void;
   onDelete: (id: string) => void;
 }
 
 const CognitiveTraining: FC<CognitiveTrainingProps> = ({
   cards,
   onAdd,
-  onEdit,
   onDelete,
-}) => (
-  <div>
-    <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
-      <Title level={5} style={{ margin: 0 }}>
-        认知训练
-      </Title>
-      <Text type="secondary">每日30分钟</Text>
-    </Flex>
-    <Row gutter={[16, 16]}>
-      {cards.map((item) => (
-        <Col span={12} key={item.id}>
-          <Card size="small">
-            <Flex justify="space-between" align="center">
-              <div>
-                <Text strong>{item.cardName}</Text>
-                <br />
-                <Text type="secondary">{item.difficulty}</Text>
-              </div>
-              <Flex gap={4}>
-                <Button
-                  type="link"
-                  size="small"
-                  icon={<EditOutlined />}
-                  aria-label={`编辑${item.cardName}`}
-                  onClick={() => onEdit(item)}
-                />
-                <Button
-                  type="link"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  aria-label={`删除${item.cardName}`}
-                  onClick={() => onDelete(item.id)}
-                />
-              </Flex>
-            </Flex>
-          </Card>
-        </Col>
-      ))}
-      <Col span={12}>
-        <Button
-          type="dashed"
-          block
-          icon={<PlusOutlined />}
-          style={{ height: '100%', minHeight: 60 }}
-          onClick={onAdd}
-        >
-          更多卡片
-        </Button>
-      </Col>
-    </Row>
-  </div>
-);
+}) => {
+  const [options, setOptions] = useState<RehabLevel[]>([]);
+  const [fetching, setFetching] = useState(false);
+
+  const selectedIds = useMemo(() => new Set(cards.map((c) => c.id)), [cards]);
+
+  const { run: handleSearch } = useDebounceFn(
+    async (keyword: string) => {
+      if (!keyword.trim()) {
+        setOptions([]);
+        return;
+      }
+      setFetching(true);
+      try {
+        const { data } = await getRehabLevels({ name: keyword, limit: 20 });
+        setOptions(data.items);
+      } catch {
+        setOptions([]);
+      } finally {
+        setFetching(false);
+      }
+    },
+    { wait: 400 },
+  );
+
+  const handleSelect = useCallback(
+    (value: string) => {
+      const rehab = options.find((r) => r.id === value);
+      if (rehab) {
+        onAdd({
+          id: rehab.id,
+          name: rehab.name,
+          levelType: rehab.level_type ?? '',
+        });
+      }
+      setOptions([]);
+    },
+    [options, onAdd],
+  );
+
+  const selectOptions = useMemo(
+    () =>
+      options
+        .filter((r) => !selectedIds.has(r.id))
+        .map((r) => ({ label: r.name, value: r.id })),
+    [options, selectedIds],
+  );
+
+  return (
+    <div>
+      <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
+        <Title level={5} style={{ margin: 0 }}>
+          认知训练
+        </Title>
+        <Text type="secondary">每日30分钟</Text>
+      </Flex>
+      <Select<string>
+        showSearch
+        filterOption={false}
+        placeholder="搜索训练项目添加…"
+        value={undefined}
+        options={selectOptions}
+        onSearch={handleSearch}
+        onSelect={handleSelect}
+        notFoundContent={fetching ? <Spin size="small" /> : undefined}
+        style={{ width: '100%', marginBottom: 12 }}
+        aria-label="搜索训练项目添加"
+      />
+      {cards.length > 0 ? (
+        <Row gutter={[16, 16]}>
+          {cards.map((item) => (
+            <Col span={12} key={item.id}>
+              <Card size="small">
+                <Flex justify="space-between" align="center">
+                  <div>
+                    <Text strong>{item.name}</Text>
+                    <br />
+                    <Text type="secondary">{item.levelType}</Text>
+                  </div>
+                  <Button
+                    type="link"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    aria-label={`删除${item.name}`}
+                    onClick={() => onDelete(item.id)}
+                  />
+                </Flex>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无训练项" />
+      )}
+    </div>
+  );
+};
 
 export default CognitiveTraining;
