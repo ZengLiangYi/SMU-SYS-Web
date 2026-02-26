@@ -10,12 +10,8 @@ const FONT_SIZE_DEFAULT = 14;
 
 const SLIDER_MARKS: Record<number, string> = { [FONT_SIZE_DEFAULT]: '默认' };
 
-function applyFontSizeCssVar(size: number) {
-  document.documentElement.style.setProperty('--ant-font-size', `${size}px`);
-}
-
 const SystemSettings: React.FC = () => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
 
   const [fontSize, setFontSize] = useState<number>(() => {
     try {
@@ -34,19 +30,29 @@ const SystemSettings: React.FC = () => {
     } catch {
       /* localStorage 可能不可用 */
     }
-    applyFontSizeCssVar(fontSize);
-    message.success('设置已保存');
+    modal.confirm({
+      title: '设置已保存',
+      content: '需要刷新页面以应用新的字体大小',
+      okText: '立即刷新',
+      cancelText: '稍后刷新',
+      onOk: () => window.location.reload(),
+    });
   };
 
   const handleReset = () => {
-    setFontSize(FONT_SIZE_DEFAULT);
     try {
       localStorage.setItem('systemFontSize', String(FONT_SIZE_DEFAULT));
     } catch {
       /* localStorage 可能不可用 */
     }
-    applyFontSizeCssVar(FONT_SIZE_DEFAULT);
-    message.success('已恢复默认设置');
+    modal.confirm({
+      title: '已恢复默认设置',
+      content: '需要刷新页面以应用默认字体大小',
+      okText: '立即刷新',
+      cancelText: '稍后刷新',
+      onOk: () => window.location.reload(),
+      onCancel: () => setFontSize(FONT_SIZE_DEFAULT),
+    });
   };
 
   return (
@@ -54,7 +60,7 @@ const SystemSettings: React.FC = () => {
       <ProCard title="系统字体大小" headerBordered>
         <Flex vertical gap={24} style={{ maxWidth: 480 }}>
           <Text type="secondary">
-            调整系统界面的全局字体大小，保存后立即生效
+            调整系统界面的全局字体大小，保存后刷新页面生效
           </Text>
 
           <Flex align="center" gap={16}>

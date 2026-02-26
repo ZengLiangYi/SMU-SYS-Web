@@ -7,7 +7,6 @@ import type {
 import { history } from '@umijs/max';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/zh-cn';
 import {
   AvatarDropdown,
@@ -15,8 +14,8 @@ import {
 } from '@/components/RightContent/AvatarDropdown';
 
 // dayjs 全局配置（仅在入口执行一次）
+// 后端约定所有时间戳均为 UTC+0（RFC 2822 + GMT），无需 utc 插件
 dayjs.extend(relativeTime);
-dayjs.extend(utc);
 dayjs.locale('zh-cn');
 
 import NotificationBell from '@/components/NotificationBell';

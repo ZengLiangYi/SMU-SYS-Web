@@ -37,7 +37,7 @@ import type { PatientListItem } from '@/services/patient-user/typings.d';
 import { getStaticUrl } from '@/services/static';
 import { useSocket } from '@/services/websocket/useSocket';
 import { getCategoryColor } from '@/utils/constants';
-import { isWithinMinutesUTC } from '@/utils/date';
+import { isWithinMinutes } from '@/utils/date';
 
 const { Link, Text } = Typography;
 
@@ -143,7 +143,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
   const handleRecall = useCallback(
     async (messageId: string, createdAt: string | null) => {
-      if (!isWithinMinutesUTC(createdAt, RECALL_LIMIT_MINUTES)) {
+      if (!isWithinMinutes(createdAt, RECALL_LIMIT_MINUTES)) {
         antMessage.warning('已超过撤回时限');
         return;
       }
@@ -198,10 +198,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
 
         const isDoctor = msg.sender_role === 'doctor';
         const isOwnMessage = msg.sender_id === currentDoctorId;
-        const canRecall = isWithinMinutesUTC(
-          msg.created_at,
-          RECALL_LIMIT_MINUTES,
-        );
+        const canRecall = isWithinMinutes(msg.created_at, RECALL_LIMIT_MINUTES);
 
         // 媒体内容渲染
         let content: React.ReactNode = msg.content ?? '';

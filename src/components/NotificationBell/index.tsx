@@ -19,7 +19,7 @@ import {
 import type { NotificationItem } from '@/services/notification/typings.d';
 import { useSocket } from '@/services/websocket/useSocket';
 import { NOTIFICATION_BIZ_ROUTE_MAP } from '@/utils/constants';
-import { formatTimeAgoUTC } from '@/utils/date';
+import { formatTimeAgo } from '@/utils/date';
 
 const { Text, Paragraph } = Typography;
 
@@ -170,7 +170,7 @@ const NotificationBell: React.FC = () => {
                     type="secondary"
                     style={{ fontSize: 12, flexShrink: 0, marginLeft: 8 }}
                   >
-                    {formatTimeAgoUTC(item.created_at)}
+                    {formatTimeAgo(item.created_at)}
                   </Text>
                 </div>
                 <Paragraph

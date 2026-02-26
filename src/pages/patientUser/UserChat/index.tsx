@@ -3,7 +3,6 @@ import { PageContainer } from '@ant-design/pro-components';
 import { Conversations } from '@ant-design/x';
 import { useRequest, useSearchParams } from '@umijs/max';
 import { App, Avatar, Badge, Empty, Flex, Spin, Splitter } from 'antd';
-import dayjs from 'dayjs';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   createConversation,
@@ -20,6 +19,7 @@ import type {
   PatientListResult,
 } from '@/services/patient-user/typings.d';
 import { useSocket } from '@/services/websocket/useSocket';
+import { formatDateTime } from '@/utils/date';
 import ChatPanel from './components/ChatPanel';
 
 const UserChat: React.FC = () => {
@@ -96,7 +96,7 @@ const UserChat: React.FC = () => {
           key: p.id, // 使用 patient_id 作为 key
           label: p.name,
           description: conv?.last_message_at
-            ? dayjs(conv.last_message_at).format('MM-DD HH:mm')
+            ? formatDateTime(conv.last_message_at)
             : undefined,
           icon:
             unread > 0 ? (

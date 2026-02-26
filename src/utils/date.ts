@@ -1,7 +1,16 @@
 import dayjs from 'dayjs';
 
 /**
- * 格式化日期时间（保持 UTC 时区，不做本地转换）
+ * 后端约定：所有时间戳为服务器本地时间 + "GMT" 后缀（RFC 2822 格式）。
+ * 计算相对时间时需要去掉 "GMT"，让 Date 按本地时间解析，
+ * 否则 new Date("...GMT") 会按 UTC 解析，导致 epoch 偏移 8 小时。
+ */
+function stripTimezone(dateStr: string): string {
+  return dateStr.replace(/\s*GMT\s*$/i, '');
+}
+
+/**
+ * 格式化日期时间（显示时间数值本身，不做时区转换）
  * @param dateStr 日期字符串（如 "Thu, 05 Feb 2026 15:23:39 GMT"）
  * @param options 格式化选项
  * @returns 格式化后的日期字符串
@@ -54,48 +63,35 @@ export function formatDate(dateStr: string | undefined | null): string {
 }
 
 /**
- * 格式化 UTC 时间为相对时间字符串（如 "3分钟前"）
- * @param utcDateStr UTC 时间字符串
- * @returns 相对时间字符串，如果无效则返回 '-'
- * @example formatTimeAgoUTC('2026-02-09T10:00:00Z') => '5分钟前'
+ * 格式化时间为相对时间字符串（如 "3分钟前"）
+ *
+ * 去掉 "GMT" 后缀再解析，使 epoch 基于本地时区，
+ * 与 dayjs() 的本地 "now" 对比时差值正确。
  */
-export function formatTimeAgoUTC(
-  utcDateStr: string | null | undefined,
-): string {
-  if (!utcDateStr) return '-';
-  // 先解析日期字符串（识别其中的时区），然后转换为 UTC
-  const date = dayjs(utcDateStr).utc();
+export function formatTimeAgo(dateStr: string | null | undefined): string {
+  if (!dateStr) return '-';
+  const date = dayjs(stripTimezone(dateStr));
   if (!date.isValid()) return '-';
   return date.fromNow();
 }
 
 /**
- * 计算 UTC 时间距离现在的分钟数
- * @param utcDateStr UTC 时间字符串
+ * 计算时间距离现在的分钟数
  * @returns 距离现在的分钟数，如果无效则返回 Infinity
- * @example getMinutesAgoUTC('2026-02-09T10:00:00Z') => 5
  */
-export function getMinutesAgoUTC(
-  utcDateStr: string | null | undefined,
-): number {
-  if (!utcDateStr) return Infinity;
-  // 先解析日期字符串（识别其中的时区），然后转换为 UTC 进行比较
-  const created = dayjs(utcDateStr).utc();
+export function getMinutesAgo(dateStr: string | null | undefined): number {
+  if (!dateStr) return Infinity;
+  const created = dayjs(stripTimezone(dateStr));
   if (!created.isValid()) return Infinity;
-  const now = dayjs().utc();
-  return now.diff(created, 'minute');
+  return dayjs().diff(created, 'minute');
 }
 
 /**
- * 判断 UTC 时间是否在指定分钟数内
- * @param utcDateStr UTC 时间字符串
- * @param minutes 分钟数
- * @returns 是否在指定时间内
- * @example isWithinMinutesUTC('2026-02-09T10:00:00Z', 2) => true（如果在2分钟内）
+ * 判断时间是否在指定分钟数内
  */
-export function isWithinMinutesUTC(
-  utcDateStr: string | null | undefined,
+export function isWithinMinutes(
+  dateStr: string | null | undefined,
   minutes: number,
 ): boolean {
-  return getMinutesAgoUTC(utcDateStr) < minutes;
+  return getMinutesAgo(dateStr) < minutes;
 }
