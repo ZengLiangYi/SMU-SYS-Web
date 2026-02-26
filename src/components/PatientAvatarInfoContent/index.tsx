@@ -1,5 +1,5 @@
 import { ManOutlined, UserOutlined, WomanOutlined } from '@ant-design/icons';
-import { Avatar, Flex, Space, Tag, Typography } from 'antd';
+import { Avatar, Flex, Space, Tag, Typography, theme } from 'antd';
 import React from 'react';
 import { getCategoryColor } from '@/utils/constants';
 
@@ -20,19 +20,21 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
   phone,
   categories,
 }) => {
+  const { token } = theme.useToken();
+
   return (
     <div>
       <Flex gap={24}>
         <Avatar size={80} icon={<UserOutlined />} style={{ flexShrink: 0 }} />
         <Flex vertical justify="center">
           <Space style={{ marginBottom: 8 }}>
-            <Text strong style={{ fontSize: 18 }}>
+            <Text strong style={{ fontSize: token.fontSizeHeading4 }}>
               {name}
             </Text>
             {gender === '男' || gender === 'male' ? (
-              <ManOutlined style={{ color: '#336fff' }} />
+              <ManOutlined style={{ color: token.colorPrimary }} />
             ) : (
-              <WomanOutlined style={{ color: '#ff4d4f' }} />
+              <WomanOutlined style={{ color: token.colorError }} />
             )}
             <Text type="secondary">{age}岁</Text>
           </Space>
@@ -44,7 +46,7 @@ const PatientAvatarInfoContent: React.FC<PatientAvatarInfoContentProps> = ({
               <Tag
                 key={cat}
                 color={getCategoryColor(cat)}
-                style={{ borderRadius: 4 }}
+                style={{ borderRadius: token.borderRadiusSM }}
               >
                 {cat}
               </Tag>

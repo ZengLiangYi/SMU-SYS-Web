@@ -16,6 +16,7 @@ import type {
   PrimaryDisease,
 } from '@/services/llm/typings.d';
 import { getMedicines } from '@/services/medicine';
+import type { Medicine } from '@/services/medicine/typings.d';
 import { getPatient } from '@/services/patient-user';
 import type {
   PatientDetail,
@@ -24,7 +25,59 @@ import type {
   PrescriptionMedicationItem,
 } from '@/services/patient-user/typings.d';
 import { getRehabLevels } from '@/services/rehab-level';
+import type { RehabLevel } from '@/services/rehab-level/typings.d';
 import type { ScreeningCheckItem } from '../components/AICheckContent';
+
+const CANDIDATE_FETCH_LIMIT = 100;
+
+const mapMedicationsFromIds = (
+  ids: string[],
+  medMap: Map<string, Medicine>,
+): PrescriptionMedicationItem[] =>
+  ids
+    .map((id) => {
+      const med = medMap.get(id);
+      return med
+        ? {
+            id: med.id,
+            medicineName: med.name,
+            usage: med.usage ?? '',
+            dosage: '',
+          }
+        : null;
+    })
+    .filter((item): item is PrescriptionMedicationItem => item !== null);
+
+const mapCognitiveFromIds = (
+  ids: string[],
+  rehabMap: Map<string, RehabLevel>,
+): PrescriptionCognitiveItem[] =>
+  ids
+    .map((id) => {
+      const rehab = rehabMap.get(id);
+      return rehab
+        ? {
+            id: rehab.id,
+            cardName: rehab.name,
+            difficulty: rehab.level_type ?? '',
+          }
+        : null;
+    })
+    .filter((item): item is PrescriptionCognitiveItem => item !== null);
+
+const mapExercisesFromPlan = (
+  exercises: Array<{
+    item?: string;
+    name?: string;
+    quantity: number;
+    unit: string;
+  }>,
+): PrescriptionExerciseItem[] =>
+  exercises.map((e, i) => ({
+    id: `ex-${i}`,
+    exerciseName: e.item ?? e.name ?? '',
+    duration: `${e.quantity}${e.unit}`,
+  }));
 
 // -------- computeCurrentStep (with C2 fix) --------
 export function computeCurrentStep(
@@ -195,7 +248,7 @@ export default function useDiagnosisFlow(
         // 409 = 已有诊断中记录，回退获取
         if (err?.response?.status === 409) {
           const { data } = await getCurrentDiagnosis(patientId);
-          const id = data.diagnosis_id!;
+          const id = data.diagnosis_id ?? '';
           diagnosisIdRef.current = id;
           if (mountedRef.current) setDiagnosisId(id);
           return id;
@@ -219,9 +272,9 @@ export default function useDiagnosisFlow(
     }
 
     const [scaleRes, labRes, imagingRes] = await Promise.all([
-      getDiagnosticScales({ limit: 100 }),
-      getLabIndicators({ limit: 100 }),
-      getImagingIndicators({ limit: 100 }),
+      getDiagnosticScales({ limit: CANDIDATE_FETCH_LIMIT }),
+      getLabIndicators({ limit: CANDIDATE_FETCH_LIMIT }),
+      getImagingIndicators({ limit: CANDIDATE_FETCH_LIMIT }),
     ]);
 
     if (!mountedRef.current) return;
@@ -273,8 +326,8 @@ export default function useDiagnosisFlow(
         setAiSuggestion(llmRes.examination_steps);
         setAiExaminationSteps(llmRes.examination_steps);
         setAiConfidence(llmRes.prediction_confidence);
-      } catch {
-        // 错误由调用方处理
+      } catch (error) {
+        console.error('Failed to load screening data:', error);
       } finally {
         if (mountedRef.current) setScreeningLoading(false);
       }
@@ -284,7 +337,7 @@ export default function useDiagnosisFlow(
 
   // -------- 加载疾病类型目录 --------
   const loadDiseaseTypes = useCallback(async () => {
-    const diseaseRes = await getDiseaseTypes({ limit: 100 });
+    const diseaseRes = await getDiseaseTypes({ limit: CANDIDATE_FETCH_LIMIT });
     if (!mountedRef.current) return;
 
     const nameMap = new Map<string, string>();
@@ -309,8 +362,8 @@ export default function useDiagnosisFlow(
       setPrimaryDisease(result.primary_disease);
       setOtherDiseases(result.other_possible_diseases ?? []);
       setPreventionAdvice(result.prevention_advice);
-    } catch {
-      // 错误由调用方处理
+    } catch (error) {
+      console.error('Failed to load diagnosis data:', error);
     } finally {
       if (mountedRef.current) setDiagnosisLoading(false);
     }
@@ -326,8 +379,8 @@ export default function useDiagnosisFlow(
 
       // 并行解析药物和训练名称 (async-parallel)
       const [medRes, rehabRes] = await Promise.all([
-        getMedicines({ limit: 100 }),
-        getRehabLevels({ limit: 100 }),
+        getMedicines({ limit: CANDIDATE_FETCH_LIMIT }),
+        getRehabLevels({ limit: CANDIDATE_FETCH_LIMIT }),
       ]);
 
       if (!mountedRef.current) return;
@@ -336,49 +389,17 @@ export default function useDiagnosisFlow(
       const rehabMap = new Map(rehabRes.data.items.map((r) => [r.id, r]));
 
       setInitialMedications(
-        (llmRes.medicines ?? [])
-          .map((id) => {
-            const med = medMap.get(id);
-            return med
-              ? {
-                  id: med.id,
-                  medicineName: med.name,
-                  usage: med.usage ?? '',
-                  dosage: '',
-                }
-              : null;
-          })
-          .filter((item): item is PrescriptionMedicationItem => item !== null),
+        mapMedicationsFromIds(llmRes.medicines ?? [], medMap),
       );
-
       setInitialCognitiveCards(
-        (llmRes.trainings ?? [])
-          .map((id) => {
-            const rehab = rehabMap.get(id);
-            return rehab
-              ? {
-                  id: rehab.id,
-                  cardName: rehab.name,
-                  difficulty: rehab.level_type ?? '',
-                }
-              : null;
-          })
-          .filter((item): item is PrescriptionCognitiveItem => item !== null),
+        mapCognitiveFromIds(llmRes.trainings ?? [], rehabMap),
       );
-
       setInitialDietContent(llmRes.diet_prescription ?? '');
-
-      setInitialExercises(
-        (llmRes.exercises ?? []).map((e, i) => ({
-          id: `ex-${i}`,
-          exerciseName: e.item,
-          duration: `${e.quantity}${e.unit}`,
-        })),
-      );
+      setInitialExercises(mapExercisesFromPlan(llmRes.exercises ?? []));
 
       setAiPrescriptionSummary(llmRes.summary ?? null);
-    } catch {
-      // 错误由调用方处理
+    } catch (error) {
+      console.error('Failed to load prescription data:', error);
     } finally {
       if (mountedRef.current) {
         setPrescriptionLoading(false);
@@ -401,48 +422,21 @@ export default function useDiagnosisFlow(
         return;
 
       const [medRes, rehabRes] = await Promise.all([
-        hasMeds ? getMedicines({ limit: 100 }) : null,
-        hasRehab ? getRehabLevels({ limit: 100 }) : null,
+        hasMeds ? getMedicines({ limit: CANDIDATE_FETCH_LIMIT }) : null,
+        hasRehab ? getRehabLevels({ limit: CANDIDATE_FETCH_LIMIT }) : null,
       ]);
 
       if (!mountedRef.current) return;
 
       if (medRes) {
         const medMap = new Map(medRes.data.items.map((m) => [m.id, m]));
-        setInitialMedications(
-          data.medicine_ids
-            .map((id) => {
-              const med = medMap.get(id);
-              return med
-                ? {
-                    id: med.id,
-                    medicineName: med.name,
-                    usage: med.usage ?? '',
-                    dosage: '',
-                  }
-                : null;
-            })
-            .filter(
-              (item): item is PrescriptionMedicationItem => item !== null,
-            ),
-        );
+        setInitialMedications(mapMedicationsFromIds(data.medicine_ids, medMap));
       }
 
       if (rehabRes) {
         const rehabMap = new Map(rehabRes.data.items.map((r) => [r.id, r]));
         setInitialCognitiveCards(
-          data.rehab_level_ids
-            .map((id) => {
-              const rehab = rehabMap.get(id);
-              return rehab
-                ? {
-                    id: rehab.id,
-                    cardName: rehab.name,
-                    difficulty: rehab.level_type ?? '',
-                  }
-                : null;
-            })
-            .filter((item): item is PrescriptionCognitiveItem => item !== null),
+          mapCognitiveFromIds(data.rehab_level_ids, rehabMap),
         );
       }
 
@@ -451,13 +445,7 @@ export default function useDiagnosisFlow(
       }
 
       if (data.exercise_plan?.length) {
-        setInitialExercises(
-          data.exercise_plan.map((e, i) => ({
-            id: `ex-${i}`,
-            exerciseName: e.name,
-            duration: `${e.quantity}${e.unit}`,
-          })),
-        );
+        setInitialExercises(mapExercisesFromPlan(data.exercise_plan));
       }
     },
     [],
@@ -510,8 +498,8 @@ export default function useDiagnosisFlow(
               exercise_plan: [],
               diet_plan: null,
             };
-          } catch {
-            // 创建失败时仍使用已有数据
+          } catch (error) {
+            console.error('Failed to create diagnosis:', error);
           }
         }
 
@@ -554,8 +542,8 @@ export default function useDiagnosisFlow(
           // H2: 解析处方 ID 为显示对象
           await resolvePrescriptionData(saved);
         }
-      } catch {
-        // 网络错误由页面层处理
+      } catch (error) {
+        console.error('Failed to initialize diagnosis flow:', error);
       } finally {
         if (mountedRef.current) setInitialLoading(false);
       }

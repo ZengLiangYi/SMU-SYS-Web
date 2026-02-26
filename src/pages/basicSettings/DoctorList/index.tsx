@@ -5,6 +5,7 @@ import { useRequest } from '@umijs/max';
 import { App, Button, Popconfirm, Space } from 'antd';
 import React, { useRef } from 'react';
 import { deleteDoctorUser, getDoctorUsers } from '@/services/doctor-admin';
+import { createProTableRequest } from '@/utils/proTableRequest';
 import CreateDoctorForm from './components/CreateDoctorForm';
 import EditDoctorForm from './components/EditDoctorForm';
 import ResetPasswordModal from './components/ResetPasswordModal';
@@ -101,29 +102,10 @@ const DoctorList: React.FC = () => {
             onOk={() => actionRef.current?.reload()}
           />,
         ]}
-        request={async (params) => {
-          const { current = 1, pageSize = 10, name, code } = params;
-          const offset = (current - 1) * pageSize;
-          try {
-            const { data } = await getDoctorUsers({
-              offset,
-              limit: pageSize,
-              name: name || undefined,
-              code: code || undefined,
-            });
-            return {
-              data: data.items,
-              total: data.total,
-              success: true,
-            };
-          } catch {
-            return {
-              data: [],
-              total: 0,
-              success: false,
-            };
-          }
-        }}
+        request={createProTableRequest(getDoctorUsers, (p) => ({
+          name: p.name || undefined,
+          code: p.code || undefined,
+        }))}
         columns={columns}
         pagination={{
           defaultPageSize: 10,

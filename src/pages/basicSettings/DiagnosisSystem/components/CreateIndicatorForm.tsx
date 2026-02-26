@@ -8,15 +8,23 @@ import { useRequest } from '@umijs/max';
 import { App, Button } from 'antd';
 import type { FC } from 'react';
 import { createImagingIndicator } from '@/services/imaging-indicator';
+import { createLabIndicator } from '@/services/lab-indicator';
 
-interface CreateImagingFormProps {
+const INDICATOR_CONFIG = {
+  lab: { title: '添加实验室筛查项目', createFn: createLabIndicator },
+  imaging: { title: '添加影像学筛查项目', createFn: createImagingIndicator },
+} as const;
+
+interface CreateIndicatorFormProps {
+  type: 'lab' | 'imaging';
   onOk?: () => void;
 }
 
-const CreateImagingForm: FC<CreateImagingFormProps> = ({ onOk }) => {
+const CreateIndicatorForm: FC<CreateIndicatorFormProps> = ({ type, onOk }) => {
   const { message } = App.useApp();
+  const config = INDICATOR_CONFIG[type];
 
-  const { run, loading } = useRequest(createImagingIndicator, {
+  const { run, loading } = useRequest(config.createFn, {
     manual: true,
     onSuccess: () => {
       message.success('创建成功');
@@ -29,7 +37,7 @@ const CreateImagingForm: FC<CreateImagingFormProps> = ({ onOk }) => {
 
   return (
     <ModalForm
-      title="添加影像学筛查项目"
+      title={config.title}
       trigger={
         <Button type="primary" icon={<PlusOutlined />}>
           添加项目
@@ -92,4 +100,4 @@ const CreateImagingForm: FC<CreateImagingFormProps> = ({ onOk }) => {
   );
 };
 
-export default CreateImagingForm;
+export default CreateIndicatorForm;

@@ -150,7 +150,8 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
         limit: pageSize,
       });
       return { data: data.items, total: data.total, success: true };
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch health metrics:', error);
       return { data: [], total: 0, success: false };
     }
   };
@@ -179,7 +180,12 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
       key: 'action',
       width: 100,
       render: () => (
-        <Button type="link" size="small" icon={<EyeOutlined />}>
+        <Button
+          type="link"
+          size="small"
+          icon={<EyeOutlined />}
+          aria-label="查看详情"
+        >
           详情
         </Button>
       ),

@@ -6,22 +6,38 @@ import {
 import { useRequest } from '@umijs/max';
 import { App } from 'antd';
 import React, { cloneElement, useCallback, useState } from 'react';
+import { updateImagingIndicator } from '@/services/imaging-indicator';
+import type { ImagingIndicator } from '@/services/imaging-indicator/typings.d';
 import { updateLabIndicator } from '@/services/lab-indicator';
 import type { LabIndicator } from '@/services/lab-indicator/typings.d';
 
-interface EditLabFormProps {
+type IndicatorRecord = LabIndicator | ImagingIndicator;
+
+const INDICATOR_CONFIG = {
+  lab: { title: '编辑实验室筛查项目', updateFn: updateLabIndicator },
+  imaging: { title: '编辑影像学筛查项目', updateFn: updateImagingIndicator },
+} as const;
+
+interface EditIndicatorFormProps {
+  type: 'lab' | 'imaging';
   trigger: React.ReactElement<{ onClick?: () => void }>;
-  record: LabIndicator;
+  record: IndicatorRecord;
   onOk?: () => void;
 }
 
-const EditLabForm: React.FC<EditLabFormProps> = ({ trigger, record, onOk }) => {
+const EditIndicatorForm: React.FC<EditIndicatorFormProps> = ({
+  type,
+  trigger,
+  record,
+  onOk,
+}) => {
   const { message } = App.useApp();
   const [open, setOpen] = useState(false);
+  const config = INDICATOR_CONFIG[type];
 
   const { run, loading } = useRequest(
     (values: Parameters<typeof updateLabIndicator>[1]) =>
-      updateLabIndicator(record.id, values),
+      config.updateFn(record.id, values),
     {
       manual: true,
       onSuccess: () => {
@@ -41,7 +57,7 @@ const EditLabForm: React.FC<EditLabFormProps> = ({ trigger, record, onOk }) => {
     <>
       {cloneElement(trigger, { onClick: onOpen })}
       <ModalForm
-        title="编辑实验室筛查项目"
+        title={config.title}
         open={open}
         onOpenChange={(visible) => {
           if (!visible) onCancel();
@@ -112,4 +128,4 @@ const EditLabForm: React.FC<EditLabFormProps> = ({ trigger, record, onOk }) => {
   );
 };
 
-export default EditLabForm;
+export default EditIndicatorForm;

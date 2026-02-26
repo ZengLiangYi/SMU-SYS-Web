@@ -6,6 +6,7 @@ import { App, Button, Popconfirm, Space, Typography } from 'antd';
 import React, { useRef } from 'react';
 import { deleteReferral, getReferrals } from '@/services/referral';
 import type { Referral } from '@/services/referral/typings.d';
+import { createProTableRequest } from '@/utils/proTableRequest';
 import CreateReferralForm from './components/CreateReferralForm';
 import EditReferralForm from './components/EditReferralForm';
 
@@ -78,7 +79,13 @@ const ReferralHospital: React.FC = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" danger size="small" style={{ padding: 0 }}>
+            <Button
+              type="link"
+              danger
+              size="small"
+              style={{ padding: 0 }}
+              aria-label="删除"
+            >
               <DeleteOutlined /> 删除
             </Button>
           </Popconfirm>
@@ -100,25 +107,10 @@ const ReferralHospital: React.FC = () => {
             onOk={() => actionRef.current?.reload()}
           />,
         ]}
-        request={async (params) => {
-          const {
-            current = 1,
-            pageSize = 10,
-            hospital_name,
-            doctor_name,
-          } = params;
-          try {
-            const { data } = await getReferrals({
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-              hospital_name: hospital_name || undefined,
-              doctor_name: doctor_name || undefined,
-            });
-            return { data: data.items, total: data.total, success: true };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
+        request={createProTableRequest(getReferrals, (p) => ({
+          hospital_name: p.hospital_name || undefined,
+          doctor_name: p.doctor_name || undefined,
+        }))}
         columns={columns}
         pagination={{ pageSize: 10 }}
       />

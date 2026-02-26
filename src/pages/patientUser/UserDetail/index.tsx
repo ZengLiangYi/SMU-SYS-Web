@@ -222,9 +222,13 @@ const UserDetail: React.FC = () => {
           patientId={patientId}
           open={referralOpen}
           onOpenChange={setReferralOpen}
-          onOk={() => {
+          onOk={(referralType) => {
             setReferralOpen(false);
-            refresh();
+            if (referralType === 'internal') {
+              history.push('/patient-user/list');
+            } else {
+              refresh();
+            }
           }}
         />
       </Suspense>

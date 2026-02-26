@@ -178,7 +178,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     if (conversation_id === conversationId) {
       setMessages((prev) => [...prev, newMsg]);
       // 当前会话收到新消息自动标记已读
-      markConversationRead(conversation_id).catch(() => {});
+      markConversationRead(conversation_id).catch((error) =>
+        console.error('Failed to mark conversation read:', error),
+      );
     }
   });
 
@@ -312,6 +314,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
               onClick={() =>
                 history.push(`/patient-user/detail/${patientInfo.id}`)
               }
+              aria-label="查看患者详情"
             >
               查看详情
             </Button>

@@ -1,4 +1,3 @@
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ProFormInstance } from '@ant-design/pro-components';
 import {
   ProForm,
@@ -8,101 +7,30 @@ import {
   ProFormText,
   ProFormTextArea,
 } from '@ant-design/pro-components';
-import {
-  Button,
-  Empty,
-  Flex,
-  Input,
-  InputNumber,
-  Typography,
-  theme,
-} from 'antd';
-import React, { useImperativeHandle, useRef, useState } from 'react';
+import { Empty, Flex, Typography, theme } from 'antd';
+import React, { useImperativeHandle, useRef } from 'react';
 import type {
-  DiagnosticScaleQuestionContent,
   DiagnosticScaleQuestionPayload,
   QuestionType,
 } from '@/services/diagnostic-scale/typings.d';
 import {
-  OPTION_KEY_LETTERS,
   QUESTION_TYPE_OPTIONS,
   SINGLE_CHOICE_DEFAULT_OPTIONS,
   TRUE_FALSE_DEFAULT_OPTIONS,
   TYPES_WITH_OPTIONS,
 } from '@/utils/constants';
+import OptionsEditor from './OptionsEditor';
+import type { OptionRow, ScoreEntry } from './questionEditorUtils';
+import {
+  fromOptionRows,
+  fromScoreEntries,
+  toOptionRows,
+  toScoreEntries,
+} from './questionEditorUtils';
+import ScoreMapEditor from './ScoreMapEditor';
+import TrueFalseScoreEditor from './TrueFalseScoreEditor';
 
 const { Text } = Typography;
-
-interface OptionRow {
-  key: string;
-  label: string;
-  score: number;
-}
-
-let seId = 0;
-function nextSeId(): string {
-  return `se_${++seId}`;
-}
-
-interface ScoreEntry {
-  _id: string;
-  answer: string;
-  score: number;
-}
-
-function toOptionRows(content?: DiagnosticScaleQuestionContent): OptionRow[] {
-  if (!content) return [];
-  return content.options.map((opt) => ({
-    key: opt.key,
-    label: opt.label,
-    score: content.score_map[opt.key] ?? content.default_score,
-  }));
-}
-
-function fromOptionRows(
-  rows: OptionRow[],
-  allowMultiple: boolean,
-  defaultScore: number,
-): DiagnosticScaleQuestionContent {
-  const options = rows.map((r) => ({ key: r.key, label: r.label }));
-  const scoreMap: Record<string, number> = {};
-  for (const r of rows) {
-    scoreMap[r.key] = r.score;
-  }
-  return {
-    options,
-    score_map: scoreMap,
-    allow_multiple: allowMultiple,
-    default_score: defaultScore,
-  };
-}
-
-function toScoreEntries(
-  content?: DiagnosticScaleQuestionContent,
-): ScoreEntry[] {
-  if (!content) return [];
-  return Object.entries(content.score_map).map(([answer, score]) => ({
-    _id: nextSeId(),
-    answer,
-    score,
-  }));
-}
-
-function fromScoreEntries(
-  entries: ScoreEntry[],
-  defaultScore: number,
-): DiagnosticScaleQuestionContent {
-  const scoreMap: Record<string, number> = {};
-  for (const e of entries) {
-    scoreMap[e.answer] = e.score;
-  }
-  return {
-    options: [],
-    score_map: scoreMap,
-    allow_multiple: false,
-    default_score: defaultScore,
-  };
-}
 
 export interface QuestionEditorRef {
   getValues: () => DiagnosticScaleQuestionPayload | null;
@@ -277,18 +205,26 @@ const QuestionEditor = React.forwardRef<QuestionEditorRef, QuestionEditorProps>(
               const formOptions = formRef.current?.getFieldValue('options') as
                 | OptionRow[]
                 | undefined;
+              const propOptions = toOptionRows(question?.question_content);
               const initialOpts =
                 formOptions && formOptions.length > 0
                   ? formOptions
-                  : qType === 'true_false'
-                    ? TRUE_FALSE_DEFAULT_OPTIONS
-                    : SINGLE_CHOICE_DEFAULT_OPTIONS;
+                  : propOptions.length > 0
+                    ? propOptions
+                    : qType === 'true_false'
+                      ? TRUE_FALSE_DEFAULT_OPTIONS
+                      : SINGLE_CHOICE_DEFAULT_OPTIONS;
 
               const formEntries = formRef.current?.getFieldValue(
                 'score_entries',
               ) as ScoreEntry[] | undefined;
+              const propEntries = toScoreEntries(question?.question_content);
               const initialSE =
-                formEntries && formEntries.length > 0 ? formEntries : [];
+                formEntries && formEntries.length > 0
+                  ? formEntries
+                  : propEntries.length > 0
+                    ? propEntries
+                    : [];
 
               const isTrueFalse = qType === 'true_false';
 
@@ -334,16 +270,6 @@ const QuestionEditor = React.forwardRef<QuestionEditorRef, QuestionEditorProps>(
                     </ProForm.Item>
                   )}
                   <Flex gap={24} align="center" style={{ marginBlockEnd: 24 }}>
-                    {/* TODO: 预留扩展 —— 允许多选开关，后端支持后启用
-                    <ProForm.Item
-                      name="allow_multiple"
-                      label="允许多选"
-                      valuePropName="checked"
-                      style={{ marginBottom: 0 }}
-                    >
-                      <Switch size="small" />
-                    </ProForm.Item>
-                    */}
                     <ProFormDigit
                       name="default_score"
                       label="默认分数"
@@ -376,324 +302,3 @@ const QuestionEditor = React.forwardRef<QuestionEditorRef, QuestionEditorProps>(
 QuestionEditor.displayName = 'QuestionEditor';
 
 export default QuestionEditor;
-
-// ---------- True/False score editor ----------
-
-const TRUE_FALSE_DISPLAY: { key: 'True' | 'False'; label: string }[] = [
-  { key: 'True', label: '是' },
-  { key: 'False', label: '否' },
-];
-
-interface TrueFalseScoreEditorProps {
-  formRef: React.RefObject<ProFormInstance | undefined>;
-  initialOptions: OptionRow[];
-  onOptionsChange?: () => void;
-}
-
-const TrueFalseScoreEditor: React.FC<TrueFalseScoreEditorProps> = ({
-  formRef,
-  initialOptions,
-  onOptionsChange,
-}) => {
-  const { token } = theme.useToken();
-  const scoreMap = useRef<Record<string, number>>(
-    initialOptions.reduce<Record<string, number>>(
-      (m, o) => {
-        if (o.key === 'True' || o.key === 'False') m[o.key] = o.score;
-        return m;
-      },
-      { True: 0, False: 0 },
-    ),
-  );
-
-  const sync = (key: 'True' | 'False', value: number) => {
-    scoreMap.current[key] = value;
-    const next: OptionRow[] = TRUE_FALSE_DISPLAY.map((d) => ({
-      key: d.key,
-      label: d.label,
-      score: scoreMap.current[d.key] ?? 0,
-    }));
-    formRef.current?.setFieldsValue({ options: next });
-    onOptionsChange?.();
-  };
-
-  return (
-    <Flex gap={12}>
-      {TRUE_FALSE_DISPLAY.map((d) => (
-        <Flex
-          key={d.key}
-          align="center"
-          gap={10}
-          style={{
-            flex: 1,
-            padding: '8px 12px',
-            background: token.colorFillQuaternary,
-            borderRadius: token.borderRadiusSM,
-            border: `1px solid ${token.colorBorderSecondary}`,
-          }}
-        >
-          <Text
-            strong
-            style={{
-              fontSize: 14,
-              color: d.key === 'True' ? token.colorSuccess : token.colorError,
-            }}
-          >
-            {d.label}
-          </Text>
-          <div
-            style={{
-              flex: 1,
-              borderBottom: `1px dashed ${token.colorBorderSecondary}`,
-            }}
-          />
-          <Text type="secondary" style={{ fontSize: 13, flexShrink: 0 }}>
-            分数
-          </Text>
-          <InputNumber
-            defaultValue={
-              initialOptions.find((o) => o.key === d.key)?.score ?? 0
-            }
-            onChange={(v) => sync(d.key, v ?? 0)}
-            precision={1}
-            size="small"
-            style={{
-              width: 64,
-              flexShrink: 0,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          />
-        </Flex>
-      ))}
-      <ProForm.Item name="options" hidden />
-    </Flex>
-  );
-};
-
-// ---------- Options sub-editor ----------
-
-interface OptionsEditorProps {
-  formRef: React.RefObject<ProFormInstance | undefined>;
-  initialOptions: OptionRow[];
-  onOptionsChange?: () => void;
-}
-
-const OptionsEditor: React.FC<OptionsEditorProps> = ({
-  formRef,
-  initialOptions,
-  onOptionsChange,
-}) => {
-  const { token } = theme.useToken();
-  const [options, setLocalOptions] = useState<OptionRow[]>(initialOptions);
-
-  const setOptions = (next: OptionRow[]) => {
-    setLocalOptions(next);
-    formRef.current?.setFieldsValue({ options: next });
-    onOptionsChange?.();
-  };
-
-  const handleAdd = () => {
-    const nextKey =
-      OPTION_KEY_LETTERS[options.length] ?? `O${options.length + 1}`;
-    setOptions([...options, { key: nextKey, label: '', score: 0 }]);
-  };
-
-  const handleRemove = (idx: number) => {
-    const next = options.filter((_, i) => i !== idx);
-    const reKeyed = next.map((row, i) => ({
-      ...row,
-      key: OPTION_KEY_LETTERS[i] ?? `O${i + 1}`,
-    }));
-    setOptions(reKeyed);
-  };
-
-  const handleChange = (
-    idx: number,
-    field: 'label' | 'score',
-    value: string | number | null,
-  ) => {
-    const next = options.map((row, i) =>
-      i === idx
-        ? { ...row, [field]: value ?? (field === 'score' ? 0 : '') }
-        : row,
-    );
-    setOptions(next);
-  };
-
-  return (
-    <div>
-      {options.map((row, idx) => (
-        <Flex
-          key={row.key}
-          gap={8}
-          align="center"
-          style={{
-            marginBlockEnd: 8,
-            padding: '6px 8px',
-            background: token.colorFillQuaternary,
-            borderRadius: token.borderRadiusSM,
-          }}
-        >
-          <Text
-            strong
-            style={{
-              width: 24,
-              textAlign: 'center',
-              flexShrink: 0,
-              color: token.colorPrimary,
-            }}
-          >
-            {row.key}
-          </Text>
-          <Input
-            value={row.label}
-            onChange={(e) => handleChange(idx, 'label', e.target.value)}
-            placeholder="请输入选项文本…"
-            size="small"
-            style={{ flex: 1, minWidth: 0 }}
-          />
-          <Text type="secondary" style={{ flexShrink: 0, fontSize: 13 }}>
-            分数
-          </Text>
-          <InputNumber
-            value={row.score}
-            onChange={(v) => handleChange(idx, 'score', v)}
-            precision={1}
-            size="small"
-            style={{
-              width: 64,
-              flexShrink: 0,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          />
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleRemove(idx)}
-            aria-label={`删除选项 ${row.key}`}
-            disabled={options.length <= 1}
-          />
-        </Flex>
-      ))}
-
-      <Button
-        type="dashed"
-        size="small"
-        icon={<PlusOutlined />}
-        onClick={handleAdd}
-        style={{ marginBlockStart: 4 }}
-      >
-        添加选项
-      </Button>
-
-      <ProForm.Item name="options" hidden />
-    </div>
-  );
-};
-
-// ---------- Score-map sub-editor (fill_blank) ----------
-
-interface ScoreMapEditorProps {
-  formRef: React.RefObject<ProFormInstance | undefined>;
-  initialEntries: ScoreEntry[];
-  onScoreEntriesChange?: () => void;
-}
-
-const ScoreMapEditor: React.FC<ScoreMapEditorProps> = ({
-  formRef,
-  initialEntries,
-  onScoreEntriesChange,
-}) => {
-  const { token } = theme.useToken();
-  const [entries, setLocalEntries] = useState<ScoreEntry[]>(initialEntries);
-
-  const setEntries = (next: ScoreEntry[]) => {
-    setLocalEntries(next);
-    formRef.current?.setFieldsValue({ score_entries: next });
-    onScoreEntriesChange?.();
-  };
-
-  const handleAdd = () => {
-    setEntries([...entries, { _id: nextSeId(), answer: '', score: 0 }]);
-  };
-
-  const handleRemove = (idx: number) => {
-    setEntries(entries.filter((_, i) => i !== idx));
-  };
-
-  const handleChange = (
-    idx: number,
-    field: 'answer' | 'score',
-    value: string | number | null,
-  ) => {
-    const next = entries.map((row, i) =>
-      i === idx
-        ? { ...row, [field]: value ?? (field === 'score' ? 0 : '') }
-        : row,
-    );
-    setEntries(next);
-  };
-
-  return (
-    <div>
-      {entries.map((row, idx) => (
-        <Flex
-          key={row._id}
-          gap={8}
-          align="center"
-          style={{
-            marginBlockEnd: 8,
-            padding: '6px 8px',
-            background: token.colorFillQuaternary,
-            borderRadius: token.borderRadiusSM,
-          }}
-        >
-          <Input
-            value={row.answer}
-            onChange={(e) => handleChange(idx, 'answer', e.target.value)}
-            placeholder="答案文本…"
-            size="small"
-            style={{ flex: 1, minWidth: 0 }}
-          />
-          <Text type="secondary" style={{ flexShrink: 0, fontSize: 13 }}>
-            分数
-          </Text>
-          <InputNumber
-            value={row.score}
-            onChange={(v) => handleChange(idx, 'score', v)}
-            precision={1}
-            size="small"
-            style={{
-              width: 64,
-              flexShrink: 0,
-              fontVariantNumeric: 'tabular-nums',
-            }}
-          />
-          <Button
-            type="text"
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleRemove(idx)}
-            aria-label={`删除答案 ${idx + 1}`}
-            disabled={entries.length <= 1}
-          />
-        </Flex>
-      ))}
-
-      <Button
-        type="dashed"
-        size="small"
-        icon={<PlusOutlined />}
-        onClick={handleAdd}
-        style={{ marginBlockStart: 4 }}
-      >
-        添加答案
-      </Button>
-
-      <ProForm.Item name="score_entries" hidden />
-    </div>
-  );
-};

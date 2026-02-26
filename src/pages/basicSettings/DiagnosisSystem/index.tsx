@@ -28,10 +28,9 @@ import { deleteLabIndicator, getLabIndicators } from '@/services/lab-indicator';
 import type { LabIndicator } from '@/services/lab-indicator/typings.d';
 import { getStaticUrl } from '@/services/static';
 import { formatDateTime } from '@/utils/date';
-import CreateImagingForm from './components/CreateImagingForm';
-import CreateLabForm from './components/CreateLabForm';
-import EditImagingForm from './components/EditImagingForm';
-import EditLabForm from './components/EditLabForm';
+import { createProTableRequest } from '@/utils/proTableRequest';
+import CreateIndicatorForm from './components/CreateIndicatorForm';
+import EditIndicatorForm from './components/EditIndicatorForm';
 
 const { Link, Text } = Typography;
 
@@ -112,7 +111,8 @@ const DiagnosisSystem: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space>
-          <EditLabForm
+          <EditIndicatorForm
+            type="lab"
             trigger={
               <Button type="link" size="small" icon={<EditOutlined />}>
                 修改
@@ -174,7 +174,8 @@ const DiagnosisSystem: React.FC = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space>
-          <EditImagingForm
+          <EditIndicatorForm
+            type="imaging"
             trigger={
               <Button type="link" size="small" icon={<EditOutlined />}>
                 修改
@@ -202,37 +203,8 @@ const DiagnosisSystem: React.FC = () => {
     },
   ];
 
-  const fetchLabList = async (params: {
-    current?: number;
-    pageSize?: number;
-  }) => {
-    const { current = 1, pageSize = 10 } = params;
-    try {
-      const { data } = await getLabIndicators({
-        offset: (current - 1) * pageSize,
-        limit: pageSize,
-      });
-      return { data: data.items, total: data.total, success: true };
-    } catch {
-      return { data: [], total: 0, success: false };
-    }
-  };
-
-  const fetchImagingList = async (params: {
-    current?: number;
-    pageSize?: number;
-  }) => {
-    const { current = 1, pageSize = 10 } = params;
-    try {
-      const { data } = await getImagingIndicators({
-        offset: (current - 1) * pageSize,
-        limit: pageSize,
-      });
-      return { data: data.items, total: data.total, success: true };
-    } catch {
-      return { data: [], total: 0, success: false };
-    }
-  };
+  const fetchLabList = createProTableRequest(getLabIndicators);
+  const fetchImagingList = createProTableRequest(getImagingIndicators);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -332,8 +304,9 @@ const DiagnosisSystem: React.FC = () => {
             search={false}
             options={false}
             toolBarRender={() => [
-              <CreateLabForm
+              <CreateIndicatorForm
                 key="create"
+                type="lab"
                 onOk={() => labActionRef.current?.reload()}
               />,
             ]}
@@ -352,8 +325,9 @@ const DiagnosisSystem: React.FC = () => {
             search={false}
             options={false}
             toolBarRender={() => [
-              <CreateImagingForm
+              <CreateIndicatorForm
                 key="create"
+                type="imaging"
                 onOk={() => imagingActionRef.current?.reload()}
               />,
             ]}

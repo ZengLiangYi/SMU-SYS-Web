@@ -161,7 +161,11 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           <DrawerForm
             title="编辑个人信息"
             trigger={
-              <Button type="link" icon={<EditOutlined />}>
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                aria-label="编辑个人信息"
+              >
                 编辑
               </Button>
             }
@@ -302,6 +306,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           type="link"
           icon={<PlusOutlined />}
           onClick={() => openContactModal(null)}
+          aria-label="添加联系人"
         >
           添加联系人
         </Button>
@@ -392,6 +397,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
                         setViewingRecord(item);
                         setDetailModalVisible(true);
                       }}
+                      aria-label="查看随访详情"
                     >
                       详情
                     </Button>
@@ -442,7 +448,11 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         onCancel={() => setDetailModalVisible(false)}
         destroyOnHidden
         footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+          <Button
+            key="close"
+            onClick={() => setDetailModalVisible(false)}
+            aria-label="关闭"
+          >
             关闭
           </Button>,
         ]}

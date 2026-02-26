@@ -22,7 +22,7 @@ interface CreateReferralFormProps {
   patientId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onOk?: () => void;
+  onOk?: (referralType: 'internal' | 'external') => void;
 }
 
 const CreateReferralForm: FC<CreateReferralFormProps> = ({
@@ -50,7 +50,7 @@ const CreateReferralForm: FC<CreateReferralFormProps> = ({
         } else {
           message.success('院外转诊记录创建成功');
         }
-        onOk?.();
+        onOk?.(params.referral_type as 'internal' | 'external');
       },
       onError: () => {
         message.error('转诊失败，请重试');

@@ -236,19 +236,23 @@ const NotificationBell: React.FC = () => {
       placement="bottomRight"
       arrow={false}
     >
-      <span
+      <button
+        type="button"
+        aria-label="通知"
         style={{
           display: 'inline-flex',
           padding: 4,
           fontSize: 18,
           color: 'inherit',
           cursor: 'pointer',
+          background: 'none',
+          border: 'none',
         }}
       >
         <Badge count={unreadCount} size="small" offset={[2, -2]}>
           <BellOutlined />
         </Badge>
-      </span>
+      </button>
     </Popover>
   );
 };

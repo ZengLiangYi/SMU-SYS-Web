@@ -96,6 +96,19 @@ const ScaleForm: React.FC = () => {
     setDirty(value);
   }, []);
 
+  const confirmUnsavedLeave = useCallback(
+    (onConfirm: () => void) => {
+      modal.confirm({
+        title: '有未保存的修改',
+        content: '确定要离开吗？未保存的修改将丢失。',
+        okText: '离开',
+        cancelText: '留下',
+        onOk: onConfirm,
+      });
+    },
+    [modal],
+  );
+
   // ---------- Unsaved changes guard ----------
   useEffect(() => {
     if (!dirty) return;
@@ -107,39 +120,27 @@ const ScaleForm: React.FC = () => {
         tx.retry();
         return;
       }
-      modal.confirm({
-        title: '有未保存的修改',
-        content: '确定要离开吗？未保存的修改将丢失。',
-        okText: '离开',
-        cancelText: '留下',
-        onOk: () => {
-          unblock();
-          tx.retry();
-        },
+      confirmUnsavedLeave(() => {
+        unblock();
+        tx.retry();
       });
     });
     return () => {
       window.removeEventListener('beforeunload', onBeforeUnload);
       unblock();
     };
-  }, [dirty, modal]);
+  }, [dirty, confirmUnsavedLeave]);
 
   const handleLeave = useCallback(() => {
     if (dirty) {
-      modal.confirm({
-        title: '有未保存的修改',
-        content: '确定要离开吗？未保存的修改将丢失。',
-        okText: '离开',
-        cancelText: '留下',
-        onOk: () => {
-          setDirtyState(false);
-          history.push(BACK_URL);
-        },
+      confirmUnsavedLeave(() => {
+        setDirtyState(false);
+        history.push(BACK_URL);
       });
     } else {
       history.push(BACK_URL);
     }
-  }, [dirty, modal, setDirtyState]);
+  }, [dirty, confirmUnsavedLeave, setDirtyState]);
 
   // ---------- Sync editor -> questions before switching ----------
   const syncCurrentEditor = useCallback(() => {
@@ -211,6 +212,7 @@ const ScaleForm: React.FC = () => {
         return next;
       });
       setActiveIndex(newActive);
+      setDataVersion((v) => v + 1);
       setDirtyState(true);
     },
     [setDirtyState],
@@ -398,7 +400,7 @@ const ScaleForm: React.FC = () => {
       title={isEditMode ? '编辑量表' : '添加量表'}
       onBack={handleLeave}
       footer={[
-        <Button key="cancel" onClick={handleLeave}>
+        <Button key="cancel" onClick={handleLeave} aria-label="取消编辑">
           取消
         </Button>,
         <Button
@@ -406,6 +408,7 @@ const ScaleForm: React.FC = () => {
           type="primary"
           loading={saving}
           onClick={handleSubmit}
+          aria-label="保存量表"
         >
           {saving ? '保存中…' : '保存'}
         </Button>,

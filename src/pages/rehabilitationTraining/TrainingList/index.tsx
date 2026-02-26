@@ -18,6 +18,7 @@ import type { RehabLevel } from '@/services/rehab-level/typings.d';
 import { getStaticUrl } from '@/services/static';
 import { REHAB_LEVEL_TYPE_ENUM } from '@/utils/constants';
 import { formatDateTime } from '@/utils/date';
+import { createProTableRequest } from '@/utils/proTableRequest';
 import CreateTrainingForm from './components/CreateTrainingForm';
 import DetailModal from './components/DetailModal';
 import EditTrainingForm from './components/EditTrainingForm';
@@ -27,8 +28,13 @@ const { Link, Paragraph, Text } = Typography;
 const TrainingList: React.FC = () => {
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<RehabLevel | null>(null);
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    record: RehabLevel | null;
+  }>({
+    open: false,
+    record: null,
+  });
 
   const { run: runDelete } = useRequest(deleteRehabLevel, {
     manual: true,
@@ -48,20 +54,10 @@ const TrainingList: React.FC = () => {
         search={{ labelWidth: 'auto' }}
         pagination={{ pageSize: 12 }}
         grid={{ gutter: [16, 16], column: 4 }}
-        request={async (params) => {
-          const { current = 1, pageSize = 12, name, level_type } = params;
-          try {
-            const { data } = await getRehabLevels({
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-              name: name || undefined,
-              level_type: level_type || undefined,
-            });
-            return { data: data.items, total: data.total, success: true };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
+        request={createProTableRequest(getRehabLevels, (p) => ({
+          name: p.name || undefined,
+          level_type: p.level_type || undefined,
+        }))}
         metas={{
           name: { dataIndex: 'name', title: '关卡名称' },
           level_type: {
@@ -92,10 +88,7 @@ const TrainingList: React.FC = () => {
               actions={[
                 <Link
                   key="detail"
-                  onClick={() => {
-                    setViewingRecord(item);
-                    setDetailModalVisible(true);
-                  }}
+                  onClick={() => setDetailModal({ open: true, record: item })}
                 >
                   <EyeOutlined /> 详情
                 </Link>,
@@ -153,9 +146,9 @@ const TrainingList: React.FC = () => {
       />
 
       <DetailModal
-        open={detailModalVisible}
-        record={viewingRecord}
-        onCancel={() => setDetailModalVisible(false)}
+        open={detailModal.open}
+        record={detailModal.record}
+        onCancel={() => setDetailModal((s) => ({ ...s, open: false }))}
       />
     </PageContainer>
   );

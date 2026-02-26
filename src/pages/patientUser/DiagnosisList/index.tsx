@@ -9,6 +9,7 @@ import type { DiagnosisRecordListItem } from '@/services/diagnosis/typings.d';
 import { getDiseaseMetadata } from '@/services/doctor-metadata';
 import { CROWD_CATEGORY_ENUM, getCategoryColor } from '@/utils/constants';
 import { formatDateTime } from '@/utils/date';
+import { createProTableRequest } from '@/utils/proTableRequest';
 
 const DiagnosisList: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
@@ -23,7 +24,9 @@ const DiagnosisList: React.FC = () => {
         for (const d of data) map.set(d.id, d.name);
         setDiseaseMap(map);
       })
-      .catch(() => {});
+      .catch((error) =>
+        console.error('Failed to fetch disease metadata:', error),
+      );
   }, []);
 
   const columns: ProColumns<DiagnosisRecordListItem>[] = [
@@ -128,28 +131,11 @@ const DiagnosisList: React.FC = () => {
     },
   ];
 
-  // -------- 列表请求 --------
-  const fetchList = async (params: {
-    current?: number;
-    pageSize?: number;
-    patient_name?: string;
-    category?: string;
-    doctor_name?: string;
-  }) => {
-    const { current = 1, pageSize = 10 } = params;
-    try {
-      const { data } = await getDiagnosisRecords({
-        offset: (current - 1) * pageSize,
-        limit: pageSize,
-        patient_name: params.patient_name,
-        category: params.category,
-        doctor_name: params.doctor_name,
-      });
-      return { data: data.items, total: data.total, success: true };
-    } catch {
-      return { data: [], total: 0, success: false };
-    }
-  };
+  const fetchList = createProTableRequest(getDiagnosisRecords, (p) => ({
+    patient_name: p.patient_name,
+    category: p.category,
+    doctor_name: p.doctor_name,
+  }));
 
   return (
     <PageContainer>

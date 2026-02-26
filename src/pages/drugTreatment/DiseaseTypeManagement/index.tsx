@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 import { deleteDiseaseType, getDiseaseTypes } from '@/services/disease-type';
 import type { DiseaseType } from '@/services/disease-type/typings.d';
 import { formatDateTime } from '@/utils/date';
+import { createProTableRequest } from '@/utils/proTableRequest';
 import CreateDiseaseTypeForm from './components/CreateDiseaseTypeForm';
 import DetailModal from './components/DetailModal';
 import EditDiseaseTypeForm from './components/EditDiseaseTypeForm';
@@ -16,8 +17,13 @@ const { Link, Paragraph } = Typography;
 const DiseaseTypeList: React.FC = () => {
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<DiseaseType | null>(null);
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    record: DiseaseType | null;
+  }>({
+    open: false,
+    record: null,
+  });
 
   const { run: runDelete } = useRequest(deleteDiseaseType, {
     manual: true,
@@ -75,12 +81,7 @@ const DiseaseTypeList: React.FC = () => {
       width: 200,
       render: (_, record) => (
         <Space>
-          <Link
-            onClick={() => {
-              setViewingRecord(record);
-              setDetailModalOpen(true);
-            }}
-          >
+          <Link onClick={() => setDetailModal({ open: true, record })}>
             <EyeOutlined /> 详情
           </Link>
           <EditDiseaseTypeForm
@@ -99,7 +100,13 @@ const DiseaseTypeList: React.FC = () => {
             okText="确定"
             cancelText="取消"
           >
-            <Button type="link" danger size="small" style={{ padding: 0 }}>
+            <Button
+              type="link"
+              danger
+              size="small"
+              style={{ padding: 0 }}
+              aria-label="删除"
+            >
               <DeleteOutlined /> 删除
             </Button>
           </Popconfirm>
@@ -121,33 +128,18 @@ const DiseaseTypeList: React.FC = () => {
             onOk={() => actionRef.current?.reload()}
           />,
         ]}
-        request={async (params) => {
-          const {
-            current = 1,
-            pageSize = 10,
-            disease_name,
-            disease_category,
-          } = params;
-          try {
-            const { data } = await getDiseaseTypes({
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-              disease_name: disease_name || undefined,
-              disease_category: disease_category || undefined,
-            });
-            return { data: data.items, total: data.total, success: true };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
+        request={createProTableRequest(getDiseaseTypes, (p) => ({
+          disease_name: p.disease_name || undefined,
+          disease_category: p.disease_category || undefined,
+        }))}
         columns={columns}
         pagination={{ pageSize: 10 }}
       />
 
       <DetailModal
-        open={detailModalOpen}
-        record={viewingRecord}
-        onCancel={() => setDetailModalOpen(false)}
+        open={detailModal.open}
+        record={detailModal.record}
+        onCancel={() => setDetailModal((s) => ({ ...s, open: false }))}
       />
     </PageContainer>
   );

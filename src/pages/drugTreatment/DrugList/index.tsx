@@ -17,6 +17,7 @@ import { deleteMedicine, getMedicines } from '@/services/medicine';
 import type { Medicine } from '@/services/medicine/typings.d';
 import { getStaticUrl } from '@/services/static';
 import { formatDateTime } from '@/utils/date';
+import { createProTableRequest } from '@/utils/proTableRequest';
 import CreateMedicineForm from './components/CreateMedicineForm';
 import DetailModal from './components/DetailModal';
 import EditMedicineForm from './components/EditMedicineForm';
@@ -26,8 +27,13 @@ const { Link, Paragraph, Text } = Typography;
 const DrugList: React.FC = () => {
   const { message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
-  const [detailModalVisible, setDetailModalVisible] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<Medicine | null>(null);
+  const [detailModal, setDetailModal] = useState<{
+    open: boolean;
+    record: Medicine | null;
+  }>({
+    open: false,
+    record: null,
+  });
 
   const { run: runDelete } = useRequest(deleteMedicine, {
     manual: true,
@@ -47,20 +53,10 @@ const DrugList: React.FC = () => {
         search={{ labelWidth: 'auto' }}
         pagination={{ pageSize: 12 }}
         grid={{ gutter: [16, 16], column: 4 }}
-        request={async (params) => {
-          const { current = 1, pageSize = 12, name, treatment_type } = params;
-          try {
-            const { data } = await getMedicines({
-              offset: (current - 1) * pageSize,
-              limit: pageSize,
-              name: name || undefined,
-              treatment_type: treatment_type || undefined,
-            });
-            return { data: data.items, total: data.total, success: true };
-          } catch {
-            return { data: [], total: 0, success: false };
-          }
-        }}
+        request={createProTableRequest(getMedicines, (p) => ({
+          name: p.name || undefined,
+          treatment_type: p.treatment_type || undefined,
+        }))}
         metas={{
           name: { dataIndex: 'name', title: '药物名称' },
           treatment_type: { dataIndex: 'treatment_type', title: '药物类型' },
@@ -86,10 +82,7 @@ const DrugList: React.FC = () => {
               actions={[
                 <Link
                   key="detail"
-                  onClick={() => {
-                    setViewingRecord(item);
-                    setDetailModalVisible(true);
-                  }}
+                  onClick={() => setDetailModal({ open: true, record: item })}
                 >
                   <EyeOutlined /> 详情
                 </Link>,
@@ -150,9 +143,9 @@ const DrugList: React.FC = () => {
       />
 
       <DetailModal
-        open={detailModalVisible}
-        record={viewingRecord}
-        onCancel={() => setDetailModalVisible(false)}
+        open={detailModal.open}
+        record={detailModal.record}
+        onCancel={() => setDetailModal((s) => ({ ...s, open: false }))}
       />
     </PageContainer>
   );
