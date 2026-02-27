@@ -24,7 +24,12 @@ export function useSocket<T extends SocketEventType>(
 
   useEffect(() => {
     const socket = getSocket();
-    if (!socket) return;
+    if (!socket) {
+      console.warn(
+        `[useSocket] socket 不可用，跳过 "${eventType}" 订阅`,
+      );
+      return;
+    }
 
     const stableHandler = (payload: SocketEventMap[T]) => {
       handlerRef.current(payload);

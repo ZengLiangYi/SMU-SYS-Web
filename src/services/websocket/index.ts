@@ -2,11 +2,9 @@ import { io, Socket } from 'socket.io-client';
 import type { SocketEventMap, SocketEventType } from './typings.d';
 
 const HEARTBEAT_INTERVAL = 30_000; // 30s
+const IS_DEV = process.env.NODE_ENV === 'development';
 // 开发走 proxy，生产用实际地址
-const WS_URL =
-  process.env.NODE_ENV === 'development'
-    ? undefined
-    : 'https://alzheimer.dianchuang.club';
+const WS_URL = IS_DEV ? undefined : 'https://alzheimer.dianchuang.club';
 
 let socket: Socket | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
@@ -27,21 +25,41 @@ export function connectSocket(token: string): Socket {
   socket = io(WS_URL ?? '', {
     path: '/socket.io',
     auth: { token, role: 'doctor' },
-    transports: ['websocket', 'polling'],
+    // 开发环境代理不支持 WebSocket 升级，仅用 polling；生产直连支持双协议
+    transports: IS_DEV ? ['polling'] : ['polling', 'websocket'],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
     reconnectionDelayMax: 10000,
   });
 
-  // 连接成功后启动心跳
+  // -------- 连接生命周期日志 --------
   socket.on('connect', () => {
+    console.log('[WebSocket] 连接成功, id:', socket?.id);
     startHeartbeat();
   });
 
-  // 断线时清除心跳
-  socket.on('disconnect', () => {
+  socket.on('connect_error', (err) => {
+    console.error('[WebSocket] 连接失败:', err.message);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.warn('[WebSocket] 断开, 原因:', reason);
     stopHeartbeat();
+  });
+
+  // Manager 级事件（重连）
+  socket.io.on('reconnect', (attempt: number) => {
+    console.log('[WebSocket] 重连成功, 尝试次数:', attempt);
+  });
+
+  socket.io.on('reconnect_error', (err: Error) => {
+    console.error('[WebSocket] 重连失败:', err.message);
+  });
+
+  // 服务端鉴权/系统错误（文档 §5.4）
+  socket.on('system:error', (payload: unknown) => {
+    console.error('[WebSocket] 服务端错误:', payload);
   });
 
   return socket;
