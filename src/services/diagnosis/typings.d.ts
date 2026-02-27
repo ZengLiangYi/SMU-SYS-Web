@@ -35,6 +35,7 @@ export interface DiagnosisDetailResponse {
   exercise_plan: ExercisePlanItem[];
   diet_plan: string | null;
   prescription_summary: string | null;
+  unfinished_scale_ids: string[];
 }
 
 // -------- 诊疗更新请求（支持分步提交） --------

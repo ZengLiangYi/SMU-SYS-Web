@@ -21,7 +21,9 @@ import type {
   ExerciseRecordListResult,
   PatientAnalysisParams,
   PatientHealthAnalysis,
+  ScaleScoreListParams,
   ScaleScoreResult,
+  ScaleTestRecordDetail,
   HealthMetricListParams,
   HealthMetricListResult,
   RehabScoreRecordListParams,
@@ -190,11 +192,27 @@ export async function getPatientAnalysis(
 }
 
 /**
- * 获取患者量表分数
+ * 分页查询患者量表分数
  */
-export async function getScaleScores(patientId: string) {
+export async function getScaleScores(
+  patientId: string,
+  params?: ScaleScoreListParams,
+) {
   return request<API.ApiResponse<ScaleScoreResult>>(
     `/api/doctor/patients/${patientId}/scale-scores`,
+    { method: 'GET', params },
+  );
+}
+
+/**
+ * 获取患者量表作答详情
+ */
+export async function getScaleTestDetail(
+  patientId: string,
+  recordId: string,
+) {
+  return request<API.ApiResponse<ScaleTestRecordDetail>>(
+    `/api/doctor/patients/${patientId}/scale-tests/${recordId}`,
     { method: 'GET' },
   );
 }

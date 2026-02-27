@@ -8,7 +8,7 @@ import {
 } from '@ant-design/pro-components';
 import { history, useSearchParams } from '@umijs/max';
 import type { FormInstance } from 'antd';
-import { App, Button, Flex, Spin, Typography } from 'antd';
+import { Alert, App, Button, Flex, Spin, Typography } from 'antd';
 import React, {
   useCallback,
   useEffect,
@@ -16,7 +16,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { updateDiagnosis } from '@/services/diagnosis';
+import { getCurrentDiagnosis, updateDiagnosis } from '@/services/diagnosis';
 import type { ScreeningItems } from '@/services/diagnosis/typings.d';
 import { getFileUrl, getUploadProps, urlToUploadFile } from '@/utils/upload';
 import AICheckContent from './components/AICheckContent';
@@ -411,16 +411,37 @@ const Diagnosis: React.FC = () => {
                 const { labResultImages, imagingResultImages } =
                   extractStep2ImageUrls();
                 const id = await ensureDiagnosisId();
-                await updateDiagnosis(patientId, id, {
-                  lab_result_images:
-                    Object.keys(labResultImages).length > 0
-                      ? labResultImages
-                      : undefined,
-                  imaging_result_images:
-                    Object.keys(imagingResultImages).length > 0
-                      ? imagingResultImages
-                      : undefined,
-                });
+
+                // async-parallel: 保存图片与查询量表状态互不依赖，并行执行
+                const [, freshRes] = await Promise.all([
+                  updateDiagnosis(patientId, id, {
+                    lab_result_images:
+                      Object.keys(labResultImages).length > 0
+                        ? labResultImages
+                        : undefined,
+                    imaging_result_images:
+                      Object.keys(imagingResultImages).length > 0
+                        ? imagingResultImages
+                        : undefined,
+                  }),
+                  getCurrentDiagnosis(patientId),
+                ]);
+
+                // 校验量表完成状态
+                const unfinished = freshRes.data?.unfinished_scale_ids ?? [];
+                if (unfinished.length > 0) {
+                  const nameMap = new Map(
+                    scaleItems.map((s) => [s.id, s.name]),
+                  );
+                  const names = unfinished
+                    .map((uid) => nameMap.get(uid) ?? uid)
+                    .join('、');
+                  message.warning(
+                    `以下量表尚未完成：${names}，请等待患者完成后再进行下一步`,
+                  );
+                  return false;
+                }
+
                 loadDiagnosisData();
                 return true;
               } catch {
@@ -429,6 +450,22 @@ const Diagnosis: React.FC = () => {
               }
             }}
           >
+            {diagnosisData?.unfinished_scale_ids?.length ? (
+              <Alert
+                type="warning"
+                showIcon
+                style={{ marginBottom: 16 }}
+                message="以下量表尚未完成"
+                description={(() => {
+                  const nameMap = new Map(
+                    scaleItems.map((s) => [s.id, s.name]),
+                  );
+                  return diagnosisData.unfinished_scale_ids
+                    .map((id) => nameMap.get(id) ?? id)
+                    .join('、');
+                })()}
+              />
+            ) : null}
             {selectedLabItems.length > 0 ? (
               <>
                 <Text strong style={{ display: 'block', marginBottom: 8 }}>
@@ -441,6 +478,12 @@ const Diagnosis: React.FC = () => {
                     label={item.name}
                     title="上传"
                     max={1}
+                    rules={[
+                      {
+                        required: true,
+                        message: `请上传${item.name}检测结果`,
+                      },
+                    ]}
                     fieldProps={{
                       ...uploadFieldProps,
                       onChange: handleUploadChange,
@@ -461,6 +504,12 @@ const Diagnosis: React.FC = () => {
                     label={item.name}
                     title="上传"
                     max={1}
+                    rules={[
+                      {
+                        required: true,
+                        message: `请上传${item.name}影像资料`,
+                      },
+                    ]}
                     fieldProps={{
                       ...uploadFieldProps,
                       onChange: handleUploadChange,

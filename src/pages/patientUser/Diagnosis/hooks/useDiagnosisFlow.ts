@@ -50,14 +50,19 @@ export function computeCurrentStep(
     (data.screening_items?.selected_imaging_tests?.length ?? 0) > 0;
   if (!hasScreening) return 1;
 
-  // Step 2 or 3: C2 FIX
+  // Step 2 or 3: 仅当所有选中检查项都已上传时才跳到 Step 3
   if (!data.diagnosis_results?.length) {
-    const hasLabImages =
-      data.lab_result_images && Object.keys(data.lab_result_images).length > 0;
-    const hasImagingImages =
-      data.imaging_result_images &&
-      Object.keys(data.imaging_result_images).length > 0;
-    if (hasLabImages || hasImagingImages) return 3;
+    const selectedLabs = data.screening_items?.selected_lab_tests ?? [];
+    const selectedImaging = data.screening_items?.selected_imaging_tests ?? [];
+    const hasExpected = selectedLabs.length > 0 || selectedImaging.length > 0;
+    const allLabUploaded = selectedLabs.every(
+      (id) => data.lab_result_images?.[id],
+    );
+    const allImagingUploaded = selectedImaging.every(
+      (id) => data.imaging_result_images?.[id],
+    );
+
+    if (hasExpected && allLabUploaded && allImagingUploaded) return 3;
     return 2;
   }
 

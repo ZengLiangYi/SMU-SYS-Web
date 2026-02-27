@@ -241,6 +241,11 @@ export interface ScoreTrendPoint {
   score: number;
 }
 
+export interface NullableScoreTrendPoint {
+  bucket_start: string;
+  score: number | null;
+}
+
 export interface PatientHealthAnalysis {
   granularity: 'day' | 'week' | 'month';
   start_date: string;
@@ -248,11 +253,11 @@ export interface PatientHealthAnalysis {
   blood_pressure_score: ScoreTrendPoint[];
   blood_glucose_score: ScoreTrendPoint[];
   blood_lipid_score: ScoreTrendPoint[];
-  diet_score: ScoreTrendPoint[];
-  exercise_score: ScoreTrendPoint[];
-  medication_adherence_score: ScoreTrendPoint[];
-  composite_scale_score: ScoreTrendPoint[];
-  overall_user_score: ScoreTrendPoint[];
+  diet_score: NullableScoreTrendPoint[];
+  exercise_score: NullableScoreTrendPoint[];
+  medication_adherence_score: NullableScoreTrendPoint[];
+  composite_scale_score: NullableScoreTrendPoint[];
+  overall_user_score: NullableScoreTrendPoint[];
 }
 
 export interface PatientAnalysisParams {
@@ -266,10 +271,53 @@ export interface ScaleScoreItem {
   scale_id: string;
   scale_name: string;
   score: number | null;
+  tested_at: string;
+  record_id?: string;
+}
+
+export interface ScaleScoreListParams {
+  offset?: number;
+  limit?: number;
 }
 
 export interface ScaleScoreResult {
+  total: number;
+  offset: number;
+  limit: number;
   items: ScaleScoreItem[];
+}
+
+// -------- 量表作答详情 --------
+export interface ScaleTestQuestionOption {
+  key: string;
+  label: string;
+}
+
+export interface ScaleTestQuestionContent {
+  options: ScaleTestQuestionOption[];
+  score_map: Record<string, number>;
+  allow_multiple: boolean;
+  default_score: number;
+}
+
+export interface ScaleTestAnswerDetailItem {
+  question_id: string;
+  question_stem: string;
+  question_type: 'single_choice' | 'fill_blank' | 'short_answer' | 'true_false';
+  sort_order: number;
+  question_content: ScaleTestQuestionContent;
+  user_answers: string[];
+  awarded_score: number;
+}
+
+export interface ScaleTestRecordDetail {
+  id: string;
+  patient_id: string;
+  scale_id: string;
+  scale_name: string;
+  score: number;
+  tested_at: string;
+  items: ScaleTestAnswerDetailItem[];
 }
 
 // -------- 健康指标记录 --------
