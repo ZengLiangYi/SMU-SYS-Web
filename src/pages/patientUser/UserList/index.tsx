@@ -275,21 +275,26 @@ const UserList: React.FC = () => {
     name?: string;
     categories?: string;
   }) => {
-    const { current = 1, pageSize = 10 } = params;
+    const { current = 1, pageSize = 10, name, categories } = params;
     const offset = (current - 1) * pageSize;
+    const searchParams = {
+      offset,
+      limit: pageSize,
+      name: name || undefined,
+      categories: categories || undefined,
+    };
     try {
       // js-early-exit: 已绑定 tab 无需查询绑定请求
       if (isBound) {
         const { data } = await getPatients({
-          offset,
-          limit: pageSize,
+          ...searchParams,
           is_bound: true,
         });
         return { data: data.items, total: data.total, success: true };
       }
       // async-parallel: 未绑定 tab 并行获取患者列表 + 待处理绑定请求
       const [patientsRes, bindRes] = await Promise.all([
-        getPatients({ offset, limit: pageSize, is_bound: false }),
+        getPatients({ ...searchParams, is_bound: false }),
         getBindRequests({ status: 'pending', limit: 100 }),
       ]);
       // js-set-map-lookups: 构建 Map<patient_id, request_id>，仅匹配当前医生

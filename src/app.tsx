@@ -179,7 +179,13 @@ export const antd: RuntimeAntdConfig = (memo) => {
     const stored = localStorage.getItem('systemFontSize');
     if (stored) {
       const size = parseInt(stored, 10);
-      if (size >= 12 && size <= 20) memo.theme.token.fontSize = size;
+      if (size >= 12 && size <= 24) {
+        memo.theme.token.fontSize = size;
+        // 大字体自适应：按比例缩放控件高度，避免文字溢出
+        if (size > 14) {
+          memo.theme.token.controlHeight = Math.round(32 * (size / 14));
+        }
+      }
     }
   } catch {
     /* localStorage 可能不可用 */

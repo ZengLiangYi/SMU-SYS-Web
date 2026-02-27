@@ -27,12 +27,14 @@ const ReferralHospital: React.FC = () => {
     {
       title: '医院名称',
       dataIndex: 'hospital_name',
+      width: 180,
       ellipsis: true,
     },
     {
       title: '医院地址',
       dataIndex: 'hospital_address',
       search: false,
+      width: 220,
       ellipsis: true,
     },
     {
@@ -44,6 +46,7 @@ const ReferralHospital: React.FC = () => {
     {
       title: '对接医师',
       dataIndex: 'doctor_name',
+      width: 120,
     },
     {
       title: '职称',
@@ -112,6 +115,7 @@ const ReferralHospital: React.FC = () => {
           doctor_name: p.doctor_name || undefined,
         }))}
         columns={columns}
+        scroll={{ x: 1060 }}
         pagination={{ pageSize: 10 }}
       />
     </PageContainer>

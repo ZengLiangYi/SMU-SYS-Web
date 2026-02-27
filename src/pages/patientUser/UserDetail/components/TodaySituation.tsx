@@ -378,6 +378,7 @@ const TodaySituation: React.FC<TodaySituationProps> = ({ patientId }) => {
           total: MOCK_COGNITIVE_TRAINING_RECORDS.length,
         })}
         columns={cognitiveTrainingColumns}
+        scroll={{ x: 900 }}
         pagination={{ defaultPageSize: 5 }}
       />
     </div>

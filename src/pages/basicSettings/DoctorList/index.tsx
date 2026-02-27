@@ -107,6 +107,7 @@ const DoctorList: React.FC = () => {
           code: p.code || undefined,
         }))}
         columns={columns}
+        scroll={{ x: 700 }}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

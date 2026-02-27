@@ -38,12 +38,24 @@ const DiseaseTypeList: React.FC = () => {
     {
       title: '疾病名称',
       dataIndex: 'disease_name',
+      width: 200,
       ellipsis: true,
     },
     {
       title: '疾病类别',
       dataIndex: 'disease_category',
-      render: (_, record) => <Tag>{record.disease_category}</Tag>,
+      width: 120,
+      render: (_, record) => (
+        <Tag
+          style={{
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {record.disease_category}
+        </Tag>
+      ),
     },
     {
       title: '临床表现',
@@ -133,6 +145,7 @@ const DiseaseTypeList: React.FC = () => {
           disease_category: p.disease_category || undefined,
         }))}
         columns={columns}
+        scroll={{ x: 1090 }}
         pagination={{ pageSize: 10 }}
       />
 

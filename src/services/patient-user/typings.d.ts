@@ -16,6 +16,8 @@ export interface PatientListParams {
   offset?: number;
   limit?: number;
   is_bound?: boolean; // 是否查询已绑定患者（默认 true）
+  name?: string;
+  categories?: string;
 }
 
 // -------- 患者列表响应 --------
