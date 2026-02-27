@@ -138,7 +138,7 @@ const QuestionNav: React.FC<QuestionNavProps> = React.memo(
                       {q.question_type && (
                         <Tag
                           style={{ alignSelf: 'flex-start', fontSize: 11 }}
-                          bordered={false}
+                          variant="filled"
                         >
                           {QUESTION_TYPE_LABELS[q.question_type] ??
                             q.question_type}

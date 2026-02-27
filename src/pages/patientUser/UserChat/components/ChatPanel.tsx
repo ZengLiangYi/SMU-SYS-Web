@@ -47,11 +47,13 @@ const RECALL_LIMIT_MINUTES = 2;
 interface ChatPanelProps {
   conversationId: string | null;
   patientInfo: PatientListItem | null;
+  onConversationRead?: () => void;
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({
   conversationId,
   patientInfo,
+  onConversationRead,
 }) => {
   const { message: antMessage } = App.useApp();
   const { initialState } = useModel('@@initialState');
@@ -177,10 +179,12 @@ const ChatPanel: React.FC<ChatPanelProps> = ({
     const { conversation_id, message: newMsg } = payload.data;
     if (conversation_id === conversationId) {
       setMessages((prev) => [...prev, newMsg]);
-      // 当前会话收到新消息自动标记已读
-      markConversationRead(conversation_id).catch((error) =>
-        console.error('Failed to mark conversation read:', error),
-      );
+      // 当前会话收到新消息自动标记已读，完成后通知父组件刷新会话列表以清除红点
+      markConversationRead(conversation_id)
+        .then(() => onConversationRead?.())
+        .catch((error) =>
+          console.error('Failed to mark conversation read:', error),
+        );
     }
   });
 

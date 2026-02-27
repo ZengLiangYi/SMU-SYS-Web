@@ -26,7 +26,7 @@ const PatientInfoHeader: React.FC<PatientInfoHeaderProps> = ({
         />
       </div>
 
-      <Divider type="vertical" style={{ height: 'auto' }} />
+      <Divider orientation="vertical" style={{ height: 'auto' }} />
 
       <div style={{ flex: 1 }}>
         <Flex justify="space-between" align="flex-start">

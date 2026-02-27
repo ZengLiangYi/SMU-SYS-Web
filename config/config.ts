@@ -3,6 +3,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { defineConfig } from '@umijs/max';
+import zhCN from 'antd/locale/zh_CN';
 import defaultSettings from './defaultSettings';
 import proxy from './proxy';
 
@@ -111,6 +112,7 @@ export default defineConfig({
   antd: {
     appConfig: {},
     configProvider: {
+      locale: zhCN,
       theme: {
         cssVar: true,
         token: {

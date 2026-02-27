@@ -77,8 +77,6 @@ const DoctorList: React.FC = () => {
             title="确认删除"
             description={`确定要删除医师「${record.name}」吗？`}
             onConfirm={() => runDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除

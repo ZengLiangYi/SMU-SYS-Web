@@ -111,7 +111,7 @@ const CognitiveTraining: FC<CognitiveTrainingProps> = ({
         options={selectOptions}
         onSearch={handleSearch}
         onSelect={handleSelect}
-        onDropdownVisibleChange={handleDropdownOpen}
+        onOpenChange={handleDropdownOpen}
         notFoundContent={fetching ? <Spin size="small" /> : undefined}
         style={{ width: '100%', marginBottom: 12 }}
         aria-label="搜索训练项目添加"

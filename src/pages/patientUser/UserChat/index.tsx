@@ -120,7 +120,9 @@ const UserChat: React.FC = () => {
         // 已有会话，直接激活
         setActiveConvId(existingConv.id);
         setSearchParams({ patientId, conversationId: existingConv.id });
-        markConversationRead(existingConv.id).catch(() => {});
+        markConversationRead(existingConv.id)
+          .then(() => refreshConvs())
+          .catch(() => {});
       } else {
         // 无会话，创建新会话
         try {
@@ -195,6 +197,7 @@ const UserChat: React.FC = () => {
           <ChatPanel
             conversationId={activeConvId}
             patientInfo={activePatient}
+            onConversationRead={refreshConvs}
           />
         </Splitter.Panel>
       </Splitter>

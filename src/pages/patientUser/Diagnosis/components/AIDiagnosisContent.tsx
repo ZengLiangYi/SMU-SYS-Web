@@ -26,7 +26,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   if (loading) {
     return (
       <Spin
-        tip="AI 正在诊断分析中…"
+        description="AI 正在诊断分析中，大约需要 1-2 分钟…"
         style={{ display: 'block', padding: 60, textAlign: 'center' }}
       />
     );
@@ -37,7 +37,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
       <Alert
         type="warning"
         showIcon
-        message="AI 未能生成诊断建议"
+        title="AI 未能生成诊断建议"
         description="请根据检查结果手动选择诊断。"
         style={{ marginBottom: 16 }}
       />
@@ -49,7 +49,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   return (
     <Flex gap={16} wrap style={{ marginBottom: 16 }}>
       {/* 左侧：AI 诊断结果 */}
-      <Card title="AI 诊断结果" bordered style={{ flex: 1, minWidth: 300 }}>
+      <Card title="AI 诊断结果" style={{ flex: 1, minWidth: 300 }}>
         {primaryDisease ? (
           <div style={{ marginBottom: 16 }}>
             <Text strong>首选诊断</Text>
@@ -93,7 +93,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
 
       {/* 预防建议 */}
       {preventionAdvice ? (
-        <Card title="预防建议" bordered style={{ flex: 1, minWidth: 300 }}>
+        <Card title="预防建议" style={{ flex: 1, minWidth: 300 }}>
           <Paragraph style={{ marginBottom: 0, whiteSpace: 'pre-wrap' }}>
             {preventionAdvice}
           </Paragraph>

@@ -107,8 +107,6 @@ const TrainingList: React.FC = () => {
                   title="确认删除"
                   description={`确定要删除关卡「${item.name}」吗？`}
                   onConfirm={() => runDelete(item.id)}
-                  okText="确定"
-                  cancelText="取消"
                 >
                   <Link type="danger">
                     <DeleteOutlined /> 删除

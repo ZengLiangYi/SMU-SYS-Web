@@ -178,7 +178,7 @@ const HealthRecoveryPlanInner: FC<InnerProps> = ({
       <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
         <Alert
           type="info"
-          message="当前康复处方"
+          title="当前康复处方"
           description="可直接编辑并保存处方内容"
           showIcon
           style={{ flex: 1, marginRight: 12 }}

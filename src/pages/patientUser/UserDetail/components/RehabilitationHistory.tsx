@@ -67,9 +67,8 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
       });
       const items = listRes.data?.items;
       if (!items || items.length === 0) return null;
-      // 再获取该记录的完整详情
-      const detailRes = await getRehabScoreRecordDetail(patientId, items[0].id);
-      return detailRes.data;
+      // 再获取该记录的完整详情（不手动解包 .data，由 useRequest 自动提取）
+      return getRehabScoreRecordDetail(patientId, items[0].id);
     },
     {
       refreshDeps: [patientId],
@@ -168,7 +167,7 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
         <Col span={12}>
           <Alert
             type="warning"
-            message="康复建议"
+            title="康复建议"
             description={latestDetail.advice || '暂无建议'}
             showIcon
             style={{ height: '100%' }}

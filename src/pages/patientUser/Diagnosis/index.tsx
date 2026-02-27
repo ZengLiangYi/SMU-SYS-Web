@@ -455,7 +455,7 @@ const Diagnosis: React.FC = () => {
                 type="warning"
                 showIcon
                 style={{ marginBottom: 16 }}
-                message="以下量表尚未完成"
+                title="以下量表尚未完成"
                 description={(() => {
                   const nameMap = new Map(
                     scaleItems.map((s) => [s.id, s.name]),

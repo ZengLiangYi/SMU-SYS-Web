@@ -79,8 +79,6 @@ const ReferralHospital: React.FC = () => {
             title="确认删除"
             description={`确定要删除「${record.hospital_name}」的转诊医生吗？`}
             onConfirm={() => runDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
           >
             <Button
               type="link"

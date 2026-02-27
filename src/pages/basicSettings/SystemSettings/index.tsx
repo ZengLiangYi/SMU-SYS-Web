@@ -108,7 +108,7 @@ const SystemSettings: React.FC = () => {
               },
             }}
           >
-            <Card title="预览效果" bordered size="small">
+            <Card title="预览效果" size="small">
               <Flex vertical gap={12}>
                 <Title level={4} style={{ margin: 0 }}>
                   标题文本预览

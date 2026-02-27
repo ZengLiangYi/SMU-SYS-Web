@@ -56,7 +56,7 @@ const PrescriptionContent = forwardRef<
     if (loading) {
       return (
         <Spin
-          tip="AI 正在生成处方建议…"
+          description="AI 正在生成处方建议，大约需要 1-2 分钟…"
           style={{ display: 'block', padding: 60, textAlign: 'center' }}
         />
       );

@@ -42,7 +42,7 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
   if (loading) {
     return (
       <Spin
-        tip="AI 正在分析中…"
+        description="AI 正在分析中，大约需要 1-2 分钟…"
         style={{ display: 'block', padding: 60, textAlign: 'center' }}
       />
     );
@@ -140,7 +140,7 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
         <Alert
           type="info"
           showIcon
-          message="AI 建议"
+          title="AI 建议"
           description={aiSuggestion}
           style={{ marginTop: 16 }}
         />
