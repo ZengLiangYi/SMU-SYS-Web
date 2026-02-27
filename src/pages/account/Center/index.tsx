@@ -63,35 +63,25 @@ const Center: React.FC = () => {
       manual: true,
       onSuccess: (res: API.DoctorUser) => {
         message.success('个人信息更新成功');
-        // 从最新上传的头像获取 URL
-        const newAvatarUrl =
-          avatarFileList.length > 0
-            ? getStaticUrl(getFileUrl(avatarFileList[0]))
-            : undefined;
+        // API 响应为唯一真实源：avatar 从 res.avatar_url 获取
+        const avatarDisplay = res.avatar_url
+          ? getStaticUrl(res.avatar_url)
+          : (currentUser?.avatar ?? '/images/avatar.png');
         // 刷新全局用户状态（rerender-functional-setstate）
         setInitialState((s) => ({
           ...s,
           currentUser: {
             ...s?.currentUser,
             ...res,
-            avatar: newAvatarUrl ?? s?.currentUser?.avatar,
+            avatar: avatarDisplay,
             role: s?.currentUser?.role ?? 'doctor',
           } as API.CurrentUser,
         }));
         // 直接更新本地 userData，左侧资料卡立即同步，无 loading 闪烁
         mutateUser(res);
-        // 同步 localStorage（页面刷新时 fetchUserInfo 读取 avatar）
-        try {
-          localStorage.setItem(
-            'currentUser',
-            JSON.stringify({
-              ...res,
-              avatar: newAvatarUrl ?? currentUser?.avatar,
-              role: currentUser?.role ?? 'doctor',
-            }),
-          );
-        } catch {
-          // ignore
+        // 同步头像文件列表（使 UI 立即反映 API 返回的最新头像）
+        if (res.avatar_url) {
+          setAvatarFileList([urlToUploadFile(getStaticUrl(res.avatar_url))]);
         }
       },
       onError: () => {

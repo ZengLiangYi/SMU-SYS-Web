@@ -20,6 +20,7 @@ dayjs.locale('zh-cn');
 
 import NotificationBell from '@/components/NotificationBell';
 import { getDoctorMe } from '@/services/auth';
+import { getStaticUrl } from '@/services/static';
 import { connectSocket } from '@/services/websocket';
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
@@ -58,20 +59,11 @@ export async function getInitialState(): Promise<{
         if (res.status === 'OK') {
           // 建立 WebSocket 连接（医生角色）
           connectSocket(token);
-          // 从 localStorage 读取 avatar（个人中心更新后会同步写入）
-          let storedAvatar = '/images/avatar.png';
-          try {
-            const stored = localStorage.getItem('currentUser');
-            if (stored) {
-              const parsed = JSON.parse(stored) as API.CurrentUser;
-              if (parsed.avatar) storedAvatar = parsed.avatar;
-            }
-          } catch {
-            // ignore
-          }
           return {
             ...res.data,
-            avatar: storedAvatar,
+            avatar: res.data.avatar_url
+              ? getStaticUrl(res.data.avatar_url)
+              : '/images/avatar.png',
             role: 'doctor',
           } as API.CurrentUser;
         }

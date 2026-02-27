@@ -6,6 +6,7 @@ import { createStyles } from 'antd-style';
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { adminLogin, doctorLogin } from '@/services/auth';
+import { getStaticUrl } from '@/services/static';
 import Settings from '../../../../config/defaultSettings';
 
 const { Text } = Typography;
@@ -96,7 +97,9 @@ const Login: React.FC = () => {
             'currentUser',
             JSON.stringify({
               ...res.data.user,
-              avatar: '/images/avatar.png',
+              avatar: res.data.user.avatar_url
+                ? getStaticUrl(res.data.user.avatar_url)
+                : '/images/avatar.png',
               role: 'doctor',
             }),
           );

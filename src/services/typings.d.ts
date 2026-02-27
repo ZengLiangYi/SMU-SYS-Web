@@ -16,6 +16,7 @@ declare namespace API {
     code: string;
     name: string;
     phone: string;
+    avatar_url?: string;
   };
 
   // 当前用户（全局用户状态）
