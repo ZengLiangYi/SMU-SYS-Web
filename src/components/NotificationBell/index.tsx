@@ -10,6 +10,7 @@ import {
   Popover,
   Tabs,
   Typography,
+  theme,
 } from 'antd';
 import React, { useCallback, useState } from 'react';
 import {
@@ -27,6 +28,7 @@ const POLLING_INTERVAL = 60_000; // 60s（WebSocket 作为主推送通道后降�
 const LIST_PAGE_SIZE = 20;
 
 const NotificationBell: React.FC = () => {
+  const { token } = theme.useToken();
   const { message } = App.useApp();
   const { initialState } = useModel('@@initialState');
   const [open, setOpen] = useState(false);
@@ -242,7 +244,7 @@ const NotificationBell: React.FC = () => {
         style={{
           display: 'inline-flex',
           padding: 4,
-          fontSize: 18,
+          fontSize: token.fontSizeLG,
           color: 'inherit',
           cursor: 'pointer',
           background: 'none',

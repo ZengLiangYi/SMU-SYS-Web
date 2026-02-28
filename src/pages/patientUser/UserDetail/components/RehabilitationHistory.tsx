@@ -17,6 +17,7 @@ import {
   Row,
   Spin,
   Typography,
+  theme,
 } from 'antd';
 import React, { useState } from 'react';
 import {
@@ -48,6 +49,7 @@ const PAGE_SIZE = 5;
 const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
   patientId,
 }) => {
+  const { token } = theme.useToken();
   const { message } = App.useApp();
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [viewingDetail, setViewingDetail] =
@@ -137,7 +139,7 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
           <Card>
             <Flex align="baseline" gap={8} style={{ marginBottom: 16 }}>
               <Text strong>综合评分：</Text>
-              <Text strong style={{ fontSize: 36 }}>
+              <Text strong style={{ fontSize: token.fontSizeHeading1 }}>
                 {latestDetail.overall_score}
               </Text>
             </Flex>
@@ -207,7 +209,7 @@ const RehabilitationHistory: React.FC<RehabilitationHistoryProps> = ({
                   <List.Item.Meta
                     title={
                       <Flex align="baseline" gap={8}>
-                        <Text strong style={{ fontSize: 20 }}>
+                        <Text strong style={{ fontSize: token.fontSizeXL }}>
                           {item.overall_score}
                         </Text>
                         <Text type="secondary">分</Text>

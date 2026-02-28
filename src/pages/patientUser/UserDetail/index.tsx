@@ -6,7 +6,7 @@ import {
   useRequest,
   useSearchParams,
 } from '@umijs/max';
-import { App, Button, Empty, Flex, Space, Spin, Typography } from 'antd';
+import { App, Button, Empty, Flex, Space, Spin, Typography, theme } from 'antd';
 import React, { Suspense, useState } from 'react';
 import PatientAvatarInfoContent from '@/components/PatientAvatarInfoContent';
 import { createBindRequest } from '@/services/bind-request';
@@ -53,6 +53,7 @@ const LazyFallback = (
 );
 
 const UserDetail: React.FC = () => {
+  const { token } = theme.useToken();
   const { message } = App.useApp();
   const { initialState } = useModel('@@initialState');
   const { id: patientId = '' } = useParams<{ id: string }>();
@@ -170,7 +171,7 @@ const UserDetail: React.FC = () => {
               categories={patientDetail.categories}
             />
             <Flex vertical align="center" gap={4} style={{ minWidth: 120 }}>
-              <Text strong style={{ fontSize: 40 }}>
+              <Text strong style={{ fontSize: token.fontSizeHeading1 }}>
                 --
               </Text>
               <Text type="secondary" style={{ fontSize: 12 }}>

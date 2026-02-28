@@ -1,4 +1,4 @@
-import { Alert, Card, Divider, Flex, Spin, Tag, Typography } from 'antd';
+import { Alert, Card, Divider, Flex, Spin, Tag, Typography, theme } from 'antd';
 import React from 'react';
 import type {
   OtherPossibleDisease,
@@ -23,6 +23,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   preventionAdvice,
   diseaseNameMap,
 }) => {
+  const { token } = theme.useToken();
   if (loading) {
     return (
       <Spin
@@ -54,7 +55,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
           <div style={{ marginBottom: 16 }}>
             <Text strong>首选诊断</Text>
             <Flex align="center" gap={8} style={{ margin: '8px 0' }}>
-              <Text style={{ fontSize: 16, fontWeight: 600 }}>
+              <Text style={{ fontSize: token.fontSizeLG, fontWeight: 600 }}>
                 {resolveName(primaryDisease.id)}
               </Text>
               <Tag color="blue" style={{ fontVariantNumeric: 'tabular-nums' }}>
