@@ -1,6 +1,7 @@
 import {
   PageContainer,
   ProCard,
+  ProForm,
   ProFormSelect,
   ProFormTextArea,
   ProFormUploadButton,
@@ -24,6 +25,12 @@ import AIDiagnosisContent from './components/AIDiagnosisContent';
 import PatientInfoHeader from './components/PatientInfoHeader';
 import type { PrescriptionDataRef } from './components/PrescriptionContent';
 import PrescriptionContent from './components/PrescriptionContent';
+import PresetTextArea from './components/PresetTextArea';
+import {
+  CHIEF_COMPLAINT_PRESETS,
+  PHYSICAL_SIGNS_PRESETS,
+  PRESENT_ILLNESS_PRESETS,
+} from './constants';
 import useDiagnosisFlow from './hooks/useDiagnosisFlow';
 
 const { Text } = Typography;
@@ -316,27 +323,40 @@ const Diagnosis: React.FC = () => {
               }
             }}
           >
-            <ProFormTextArea
+            <ProForm.Item
               name="chief_complaint"
               label="主诉"
-              placeholder="请输入患者主诉…"
               rules={[{ required: true }]}
-              fieldProps={{ rows: 3 }}
-            />
-            <ProFormTextArea
+              extra="输入关键词可自动匹配常用短语，上下键选择、回车或点击即可快速填入"
+            >
+              <PresetTextArea
+                presets={CHIEF_COMPLAINT_PRESETS}
+                placeholder="请输入患者主诉…"
+                rows={3}
+              />
+            </ProForm.Item>
+            <ProForm.Item
               name="physical_signs"
               label="体征"
-              placeholder="请记录患者外在表现…"
               rules={[{ required: true }]}
-              fieldProps={{ rows: 3 }}
-            />
-            <ProFormTextArea
+            >
+              <PresetTextArea
+                presets={PHYSICAL_SIGNS_PRESETS}
+                placeholder="请记录患者外在表现…"
+                rows={3}
+              />
+            </ProForm.Item>
+            <ProForm.Item
               name="present_illness"
               label="现病史"
-              placeholder="请输入现病史…"
               rules={[{ required: true }]}
-              fieldProps={{ rows: 3 }}
-            />
+            >
+              <PresetTextArea
+                presets={PRESENT_ILLNESS_PRESETS}
+                placeholder="请输入现病史…"
+                rows={3}
+              />
+            </ProForm.Item>
           </StepsForm.StepForm>
 
           {/* ======== Step 1: AI 检查推荐 ======== */}
