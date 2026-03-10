@@ -1,6 +1,6 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { Alert, Button, Flex, Spin } from 'antd';
-import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useMemo } from 'react';
 import CognitiveTraining from '@/components/PrescriptionComponents/CognitiveTraining';
 import DietPrescription from '@/components/PrescriptionComponents/DietPrescription';
 import ExercisePrescription from '@/components/PrescriptionComponents/ExercisePrescription';
@@ -58,14 +58,50 @@ const PrescriptionContent = forwardRef<
       getData: () => data,
     }));
 
-    // 处方数据变更时通知 dirty
-    const prevDataRef = useRef(data);
-    useEffect(() => {
-      if (prevDataRef.current !== data && onDirty) {
-        onDirty();
-      }
-      prevDataRef.current = data;
-    }, [data, onDirty]);
+    // 仅在用户实际操作（增删改）时触发 dirty，避免引用比较误触发
+    const dirtyActions = useMemo(() => {
+      const notify = () => onDirty?.();
+      return {
+        addMedication: (...args: Parameters<typeof actions.addMedication>) => {
+          actions.addMedication(...args);
+          notify();
+        },
+        deleteMedication: (
+          ...args: Parameters<typeof actions.deleteMedication>
+        ) => {
+          actions.deleteMedication(...args);
+          notify();
+        },
+        addCognitive: (...args: Parameters<typeof actions.addCognitive>) => {
+          actions.addCognitive(...args);
+          notify();
+        },
+        deleteCognitive: (
+          ...args: Parameters<typeof actions.deleteCognitive>
+        ) => {
+          actions.deleteCognitive(...args);
+          notify();
+        },
+        saveDiet: async (...args: Parameters<typeof actions.saveDiet>) => {
+          const r = await actions.saveDiet(...args);
+          notify();
+          return r;
+        },
+        saveExercise: async (
+          ...args: Parameters<typeof actions.saveExercise>
+        ) => {
+          const r = await actions.saveExercise(...args);
+          notify();
+          return r;
+        },
+        deleteExercise: (
+          ...args: Parameters<typeof actions.deleteExercise>
+        ) => {
+          actions.deleteExercise(...args);
+          notify();
+        },
+      };
+    }, [actions, onDirty]);
 
     if (loading) {
       return (
@@ -110,15 +146,15 @@ const PrescriptionContent = forwardRef<
 
         <MedicationTreatment
           medications={data.medications}
-          onAdd={actions.addMedication}
-          onDelete={actions.deleteMedication}
+          onAdd={dirtyActions.addMedication}
+          onDelete={dirtyActions.deleteMedication}
         />
 
         <Flex vertical gap={20} style={{ marginTop: 20 }}>
           <CognitiveTraining
             cards={data.cognitiveCards}
-            onAdd={actions.addCognitive}
-            onDelete={actions.deleteCognitive}
+            onAdd={dirtyActions.addCognitive}
+            onDelete={dirtyActions.deleteCognitive}
           />
 
           <DietPrescription
@@ -130,7 +166,7 @@ const PrescriptionContent = forwardRef<
             exercises={data.exercises}
             onAdd={() => actions.openExModal()}
             onEdit={(item) => actions.openExModal(item)}
-            onDelete={actions.deleteExercise}
+            onDelete={dirtyActions.deleteExercise}
           />
         </Flex>
 
@@ -138,13 +174,13 @@ const PrescriptionContent = forwardRef<
           open={modalState.diet.open}
           onOpenChange={modalState.setDietOpen}
           dietContent={data.dietContent}
-          onFinish={actions.saveDiet}
+          onFinish={dirtyActions.saveDiet}
         />
         <ExerciseModal
           open={modalState.ex.open}
           onOpenChange={modalState.setExOpen}
           editing={modalState.ex.editing}
-          onFinish={actions.saveExercise}
+          onFinish={dirtyActions.saveExercise}
         />
       </div>
     );

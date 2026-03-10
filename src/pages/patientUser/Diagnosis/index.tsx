@@ -67,6 +67,7 @@ const Diagnosis: React.FC = () => {
     aiConfidence,
     aiExaminationSteps,
     loadScreeningData,
+    isScreeningCached,
     // 诊断
     diagnosisLoading,
     primaryDisease,
@@ -74,6 +75,7 @@ const Diagnosis: React.FC = () => {
     preventionAdvice,
     diseaseNameMap,
     loadDiagnosisData,
+    isDiagnosisCached,
     // 处方
     prescriptionLoading,
     aiPrescriptionSummary,
@@ -83,6 +85,7 @@ const Diagnosis: React.FC = () => {
     initialExercises,
     prescriptionDataVersion,
     loadPrescriptionData,
+    isPrescriptionCached,
   } = useDiagnosisFlow(patientId);
 
   // -------- Dirty tracking --------
@@ -114,6 +117,7 @@ const Diagnosis: React.FC = () => {
         v.chief_complaint,
         v.present_illness ?? '',
         v.physical_signs ?? '',
+        true,
       );
     }
   }, [loadScreeningData]);
@@ -378,12 +382,23 @@ const Diagnosis: React.FC = () => {
           <StepsForm.StepForm
             name="initial"
             title="初诊"
+            onValuesChange={() => setDirtyState(true)}
             initialValues={{
               chief_complaint: diagnosisData?.chief_complaint ?? '',
               physical_signs: diagnosisData?.physical_signs ?? '',
               present_illness: diagnosisData?.present_illness ?? '',
             }}
             onFinish={async (values) => {
+              // 输入未变且 LLM 已完成 → 跳过 API save + LLM，直接前进
+              if (
+                isScreeningCached(
+                  values.chief_complaint,
+                  values.present_illness ?? '',
+                  values.physical_signs ?? '',
+                )
+              ) {
+                return true;
+              }
               try {
                 const id = await ensureDiagnosisId();
                 await updateDiagnosis(patientId, id, {
@@ -393,7 +408,7 @@ const Diagnosis: React.FC = () => {
                 });
                 loadScreeningData(
                   values.chief_complaint,
-                  values.present_illness,
+                  values.present_illness ?? '',
                   values.physical_signs ?? '',
                 );
                 setDirtyState(false);
@@ -506,9 +521,17 @@ const Diagnosis: React.FC = () => {
             title="检测结果录入"
             initialValues={step2InitialValues}
             onFinish={async () => {
+              const { labResultImages, imagingResultImages } =
+                extractStep2ImageUrls();
+              const diagInputKey = JSON.stringify({
+                lab: labResultImages,
+                img: imagingResultImages,
+              });
+
+              // 输入未变且 LLM 已完成 → 跳过 API save + LLM
+              if (isDiagnosisCached(diagInputKey)) return true;
+
               try {
-                const { labResultImages, imagingResultImages } =
-                  extractStep2ImageUrls();
                 const id = await ensureDiagnosisId();
 
                 // async-parallel: 保存图片与查询量表状态互不依赖，并行执行
@@ -541,7 +564,7 @@ const Diagnosis: React.FC = () => {
                   return false;
                 }
 
-                loadDiagnosisData();
+                loadDiagnosisData(diagInputKey);
                 setDirtyState(false);
                 return true;
               } catch (error) {
@@ -639,7 +662,6 @@ const Diagnosis: React.FC = () => {
                   : [],
               diagnosis_note: diagnosisData?.diagnosis_note ?? '',
             }}
-            onValuesChange={() => setDirtyState(true)}
             onFinish={async (values) => {
               if (
                 !values.diagnosis_results ||
@@ -648,13 +670,18 @@ const Diagnosis: React.FC = () => {
                 message.warning('请选择至少一项诊断结果');
                 return false;
               }
+
+              // 输入未变且 LLM 已完成 → 跳过 API save + LLM
+              const rxInputKey = JSON.stringify(values.diagnosis_results);
+              if (isPrescriptionCached(rxInputKey)) return true;
+
               try {
                 const id = await ensureDiagnosisId();
                 await updateDiagnosis(patientId, id, {
                   diagnosis_results: values.diagnosis_results,
                   diagnosis_note: values.diagnosis_note,
                 });
-                loadPrescriptionData();
+                loadPrescriptionData(rxInputKey);
                 setDirtyState(false);
                 return true;
               } catch (error) {
@@ -670,7 +697,7 @@ const Diagnosis: React.FC = () => {
               otherDiseases={otherDiseases}
               preventionAdvice={preventionAdvice}
               diseaseNameMap={diseaseNameMap}
-              onRetry={loadDiagnosisData}
+              onRetry={() => loadDiagnosisData(undefined, true)}
             />
             <ProFormSelect
               name="diagnosis_results"
@@ -679,12 +706,13 @@ const Diagnosis: React.FC = () => {
               placeholder="请选择诊断结果…"
               options={diseaseOptions}
               rules={[{ required: true, message: '请选择至少一项诊断' }]}
+              fieldProps={{ onChange: () => setDirtyState(true) }}
             />
             <ProFormTextArea
               name="diagnosis_note"
               label="分型备注"
               placeholder="请输入备注信息…"
-              fieldProps={{ rows: 3 }}
+              fieldProps={{ rows: 3, onChange: () => setDirtyState(true) }}
             />
           </StepsForm.StepForm>
 
@@ -699,7 +727,7 @@ const Diagnosis: React.FC = () => {
               initialCognitiveCards={initialCognitiveCards}
               initialDietContent={initialDietContent}
               initialExercises={initialExercises}
-              onRetry={loadPrescriptionData}
+              onRetry={() => loadPrescriptionData(undefined, true)}
               onDirty={() => setDirtyState(true)}
             />
           </StepsForm.StepForm>

@@ -112,7 +112,14 @@ export interface UseDiagnosisFlowReturn {
   aiSuggestion: string | null;
   aiConfidence: number | null;
   aiExaminationSteps: string | null;
-  loadScreeningData: (cc: string, pi: string, ps: string) => Promise<void>;
+  loadScreeningData: (
+    cc: string,
+    pi: string,
+    ps: string,
+    force?: boolean,
+  ) => Promise<void>;
+  /** 输入未变时返回 true，可用于 onFinish 短路跳过 API save + LLM */
+  isScreeningCached: (cc: string, pi: string, ps: string) => boolean;
 
   // 诊断相关
   diagnosisLoading: boolean;
@@ -120,7 +127,8 @@ export interface UseDiagnosisFlowReturn {
   otherDiseases: OtherPossibleDisease[];
   preventionAdvice: string;
   diseaseNameMap: Map<string, string>;
-  loadDiagnosisData: () => Promise<void>;
+  loadDiagnosisData: (inputKey?: string, force?: boolean) => Promise<void>;
+  isDiagnosisCached: (inputKey: string) => boolean;
 
   // 处方相关
   prescriptionLoading: boolean;
@@ -131,7 +139,8 @@ export interface UseDiagnosisFlowReturn {
   initialExercises: PrescriptionExerciseItem[];
   /** 数据加载完成后递增，用作 key 强制子组件重新挂载 */
   prescriptionDataVersion: number;
-  loadPrescriptionData: () => Promise<void>;
+  loadPrescriptionData: (inputKey?: string, force?: boolean) => Promise<void>;
+  isPrescriptionCached: (inputKey: string) => boolean;
 }
 
 export default function useDiagnosisFlow(
@@ -207,6 +216,11 @@ export default function useDiagnosisFlow(
   // -------- 候选项缓存 (js-cache-function-results) --------
   const candidateCache = useRef<CandidateCache | null>(null);
 
+  // LLM 调用去重：仅在输入变化时重新调用
+  const lastScreeningKeyRef = useRef<string | null>(null);
+  const lastDiagnosisKeyRef = useRef<string | null>(null);
+  const lastPrescriptionKeyRef = useRef<string | null>(null);
+
   // -------- ensureDiagnosisId (并发安全，409 回退) --------
   const ensureDiagnosisId = useCallback(async (): Promise<string> => {
     if (diagnosisIdRef.current) return diagnosisIdRef.current;
@@ -277,7 +291,10 @@ export default function useDiagnosisFlow(
 
   // -------- 新鲜入口：候选项 + LLM 推荐 --------
   const loadScreeningData = useCallback(
-    async (cc: string, pi: string, ps: string) => {
+    async (cc: string, pi: string, ps: string, force = false) => {
+      const inputKey = `${cc}\0${pi}\0${ps}`;
+      if (!force && lastScreeningKeyRef.current === inputKey) return;
+
       setScreeningLoading(true);
       try {
         // 候选项 + LLM 并行 (async-parallel)
@@ -300,6 +317,8 @@ export default function useDiagnosisFlow(
         setAiSuggestion(llmRes.examination_steps);
         setAiExaminationSteps(llmRes.examination_steps);
         setAiConfidence(llmRes.prediction_confidence);
+
+        lastScreeningKeyRef.current = inputKey;
 
         // 自动保存 LLM 筛查结果到 DB，防止刷新丢失
         try {
@@ -337,65 +356,89 @@ export default function useDiagnosisFlow(
   }, []);
 
   // -------- 加载 AI 诊断 --------
-  const loadDiagnosisData = useCallback(async () => {
-    setDiagnosisLoading(true);
-    try {
-      const [, llmRes] = await Promise.all([
-        loadDiseaseTypes(),
-        getDiseaseJudgement({ uuid: patientId }),
-      ]);
+  const loadDiagnosisData = useCallback(
+    async (inputKey?: string, force = false) => {
+      if (
+        !force &&
+        inputKey != null &&
+        lastDiagnosisKeyRef.current === inputKey
+      )
+        return;
 
-      if (!mountedRef.current) return;
+      setDiagnosisLoading(true);
+      try {
+        const [, llmRes] = await Promise.all([
+          loadDiseaseTypes(),
+          getDiseaseJudgement({ uuid: patientId }),
+        ]);
 
-      const result: LlmDiseaseJudgementResponse = llmRes.data;
-      setPrimaryDisease(result.primary_disease);
-      setOtherDiseases(result.other_possible_diseases ?? []);
-      setPreventionAdvice(result.prevention_advice);
-    } catch (error) {
-      console.error('Failed to load diagnosis data:', error);
-    } finally {
-      if (mountedRef.current) setDiagnosisLoading(false);
-    }
-  }, [patientId, loadDiseaseTypes]);
+        if (!mountedRef.current) return;
+
+        const result: LlmDiseaseJudgementResponse = llmRes.data;
+        setPrimaryDisease(result.primary_disease);
+        setOtherDiseases(result.other_possible_diseases ?? []);
+        setPreventionAdvice(result.prevention_advice);
+
+        if (inputKey != null) lastDiagnosisKeyRef.current = inputKey;
+      } catch (error) {
+        console.error('Failed to load diagnosis data:', error);
+      } finally {
+        if (mountedRef.current) setDiagnosisLoading(false);
+      }
+    },
+    [patientId, loadDiseaseTypes],
+  );
 
   // -------- 加载 AI 处方 --------
-  const loadPrescriptionData = useCallback(async () => {
-    setPrescriptionLoading(true);
-    try {
-      const { data: llmRes } = await getPrescriptionRecommendation({
-        uuid: patientId,
-      });
+  const loadPrescriptionData = useCallback(
+    async (inputKey?: string, force = false) => {
+      if (
+        !force &&
+        inputKey != null &&
+        lastPrescriptionKeyRef.current === inputKey
+      )
+        return;
 
-      // 并行解析药物和训练名称 (async-parallel)
-      const [medRes, rehabRes] = await Promise.all([
-        getMedicines({ limit: CANDIDATE_FETCH_LIMIT }),
-        getRehabLevels({ limit: CANDIDATE_FETCH_LIMIT }),
-      ]);
+      setPrescriptionLoading(true);
+      try {
+        const { data: llmRes } = await getPrescriptionRecommendation({
+          uuid: patientId,
+        });
 
-      if (!mountedRef.current) return;
+        // 并行解析药物和训练名称 (async-parallel)
+        const [medRes, rehabRes] = await Promise.all([
+          getMedicines({ limit: CANDIDATE_FETCH_LIMIT }),
+          getRehabLevels({ limit: CANDIDATE_FETCH_LIMIT }),
+        ]);
 
-      const medMap = new Map(medRes.data.items.map((m) => [m.id, m]));
-      const rehabMap = new Map(rehabRes.data.items.map((r) => [r.id, r]));
+        if (!mountedRef.current) return;
 
-      setInitialMedications(
-        mapMedicationsFromIds(llmRes.medicines ?? [], medMap),
-      );
-      setInitialCognitiveCards(
-        mapCognitiveFromIds(llmRes.trainings ?? [], rehabMap),
-      );
-      setInitialDietContent(llmRes.diet_prescription ?? '');
-      setInitialExercises(mapExercisesFromPlan(llmRes.exercises ?? []));
+        const medMap = new Map(medRes.data.items.map((m) => [m.id, m]));
+        const rehabMap = new Map(rehabRes.data.items.map((r) => [r.id, r]));
 
-      setAiPrescriptionSummary(llmRes.summary ?? null);
-    } catch (error) {
-      console.error('Failed to load prescription data:', error);
-    } finally {
-      if (mountedRef.current) {
-        setPrescriptionLoading(false);
-        setPrescriptionDataVersion((v) => v + 1);
+        setInitialMedications(
+          mapMedicationsFromIds(llmRes.medicines ?? [], medMap),
+        );
+        setInitialCognitiveCards(
+          mapCognitiveFromIds(llmRes.trainings ?? [], rehabMap),
+        );
+        setInitialDietContent(llmRes.diet_prescription ?? '');
+        setInitialExercises(mapExercisesFromPlan(llmRes.exercises ?? []));
+
+        setAiPrescriptionSummary(llmRes.summary ?? null);
+
+        if (inputKey != null) lastPrescriptionKeyRef.current = inputKey;
+      } catch (error) {
+        console.error('Failed to load prescription data:', error);
+      } finally {
+        if (mountedRef.current) {
+          setPrescriptionLoading(false);
+          setPrescriptionDataVersion((v) => v + 1);
+        }
       }
-    }
-  }, [patientId]);
+    },
+    [patientId],
+  );
 
   // -------- H2: 从已保存 ID 解析处方显示数据 --------
   const resolvePrescriptionData = useCallback(
@@ -525,6 +568,11 @@ export default function useDiagnosisFlow(
           if (saved.examination_steps) {
             setAiExaminationSteps(saved.examination_steps);
           }
+
+          // 预填充筛查指纹，使回退 Step 0 再前进时命中缓存
+          if (saved.chief_complaint) {
+            lastScreeningKeyRef.current = `${saved.chief_complaint}\0${saved.present_illness ?? ''}\0${saved.physical_signs ?? ''}`;
+          }
         }
 
         if (step >= 3 && saved) {
@@ -533,6 +581,11 @@ export default function useDiagnosisFlow(
             await loadDiagnosisData();
           } else {
             await loadDiseaseTypes();
+            // 预填充诊断指纹
+            lastDiagnosisKeyRef.current = JSON.stringify({
+              lab: saved.lab_result_images ?? {},
+              img: saved.imaging_result_images ?? {},
+            });
           }
         }
 
@@ -547,6 +600,12 @@ export default function useDiagnosisFlow(
             await loadPrescriptionData();
           } else {
             await resolvePrescriptionData(saved);
+            // 预填充处方指纹
+            if (saved.diagnosis_results?.length) {
+              lastPrescriptionKeyRef.current = JSON.stringify(
+                saved.diagnosis_results,
+              );
+            }
           }
         }
       } catch (error) {
@@ -575,6 +634,21 @@ export default function useDiagnosisFlow(
     }
   }, [patientId]);
 
+  // -------- LLM 缓存命中检查（供 onFinish 短路） --------
+  const isScreeningCached = useCallback(
+    (cc: string, pi: string, ps: string) =>
+      lastScreeningKeyRef.current === `${cc}\0${pi}\0${ps}`,
+    [],
+  );
+  const isDiagnosisCached = useCallback(
+    (inputKey: string) => lastDiagnosisKeyRef.current === inputKey,
+    [],
+  );
+  const isPrescriptionCached = useCallback(
+    (inputKey: string) => lastPrescriptionKeyRef.current === inputKey,
+    [],
+  );
+
   return {
     initialLoading,
     patientDetail,
@@ -598,6 +672,7 @@ export default function useDiagnosisFlow(
     aiConfidence,
     aiExaminationSteps,
     loadScreeningData,
+    isScreeningCached,
 
     diagnosisLoading,
     primaryDisease,
@@ -605,6 +680,7 @@ export default function useDiagnosisFlow(
     preventionAdvice,
     diseaseNameMap,
     loadDiagnosisData,
+    isDiagnosisCached,
 
     prescriptionLoading,
     aiPrescriptionSummary,
@@ -614,5 +690,6 @@ export default function useDiagnosisFlow(
     initialExercises,
     prescriptionDataVersion,
     loadPrescriptionData,
+    isPrescriptionCached,
   };
 }
