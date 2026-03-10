@@ -1,4 +1,15 @@
-import { Alert, Card, Divider, Flex, Spin, Tag, Typography, theme } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import {
+  Alert,
+  Button,
+  Card,
+  Divider,
+  Flex,
+  Spin,
+  Tag,
+  Typography,
+  theme,
+} from 'antd';
 import React from 'react';
 import type {
   OtherPossibleDisease,
@@ -14,6 +25,7 @@ interface AIDiagnosisContentProps {
   preventionAdvice: string;
   /** 疾病 ID -> 名称映射 */
   diseaseNameMap: Map<string, string>;
+  onRetry?: () => void;
 }
 
 const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
@@ -22,6 +34,7 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
   otherDiseases,
   preventionAdvice,
   diseaseNameMap,
+  onRetry,
 }) => {
   const { token } = theme.useToken();
   if (loading) {
@@ -39,7 +52,16 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
         type="warning"
         showIcon
         title="AI 未能生成诊断建议"
-        description="请根据检查结果手动选择诊断。"
+        description={
+          <Flex align="center" gap={8}>
+            <span>请根据检查结果手动选择诊断。</span>
+            {onRetry ? (
+              <Button icon={<ReloadOutlined />} size="small" onClick={onRetry}>
+                重新生成
+              </Button>
+            ) : null}
+          </Flex>
+        }
         style={{ marginBottom: 16 }}
       />
     );
@@ -49,6 +71,13 @@ const AIDiagnosisContent: React.FC<AIDiagnosisContentProps> = ({
 
   return (
     <Flex gap={16} wrap style={{ marginBottom: 16 }}>
+      {onRetry ? (
+        <Flex justify="flex-end" style={{ width: '100%' }}>
+          <Button icon={<ReloadOutlined />} size="small" onClick={onRetry}>
+            重新生成
+          </Button>
+        </Flex>
+      ) : null}
       {/* 左侧：AI 诊断结果 */}
       <Card title="AI 诊断结果" style={{ flex: 1, minWidth: 300 }}>
         {primaryDisease ? (

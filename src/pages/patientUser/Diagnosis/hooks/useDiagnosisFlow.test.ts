@@ -237,6 +237,96 @@ describe('computeCurrentStep', () => {
     });
   });
 
+  // -------- 量表完成检查（unfinished_scale_ids） --------
+
+  describe('Step 2 → Step 3 量表完成检查', () => {
+    it('上传完成但量表未完成，停在 Step 2', () => {
+      expect(
+        computeCurrentStep(
+          makeData({
+            chief_complaint: '头痛',
+            screening_items: {
+              selected_assessments: ['scale-1'],
+              selected_lab_tests: ['lab-1'],
+              selected_imaging_tests: [],
+            },
+            lab_result_images: { 'lab-1': 'diagnosis/lab1.jpg' },
+            unfinished_scale_ids: ['scale-1'],
+          }),
+        ),
+      ).toBe(2);
+    });
+
+    it('上传完成且量表全部完成，推进到 Step 3', () => {
+      expect(
+        computeCurrentStep(
+          makeData({
+            chief_complaint: '头痛',
+            screening_items: {
+              selected_assessments: ['scale-1'],
+              selected_lab_tests: ['lab-1'],
+              selected_imaging_tests: [],
+            },
+            lab_result_images: { 'lab-1': 'diagnosis/lab1.jpg' },
+            unfinished_scale_ids: [],
+          }),
+        ),
+      ).toBe(3);
+    });
+
+    it('unfinished_scale_ids 为 undefined 时视为全部完成', () => {
+      expect(
+        computeCurrentStep(
+          makeData({
+            chief_complaint: '头痛',
+            screening_items: {
+              selected_assessments: ['scale-1'],
+              selected_lab_tests: ['lab-1'],
+              selected_imaging_tests: [],
+            },
+            lab_result_images: { 'lab-1': 'diagnosis/lab1.jpg' },
+            unfinished_scale_ids: undefined,
+          }),
+        ),
+      ).toBe(3);
+    });
+
+    it('多个量表部分未完成，停在 Step 2', () => {
+      expect(
+        computeCurrentStep(
+          makeData({
+            chief_complaint: '头痛',
+            screening_items: {
+              selected_assessments: ['scale-1', 'scale-2'],
+              selected_lab_tests: ['lab-1'],
+              selected_imaging_tests: ['img-1'],
+            },
+            lab_result_images: { 'lab-1': 'diagnosis/lab1.jpg' },
+            imaging_result_images: { 'img-1': 'diagnosis/mri.jpg' },
+            unfinished_scale_ids: ['scale-2'],
+          }),
+        ),
+      ).toBe(2);
+    });
+
+    it('仅选量表无实验室/影像 + 量表未完成，停在 Step 2', () => {
+      // hasExpected = false → 直接返回 2，量表检查不影响
+      expect(
+        computeCurrentStep(
+          makeData({
+            chief_complaint: '头痛',
+            screening_items: {
+              selected_assessments: ['scale-1'],
+              selected_lab_tests: [],
+              selected_imaging_tests: [],
+            },
+            unfinished_scale_ids: ['scale-1'],
+          }),
+        ),
+      ).toBe(2);
+    });
+  });
+
   // -------- Step 4 --------
 
   it('返回 4：已有诊断结果', () => {

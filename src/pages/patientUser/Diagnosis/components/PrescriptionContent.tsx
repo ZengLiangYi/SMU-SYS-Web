@@ -1,5 +1,6 @@
-import { Alert, Flex, Spin } from 'antd';
-import { forwardRef, useImperativeHandle } from 'react';
+import { ReloadOutlined } from '@ant-design/icons';
+import { Alert, Button, Flex, Spin } from 'antd';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import CognitiveTraining from '@/components/PrescriptionComponents/CognitiveTraining';
 import DietPrescription from '@/components/PrescriptionComponents/DietPrescription';
 import ExercisePrescription from '@/components/PrescriptionComponents/ExercisePrescription';
@@ -25,6 +26,8 @@ interface PrescriptionContentProps {
   initialCognitiveCards?: PrescriptionCognitiveItem[];
   initialDietContent?: string;
   initialExercises?: PrescriptionExerciseItem[];
+  onRetry?: () => void;
+  onDirty?: () => void;
 }
 
 const PrescriptionContent = forwardRef<
@@ -39,6 +42,8 @@ const PrescriptionContent = forwardRef<
       initialCognitiveCards = [],
       initialDietContent = '',
       initialExercises = [],
+      onRetry,
+      onDirty,
     },
     ref,
   ) => {
@@ -53,6 +58,15 @@ const PrescriptionContent = forwardRef<
       getData: () => data,
     }));
 
+    // 处方数据变更时通知 dirty
+    const prevDataRef = useRef(data);
+    useEffect(() => {
+      if (prevDataRef.current !== data && onDirty) {
+        onDirty();
+      }
+      prevDataRef.current = data;
+    }, [data, onDirty]);
+
     if (loading) {
       return (
         <Spin
@@ -64,15 +78,35 @@ const PrescriptionContent = forwardRef<
 
     return (
       <div>
-        {aiSummary ? (
-          <Alert
-            type="info"
-            showIcon
-            title="AI 处方建议"
-            description={aiSummary}
-            style={{ marginBottom: 20 }}
-          />
-        ) : null}
+        <Flex
+          justify={aiSummary ? 'space-between' : 'flex-end'}
+          align="center"
+          style={{ marginBottom: aiSummary ? 0 : 12 }}
+        >
+          {aiSummary ? (
+            <Alert
+              type="info"
+              showIcon
+              title="AI 处方建议"
+              description={aiSummary}
+              style={{
+                marginBottom: 20,
+                flex: 1,
+                marginRight: onRetry ? 12 : 0,
+              }}
+            />
+          ) : null}
+          {onRetry ? (
+            <Button
+              icon={<ReloadOutlined />}
+              size="small"
+              onClick={onRetry}
+              style={{ flexShrink: 0 }}
+            >
+              重新生成
+            </Button>
+          ) : null}
+        </Flex>
 
         <MedicationTreatment
           medications={data.medications}

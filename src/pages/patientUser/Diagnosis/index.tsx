@@ -36,7 +36,7 @@ import useDiagnosisFlow from './hooks/useDiagnosisFlow';
 const { Text } = Typography;
 
 const Diagnosis: React.FC = () => {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('id') ?? '';
 
@@ -84,6 +84,39 @@ const Diagnosis: React.FC = () => {
     prescriptionDataVersion,
     loadPrescriptionData,
   } = useDiagnosisFlow(patientId);
+
+  // -------- Dirty tracking --------
+  const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  const setDirtyState = useCallback((v: boolean) => {
+    dirtyRef.current = v;
+    setDirty(v);
+  }, []);
+
+  const confirmUnsavedLeave = useCallback(
+    (onConfirm: () => void) => {
+      modal.confirm({
+        title: '有未保存的修改',
+        content: '确定要离开吗？未保存的修改将丢失。',
+        okText: '离开',
+        cancelText: '留下',
+        onOk: onConfirm,
+      });
+    },
+    [modal],
+  );
+
+  // -------- Retry callbacks --------
+  const handleRetryScreening = useCallback(() => {
+    const v = formMapRef.current?.[0]?.current?.getFieldsValue();
+    if (v?.chief_complaint) {
+      loadScreeningData(
+        v.chief_complaint,
+        v.present_illness ?? '',
+        v.physical_signs ?? '',
+      );
+    }
+  }, [loadScreeningData]);
 
   const selectedLabItems = useMemo(
     () => labItems.filter((item) => selectedLabIds.includes(item.id)),
@@ -144,6 +177,7 @@ const Diagnosis: React.FC = () => {
     (info: { file: { status?: string } }) => {
       const { status } = info.file;
       if (status !== 'done' && status !== 'removed') return;
+      setDirtyState(true);
 
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
@@ -225,14 +259,27 @@ const Diagnosis: React.FC = () => {
     }
   }, [primaryDisease, diseaseNameMap]);
 
-  // beforeunload guard
+  // dirty-aware beforeunload + history.block guard
   useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener('beforeunload', onBeforeUnload);
+    const unblock = history.block((tx) => {
+      if (!dirtyRef.current) {
+        unblock();
+        tx.retry();
+        return;
+      }
+      confirmUnsavedLeave(() => {
+        unblock();
+        tx.retry();
+      });
+    });
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      unblock();
     };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, []);
+  }, [dirty, confirmUnsavedLeave]);
 
   // -------- 早返回 --------
   if (!patientId) {
@@ -277,7 +324,20 @@ const Diagnosis: React.FC = () => {
               const { step, onPre, onSubmit } = props;
               return (
                 <Flex justify="flex-end" gap={12} style={{ marginTop: 24 }}>
-                  <Button type="primary" danger onClick={() => history.back()}>
+                  <Button
+                    type="primary"
+                    danger
+                    onClick={() => {
+                      if (dirty) {
+                        confirmUnsavedLeave(() => {
+                          setDirtyState(false);
+                          history.back();
+                        });
+                      } else {
+                        history.back();
+                      }
+                    }}
+                  >
                     离开
                   </Button>
                   {step > 0 ? <Button onClick={onPre}>上一步</Button> : null}
@@ -303,6 +363,7 @@ const Diagnosis: React.FC = () => {
                 diet_plan: data?.dietContent ?? '',
                 prescription_summary: aiPrescriptionSummary ?? undefined,
               });
+              setDirtyState(false);
               message.success('诊断流程完成');
               history.push(`/patient-user/detail/${patientId}`);
               return true;
@@ -335,6 +396,7 @@ const Diagnosis: React.FC = () => {
                   values.present_illness,
                   values.physical_signs ?? '',
                 );
+                setDirtyState(false);
                 return true;
               } catch (error) {
                 console.error('Step 0 save failed:', error);
@@ -403,6 +465,7 @@ const Diagnosis: React.FC = () => {
                   screening_items: screeningItemsData,
                   examination_steps: aiExaminationSteps ?? undefined,
                 });
+                setDirtyState(false);
                 return true;
               } catch (error) {
                 console.error('Step 1 save failed:', error);
@@ -419,11 +482,21 @@ const Diagnosis: React.FC = () => {
               selectedScaleIds={selectedScaleIds}
               selectedLabIds={selectedLabIds}
               selectedImagingIds={selectedImagingIds}
-              onScaleChange={setSelectedScaleIds}
-              onLabChange={setSelectedLabIds}
-              onImagingChange={setSelectedImagingIds}
+              onScaleChange={(ids) => {
+                setSelectedScaleIds(ids);
+                setDirtyState(true);
+              }}
+              onLabChange={(ids) => {
+                setSelectedLabIds(ids);
+                setDirtyState(true);
+              }}
+              onImagingChange={(ids) => {
+                setSelectedImagingIds(ids);
+                setDirtyState(true);
+              }}
               aiSuggestion={aiSuggestion}
               confidence={aiConfidence}
+              onRetry={handleRetryScreening}
             />
           </StepsForm.StepForm>
 
@@ -469,6 +542,7 @@ const Diagnosis: React.FC = () => {
                 }
 
                 loadDiagnosisData();
+                setDirtyState(false);
                 return true;
               } catch (error) {
                 console.error('Step 2 save failed:', error);
@@ -565,6 +639,7 @@ const Diagnosis: React.FC = () => {
                   : [],
               diagnosis_note: diagnosisData?.diagnosis_note ?? '',
             }}
+            onValuesChange={() => setDirtyState(true)}
             onFinish={async (values) => {
               if (
                 !values.diagnosis_results ||
@@ -580,6 +655,7 @@ const Diagnosis: React.FC = () => {
                   diagnosis_note: values.diagnosis_note,
                 });
                 loadPrescriptionData();
+                setDirtyState(false);
                 return true;
               } catch (error) {
                 console.error('Step 3 save failed:', error);
@@ -594,6 +670,7 @@ const Diagnosis: React.FC = () => {
               otherDiseases={otherDiseases}
               preventionAdvice={preventionAdvice}
               diseaseNameMap={diseaseNameMap}
+              onRetry={loadDiagnosisData}
             />
             <ProFormSelect
               name="diagnosis_results"
@@ -622,6 +699,8 @@ const Diagnosis: React.FC = () => {
               initialCognitiveCards={initialCognitiveCards}
               initialDietContent={initialDietContent}
               initialExercises={initialExercises}
+              onRetry={loadPrescriptionData}
+              onDirty={() => setDirtyState(true)}
             />
           </StepsForm.StepForm>
         </StepsForm>

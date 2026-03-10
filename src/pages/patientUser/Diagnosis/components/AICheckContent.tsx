@@ -1,5 +1,6 @@
+import { ReloadOutlined } from '@ant-design/icons';
 import { CheckCard } from '@ant-design/pro-components';
-import { Alert, Flex, Spin, Tag, Typography } from 'antd';
+import { Alert, Button, Flex, Spin, Tag, Typography } from 'antd';
 import React from 'react';
 
 const { Text, Title } = Typography;
@@ -23,6 +24,7 @@ interface AICheckContentProps {
   onImagingChange: (ids: string[]) => void;
   aiSuggestion: string | null;
   confidence: number | null;
+  onRetry?: () => void;
 }
 
 const AICheckContent: React.FC<AICheckContentProps> = ({
@@ -38,6 +40,7 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
   onImagingChange,
   aiSuggestion,
   confidence,
+  onRetry,
 }) => {
   if (loading) {
     return (
@@ -52,12 +55,18 @@ const AICheckContent: React.FC<AICheckContentProps> = ({
     <div>
       <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
         <Text type="secondary">基于患者信息及候选项目生成，医生可调整勾选</Text>
-        {/* M2: ternary not && */}
-        {confidence != null ? (
-          <Tag color="blue" style={{ fontVariantNumeric: 'tabular-nums' }}>
-            置信度 {(confidence * 100).toFixed(0)}%
-          </Tag>
-        ) : null}
+        <Flex align="center" gap={8}>
+          {confidence != null ? (
+            <Tag color="blue" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              置信度 {(confidence * 100).toFixed(0)}%
+            </Tag>
+          ) : null}
+          {onRetry ? (
+            <Button icon={<ReloadOutlined />} size="small" onClick={onRetry}>
+              重新生成
+            </Button>
+          ) : null}
+        </Flex>
       </Flex>
 
       {/* 量表评估 */}

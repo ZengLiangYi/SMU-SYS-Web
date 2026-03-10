@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createDiagnosis, getCurrentDiagnosis } from '@/services/diagnosis';
+import {
+  createDiagnosis,
+  getCurrentDiagnosis,
+  updateDiagnosis,
+} from '@/services/diagnosis';
 import type { DiagnosisDetailResponse } from '@/services/diagnosis/typings.d';
 import { getDiagnosticScales } from '@/services/diagnostic-scale';
 import { getDiseaseTypes } from '@/services/disease-type';
@@ -62,7 +66,14 @@ export function computeCurrentStep(
       (id) => data.imaging_result_images?.[id],
     );
 
-    if (hasExpected && allLabUploaded && allImagingUploaded) return 3;
+    const allScalesFinished = (data.unfinished_scale_ids?.length ?? 0) === 0;
+    if (
+      hasExpected &&
+      allLabUploaded &&
+      allImagingUploaded &&
+      allScalesFinished
+    )
+      return 3;
     return 2;
   }
 
@@ -289,13 +300,28 @@ export default function useDiagnosisFlow(
         setAiSuggestion(llmRes.examination_steps);
         setAiExaminationSteps(llmRes.examination_steps);
         setAiConfidence(llmRes.prediction_confidence);
+
+        // 自动保存 LLM 筛查结果到 DB，防止刷新丢失
+        try {
+          const id = await ensureDiagnosisId();
+          await updateDiagnosis(patientId, id, {
+            screening_items: {
+              selected_assessments: llmRes.selected_assessments ?? [],
+              selected_lab_tests: llmRes.selected_lab_tests ?? [],
+              selected_imaging_tests: llmRes.selected_imaging_tests ?? [],
+            },
+            examination_steps: llmRes.examination_steps ?? undefined,
+          });
+        } catch (saveErr) {
+          console.error('Auto-save screening data failed:', saveErr);
+        }
       } catch (error) {
         console.error('Failed to load screening data:', error);
       } finally {
         if (mountedRef.current) setScreeningLoading(false);
       }
     },
-    [patientId, loadCandidatesOnly],
+    [patientId, loadCandidatesOnly, ensureDiagnosisId],
   );
 
   // -------- 加载疾病类型目录 --------
@@ -502,13 +528,26 @@ export default function useDiagnosisFlow(
         }
 
         if (step >= 3 && saved) {
-          // 加载疾病类型目录
-          await loadDiseaseTypes();
+          if (!saved.diagnosis_results?.length) {
+            // 无诊断结果：重新触发 LLM 诊断
+            await loadDiagnosisData();
+          } else {
+            await loadDiseaseTypes();
+          }
         }
 
         if (step >= 4 && saved) {
-          // H2: 解析处方 ID 为显示对象
-          await resolvePrescriptionData(saved);
+          if (
+            !saved.medicine_ids?.length &&
+            !saved.rehab_level_ids?.length &&
+            !saved.diet_plan &&
+            !saved.exercise_plan?.length
+          ) {
+            // 无处方数据：重新触发 LLM 处方
+            await loadPrescriptionData();
+          } else {
+            await resolvePrescriptionData(saved);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize diagnosis flow:', error);
@@ -520,6 +559,8 @@ export default function useDiagnosisFlow(
     patientId,
     loadCandidatesOnly,
     loadDiseaseTypes,
+    loadDiagnosisData,
+    loadPrescriptionData,
     resolvePrescriptionData,
   ]);
 
